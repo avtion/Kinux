@@ -1,0 +1,19 @@
+# 日志等级: panic fatal error warn info debug trace
+logLevel: "trace"
+
+# k8s集群配置
+Kubernetes:
+  isInCluster: false
+  kubeConfigPath: "./kubeConfig"
+  namespace: "kinux"
+
+# Web服务配置
+web:
+  enable: true
+  # test debug release
+  mode: debug
+  port: 9001
+
+# 活性探针
+live:
+  port: 8700
