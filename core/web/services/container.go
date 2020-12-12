@@ -3,6 +3,7 @@ package services
 
 import (
 	"Kinux/core/k8s"
+	"Kinux/tools"
 	"Kinux/tools/bytesconv"
 	"context"
 	"encoding/json"
@@ -14,24 +15,26 @@ import (
 
 // ContainerSessionAdapter 实现 k8s.PtyHandler 接口
 type ContainerSessionAdapter struct {
+	id       string
 	ctx      context.Context
 	wsConn   *websocket.Conn
 	sizeChan chan remotecommand.TerminalSize
 	doneChan chan struct{}
-	// TODO 会话ID 考试监控
+	// TODO 考试监控
 }
 
 var _ k8s.PtyHandler = (*ContainerSessionAdapter)(nil)
 
 // NewContainerSessionAdapter 创建一个 ContainerSessionAdapter 对象
 func NewContainerSessionAdapter(ctx context.Context, conn *websocket.Conn) *ContainerSessionAdapter {
-	// TODO 增加上下文判断会话是否主动结束
-	return &ContainerSessionAdapter{
+	adapter := &ContainerSessionAdapter{
+		id:       tools.GetRandomString(12),
 		ctx:      ctx,
 		wsConn:   conn,
 		sizeChan: make(chan remotecommand.TerminalSize),
 		doneChan: make(chan struct{}),
 	}
+	return adapter
 }
 
 // Done 结束当前 websocket 连接（由k8s组件主动调用）
@@ -51,20 +54,19 @@ func (t *ContainerSessionAdapter) Next() *remotecommand.TerminalSize {
 	}
 }
 
-// Read 将 webSocket 连接中的数据进行处理并拷贝到 p 中
+// Read 实现 io.Reader 接口将 webSocket 连接中的数据进行处理并拷贝到 p 中
 func (t *ContainerSessionAdapter) Read(p []byte) (int, error) {
+	// 读取数据并反序列化
 	_, message, err := t.wsConn.ReadMessage()
 	if err != nil {
-		logrus.Tracef("read message err: %v", err)
+		logrus.Errorf("read message err: %v", err)
 		return copy(p, EndOfTransmission), err
 	}
-
 	var msg = new(TerminalMessage)
 	if err := json.Unmarshal(message, msg); err != nil {
-		logrus.Tracef("read parse message err: %v", err)
+		logrus.Errorf("read parse message err: %v", err)
 		return copy(p, EndOfTransmission), err
 	}
-
 	logrus.Trace("接收到数据", msg.Data)
 
 	// 根据消息协议的规定进行对应的操作
