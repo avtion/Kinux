@@ -9,5 +9,6 @@ import (
 func WebSocketHandlerV1(c *gin.Context) {
 	// TODO 身份校验 / 模式校验
 	// TODO 指定容器
-	services.WebSocketContainerService(c, "", "", "", []string{})
+	services.NewWebSocketService(c,
+		services.WsOperator.NewK8SPodConnection("", "", "", []string{"/bin/bash"}))
 }
