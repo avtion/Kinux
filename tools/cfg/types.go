@@ -5,6 +5,7 @@ type config struct {
 	Kubernetes k8s
 	Web        web
 	Live       live
+	Database   database
 	LogLevel   string
 }
 
@@ -25,4 +26,9 @@ type web struct {
 // 活性探针
 type live struct {
 	Port string
+}
+
+type database struct {
+	Name string
+	Dsn  string
 }
