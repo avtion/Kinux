@@ -26,7 +26,7 @@ func InitWebService() {
 	if !cfg.DefaultConfig.Web.Enable {
 		return
 	}
-	logrus.Trace("Web服务正在启动")
+	logrus.WithField("端口", cfg.DefaultConfig.Web.Port).Trace("Web服务正在启动")
 	gin.SetMode(cfg.DefaultConfig.Web.Mode)
 	if err := initWebService(cfg.DefaultConfig.Web.Port); err != nil {
 		logrus.Error(err)
