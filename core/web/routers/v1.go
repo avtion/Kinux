@@ -15,5 +15,12 @@ func v1Routers() initFunc {
 
 		// WebSocket
 		v1.GET("/ws", controllers.WebSocketHandlerV1)
+
+		// Account
+		ac := v1.Group("/account")
+		{
+			ac.POST("/login", controllers.LoginAccount)
+		}
+
 	}
 }
