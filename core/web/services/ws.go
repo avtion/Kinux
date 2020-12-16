@@ -40,8 +40,8 @@ func NewWebSocketService(c *gin.Context, fns ...WsSvcFn) (err error) {
 	for _, fn := range fns {
 		// 每次执行函数之前都检验一次上下文是否终止
 		select {
-		case err = <-c.Done():
-			return
+		case <-c.Done():
+			return c.Err()
 		default:
 		}
 		if err = fn(c, wsConn); err != nil {
