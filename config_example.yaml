@@ -1,6 +1,12 @@
 # 日志等级: panic fatal error warn info debug trace
 logLevel: "trace"
 
+# 数据库选择
+database:
+  name: sqlite
+  dsn: kinux.db
+#  dsn: user:pass@tcp(127.0.0.1:3306)/dbname?charset=utf8mb4&parseTime=True&loc=Local
+
 # k8s集群配置
 Kubernetes:
   isInCluster: false
