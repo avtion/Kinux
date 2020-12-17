@@ -66,6 +66,7 @@ func TestNewAccounts(t *testing.T) {
 						Account: Account{
 							Username: "test",
 							Password: "test",
+							Role:     RoleNormalAccount,
 						},
 						Profile: Profile{
 							RealName: "test",
