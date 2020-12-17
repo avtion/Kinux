@@ -1,7 +1,9 @@
 package models
 
+type RoleIdentify = uint
+
 const (
-	RoleAnonymous uint = iota
+	RoleAnonymous RoleIdentify = iota
 	RoleNormalAccount
 	RoleManager
 	RoleAdmin
