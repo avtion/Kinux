@@ -12,9 +12,9 @@ var (
 )
 
 // 登陆账号
-func LoginAccount(c *gin.Context, username, password string) (token string, err error) {
-	// TODO 校验账号和密码返回token和错误信息
-	if err = (&models.Account{Username: username}).Verify(c, password); err != nil {
+func LoginAccount(c *gin.Context, username, password string) (ac *models.Account, err error) {
+	ac = &models.Account{Username: username}
+	if err = ac.Verify(c, password); err != nil {
 		logrus.WithFields(logrus.Fields{
 			"username": username,
 			"password": password,
