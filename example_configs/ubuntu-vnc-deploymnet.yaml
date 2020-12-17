@@ -1,0 +1,73 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: ubuntu-os-vnc
+  namespace: default
+  labels:
+    app: ubuntu-os-vnc
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: ubuntu-os-vnc
+  template:
+    metadata:
+      labels:
+        app: ubuntu-os-vnc
+    spec:
+      nodeSelector:
+        cpu: amd64
+      containers:
+        - name: ubuntu
+          image: dorowu/ubuntu-desktop-lxde-vnc
+          imagePullPolicy: IfNotPresent
+          ports:
+            - containerPort: 80
+          volumeMounts:
+            - mountPath: /dev/shm
+              name: shm
+      volumes:
+        - name: shm
+          hostPath:
+            # 内存
+            path: /dev/shm
+
+---
+
+apiVersion: v1
+kind: Service
+metadata:
+  labels:
+    app: ubuntu-os-vnc
+  name: ubuntu-os-vnc
+  namespace: default
+spec:
+  ports:
+    - name: http
+      port: 8791
+      targetPort: 80
+  selector:
+    app: ubuntu-os-vnc
+  type: ClusterIP
+
+---
+
+apiVersion: traefik.containo.us/v1alpha1
+kind: IngressRoute
+metadata:
+  name: ubuntu-os-vnc
+  namespace: default
+spec:
+  entryPoints:
+    - websecure
+  routes:
+    - kind: Rule
+      match: Host(`tencent.avtion.cn`)
+      middlewares: null
+      services:
+        - name: ubuntu-os-vnc
+          port: 8791
+  tls:
+    certResolver: ali
+    domains:
+      - main: '*.avtion.cn'
