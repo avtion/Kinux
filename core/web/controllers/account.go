@@ -42,7 +42,7 @@ func LoginAccount(c *gin.Context) {
 
 	c.JSON(http.StatusOK, msg.BuildSuccess(map[string]string{
 		"msg":   "🛫️登陆成功",
-		"token": token,
+		"token": middlewares.TokenCentral.TokenHeadName + " " + token,
 		"ttl":   strconv.FormatInt(ttl.Unix(), 10),
 	}))
 	return
