@@ -23,3 +23,7 @@ web:
 # 活性探针
 live:
   port: 8700
+
+# Casbin鉴权中间件
+Casbin:
+  enable: false

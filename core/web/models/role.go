@@ -9,3 +9,6 @@ const (
 	RoleManager
 	RoleAdmin
 )
+
+// 角色数组，用于遍历
+var RoleArray = [...]RoleIdentify{RoleAnonymous, RoleNormalAccount, RoleManager, RoleAdmin}

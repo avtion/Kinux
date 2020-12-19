@@ -22,6 +22,7 @@ type TokenPayload struct {
 	Role     models.RoleIdentify
 }
 
+// 转换成 MapClaims
 func (t *TokenPayload) MapClaims() jwt.MapClaims {
 	return jwt.MapClaims{
 		"username": t.Username,
@@ -29,6 +30,7 @@ func (t *TokenPayload) MapClaims() jwt.MapClaims {
 	}
 }
 
+// 将 MapClaims 转换成 TokenPayload
 func claimsToTokenPayload(claims jwt.MapClaims) *TokenPayload {
 	username, _ := claims["username"]
 	role, _ := claims["role"]
@@ -58,8 +60,7 @@ var TokenCentral = &jwt.GinJWTMiddleware{
 		}
 		return jwt.MapClaims{}
 	},
-	// 登陆使用，直接忽略
-	Authenticator: nil,
+	Authenticator: nil, // 登陆使用，直接忽略
 	IdentityHandler: func(c *gin.Context) interface{} {
 		return claimsToTokenPayload(jwt.ExtractClaims(c))
 	},
@@ -70,9 +71,14 @@ var TokenCentral = &jwt.GinJWTMiddleware{
 		if !ok {
 			return false
 		}
-		// TODO RBAC鉴权
-		logrus.WithField("payload", payload).Trace("JWT鉴权")
-		return true
+
+		// Casbin鉴权
+		ok, err := Enforce(cast.ToString(payload.Role), c.FullPath(), c.Request.Method)
+		if err != nil {
+			logrus.WithField("err", err).Error("Casbin鉴权失败")
+			return false
+		}
+		return ok
 	},
 	Unauthorized: func(c *gin.Context, code int, data string) {
 		logrus.WithFields(logrus.Fields{

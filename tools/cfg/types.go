@@ -6,6 +6,7 @@ type config struct {
 	Web        web
 	Live       live
 	Database   database
+	Casbin     casbin
 	LogLevel   string
 }
 
@@ -28,7 +29,13 @@ type live struct {
 	Port string
 }
 
+// 数据库
 type database struct {
 	Name string
 	Dsn  string
+}
+
+// Casbin鉴权中间件
+type casbin struct {
+	Enable bool
 }

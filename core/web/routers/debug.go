@@ -54,6 +54,9 @@ func debugRouters() initFunc {
 				}
 				c.JSON(http.StatusOK, msg.BuildSuccess(*u))
 			})
+			debug.Use(middlewares.JsonWebTokenAuth).GET("/casbin_test", func(c *gin.Context) {
+				c.JSON(http.StatusOK, msg.BuildSuccess("ok"))
+			})
 		}
 	}
 }
