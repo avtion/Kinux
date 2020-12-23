@@ -10,5 +10,5 @@ func init() {
 type Deployment struct {
 	gorm.Model
 	Name string `gorm:"unique"` // 名称
-	Raw  []byte // Yaml源码
+	Raw  []byte // 配置字节流
 }
