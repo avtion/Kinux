@@ -5,6 +5,10 @@ import (
 	"time"
 )
 
+func init() {
+	migrateQueue = append(migrateQueue, new(Exam), new(ExamMissions))
+}
+
 // 考试 - 对 Mission 的封装
 type Exam struct {
 	gorm.Model
@@ -17,7 +21,8 @@ type Exam struct {
 	ForceOrder bool      // 强制按照顺序完成任务
 }
 
-type ExamWithMission struct {
+// 实验与任务点为一对多关系
+type ExamMissions struct {
 	gorm.Model
 	Exam     uint `gorm:"uniqueIndex:unique_index"`
 	Mission  uint `gorm:"uniqueIndex:unique_index"`

@@ -2,6 +2,10 @@ package models
 
 import "gorm.io/gorm"
 
+func init() {
+	migrateQueue = append(migrateQueue, new(Checkpoint))
+}
+
 // 检查点方式
 type CheckpointMethod = uint
 

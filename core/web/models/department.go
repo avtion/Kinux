@@ -2,6 +2,10 @@ package models
 
 import "gorm.io/gorm"
 
+func init() {
+	migrateQueue = append(migrateQueue, new(Department))
+}
+
 // 班级
 type Department struct {
 	gorm.Model

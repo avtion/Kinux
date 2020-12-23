@@ -2,6 +2,10 @@ package models
 
 import "gorm.io/gorm"
 
+func init() {
+	migrateQueue = append(migrateQueue, new(Mission), new(MissionCheckpoints))
+}
+
 // 任务
 type Mission struct {
 	gorm.Model
