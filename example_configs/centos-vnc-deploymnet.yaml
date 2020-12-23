@@ -1,0 +1,33 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: centos-vnc
+  namespace: default
+#  labels:
+#    app: ubuntu-os-vnc
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: centos-vnc
+  template:
+    metadata:
+      labels:
+        app: centos-vnc
+    spec:
+      nodeSelector:
+        cpu: amd64
+      containers:
+        - name: centos
+          image: consol/centos-xfce-vnc
+          imagePullPolicy: IfNotPresent
+          ports:
+            - containerPort: 80
+          volumeMounts:
+            - mountPath: /dev/shm
+              name: shm
+      volumes:
+        - name: shm
+          hostPath:
+            # 内存
+            path: /dev/shm
