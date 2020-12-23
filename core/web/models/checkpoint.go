@@ -27,7 +27,7 @@ type Checkpoint struct {
 	gorm.Model
 	Name   string // 名称
 	Desc   string // 描述
-	Method uint   // 对应 CheckpointMethod
 	In     string // 输入 - 可以是指令，也可以是目标端口
 	Out    string // 输出 - 监听的目标输出，可以是指令执行结果，也可以是目标端口的响应
+	Method uint   // 对应 CheckpointMethod
 }
