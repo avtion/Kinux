@@ -3,8 +3,8 @@ kind: Deployment
 metadata:
   name: ubuntu-os-vnc
   namespace: default
-  labels:
-    app: ubuntu-os-vnc
+#  labels:
+#    app: ubuntu-os-vnc
 spec:
   replicas: 1
   selector:
