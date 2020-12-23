@@ -2,8 +2,9 @@ package models
 
 import "gorm.io/gorm"
 
-// 部门
+// 班级
 type Department struct {
 	gorm.Model
-	Name string
+	Name      string // 名称
+	Namespace string // 可见的命名空间，以分号为间隔
 }
