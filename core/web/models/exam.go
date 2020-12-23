@@ -24,8 +24,8 @@ type Exam struct {
 // 实验与任务点为一对多关系
 type ExamMissions struct {
 	gorm.Model
-	Exam     uint `gorm:"uniqueIndex:unique_index"`
-	Mission  uint `gorm:"uniqueIndex:unique_index"`
+	Exam     uint `gorm:"uniqueIndex:ex_missions"`
+	Mission  uint `gorm:"uniqueIndex:ex_missions"`
 	Percent  uint // 任务占考试成绩比例
 	Priority int  // 自定义排序
 }
