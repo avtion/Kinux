@@ -1,25 +1,41 @@
 package models
 
-import "gorm.io/gorm"
+import (
+	"context"
+	"errors"
+	"fmt"
+	"gorm.io/gorm"
+	"strings"
+)
 
 func init() {
 	migrateQueue = append(migrateQueue, new(Mission), new(MissionCheckpoints))
 }
 
+var (
+	ErrMissionDeploymentNotExist = errors.New("mission deployment not exist")
+)
+
 // 任务
 type Mission struct {
 	gorm.Model
-	Name            string // 名称
-	Desc            string // 描述
-	Namespace       string // 命名空间(默认为default)
-	ExecContainer   string // 默认执行的容器（默认为空）
-	Command         string // WebShell执行的命令
-	ForbidContainer string // 允许访问的容器（空的情况下允许全部容器）
-	Deployment      uint   // k8s部署文件
-	Total           uint   // 任务总分（默认值为100）
-	VNCEnable       bool   // 启用VNC桌面访问
-	VNCContainer    string // VNC目标容器
-	VNCPort         string // VNC目标接口
+
+	// 任务本身相关
+	Name      string `gorm:"uniqueIndex:mission_name_ns"` // 名称
+	Desc      string // 描述
+	Namespace string `gorm:"uniqueIndex:mission_name_ns"` // 命名空间(默认为default)
+	Total     uint   // 任务总分（默认值为100）
+
+	// K8S Deployment相关
+	Deployment         uint   // k8s部署文件
+	ExecContainer      string // 默认执行的容器（默认为空并访问首个容器）
+	Command            string // WebShell执行的命令 TODO 支持shell脚本
+	WhiteListContainer string // 白名单容器（若为空则放行首个容器）
+
+	// VNC
+	VNCEnable    bool   // 启用VNC桌面访问
+	VNCContainer string // VNC目标容器
+	VNCPort      string // VNC目标接口
 }
 
 // 任务和检查点是一对多的关系
@@ -30,4 +46,95 @@ type MissionCheckpoints struct {
 	Percent         uint   // 该检查点占任务总分的百分比
 	Priority        int    // 自定义排序
 	TargetContainer string // 目标容器
+}
+
+// 任务构造选项
+type MissionBuildOpt func(m *Mission) (err error)
+
+// 任务构造器
+func MissionBuilder(_ context.Context, name string, dp *Deployment, opts ...MissionBuildOpt) (m *Mission, err error) {
+	if dp == nil || dp.ID == 0 {
+		return nil, ErrMissionDeploymentNotExist
+	}
+	m = &Mission{
+		Name:       name,
+		Namespace:  "default",
+		Total:      100,
+		Deployment: dp.ID,
+	}
+	for _, opt := range opts {
+		if err = opt(m); err != nil {
+			return
+		}
+	}
+	if m.Deployment == 0 {
+		return nil, ErrMissionDeploymentNotExist
+	}
+	return
+}
+
+// 启用VNC远程桌面
+func MissionOptVnc(container, port string) MissionBuildOpt {
+	return func(m *Mission) (err error) {
+		m.VNCEnable = true
+		m.VNCContainer = container
+		m.VNCPort = port
+		return
+	}
+}
+
+// 任务描述
+func MissionOptDesc(desc string) MissionBuildOpt {
+	return func(m *Mission) (err error) {
+		m.Desc = desc
+		return
+	}
+}
+
+// 任务命名空间
+func MissionOptNs(ns string) MissionBuildOpt {
+	return func(m *Mission) (err error) {
+		m.Namespace = ns
+		return
+	}
+}
+
+// 任务Deployment
+func MissionOptDeployment(cmd, execC string, whiteListC []string) MissionBuildOpt {
+	return func(m *Mission) (err error) {
+		if len(whiteListC) > 0 {
+			for _, v := range whiteListC {
+				if strings.ContainsRune(v, ';') {
+					return fmt.Errorf("设置白名单容器不允许包含';'字符: %s", v)
+				}
+			}
+		}
+		m.ExecContainer = execC
+		m.Command = cmd
+		m.WhiteListContainer = strings.Join(whiteListC, ";")
+		return
+	}
+}
+
+// 任务创建或更新内部实现
+func (m *Mission) CreateOrUpdate(ctx context.Context) (err error) {
+	db := GetGlobalDB().WithContext(ctx)
+	if m.ID == 0 {
+		if err = db.Create(m).Error; err != nil {
+			return
+		}
+	}
+	return db.Save(m).Error
+}
+
+// 创建并更新任务
+func CrateOrUpdateMission(ctx context.Context, name string, dp *Deployment, opts ...MissionBuildOpt) (m *Mission, err error) {
+	m, err = MissionBuilder(ctx, name, dp, opts...)
+	if err != nil {
+		return
+	}
+	if err = m.CreateOrUpdate(ctx); err != nil {
+		return
+	}
+	return
 }
