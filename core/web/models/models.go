@@ -53,7 +53,7 @@ func InitDatabaseConn(ctx context.Context, dbSelector, dsn string) (err error) {
 		Logger: logger.New(logrus.StandardLogger(), logger.Config{
 			SlowThreshold: time.Second,
 			Colorful:      false,
-			LogLevel:      logger.Warn,
+			LogLevel:      logger.Info,
 		}),
 	})
 	if err != nil {
@@ -67,4 +67,20 @@ func InitDatabaseConn(ctx context.Context, dbSelector, dsn string) (err error) {
 	globalDb = db.WithContext(ctx)
 	logrus.Trace("数据库初始化成功")
 	return
+}
+
+// 分页构造器
+type PageBuilder struct {
+	Page, Size int
+}
+
+func (p *PageBuilder) build(db *gorm.DB) *gorm.DB {
+	return db.Limit(p.Size).Offset((p.Page - 1) * p.Size)
+}
+
+func NewPageBuilder(page, size int) *PageBuilder {
+	return &PageBuilder{
+		Page: page,
+		Size: size,
+	}
 }
