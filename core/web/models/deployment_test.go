@@ -113,12 +113,76 @@ func TestCrateDeployment(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			gotId, err := CrateDeployment(tt.args.ctx, tt.args.name, tt.args.raw)
+			gotId, err := CrateOrUpdateDeployment(tt.args.ctx, tt.args.name, tt.args.raw)
 			if (err != nil) != tt.wantErr {
-				t.Errorf("CrateDeployment() error = %v, wantErr %v", err, tt.wantErr)
+				t.Errorf("CrateOrUpdateDeployment() error = %v, wantErr %v", err, tt.wantErr)
 				return
 			}
 			t.Log(gotId)
+		})
+	}
+}
+
+func TestListDeployment(t *testing.T) {
+	type args struct {
+		ctx  context.Context
+		name string
+		page *PageBuilder
+	}
+	tests := []struct {
+		name    string
+		args    args
+		wantErr bool
+	}{
+		{
+			name: "test",
+			args: args{
+				ctx:  context.Background(),
+				name: "",
+				page: NewPageBuilder(0, 10),
+			},
+			wantErr: false,
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			gotRes, err := ListDeployment(tt.args.ctx, tt.args.name, tt.args.page)
+			if (err != nil) != tt.wantErr {
+				t.Errorf("ListDeployment() error = %v, wantErr %v", err, tt.wantErr)
+				return
+			}
+			t.Log(gotRes)
+		})
+	}
+}
+
+func TestGetDeployment(t *testing.T) {
+	type args struct {
+		ctx context.Context
+		id  uint
+	}
+	tests := []struct {
+		name    string
+		args    args
+		wantErr bool
+	}{
+		{
+			name: "test",
+			args: args{
+				ctx: context.Background(),
+				id:  2,
+			},
+			wantErr: false,
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			gotRes, err := GetDeployment(tt.args.ctx, tt.args.id)
+			if (err != nil) != tt.wantErr {
+				t.Errorf("GetDeployment() error = %v, wantErr %v", err, tt.wantErr)
+				return
+			}
+			t.Log(gotRes)
 		})
 	}
 }
