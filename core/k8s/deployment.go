@@ -12,6 +12,7 @@ import (
 	v1 "k8s.io/api/core/v1"
 	metaV1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/utils/pointer"
+	"sigs.k8s.io/yaml"
 )
 
 // Deployment调度主体
@@ -89,5 +90,19 @@ func NewDeployment(ctx context.Context, account, job string, options ...Deployme
 		"dp":      dp,
 		"account": account,
 	}).Info("Deployment创建成功")
+	return
+}
+
+// 解析Deployment的配置文件
+func ParseDeploymentConfig(_ context.Context, fileRaw []byte, strict bool) (dp *appV1.Deployment, err error) {
+	dp = new(appV1.Deployment)
+	if strict {
+		err = yaml.UnmarshalStrict(fileRaw, dp)
+	} else {
+		err = yaml.Unmarshal(fileRaw, dp)
+	}
+	if err != nil {
+		return
+	}
 	return
 }
