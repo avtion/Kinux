@@ -13,6 +13,7 @@ func init() {
 }
 
 var (
+	// Deployment不存在
 	ErrMissionDeploymentNotExist = errors.New("mission deployment not exist")
 )
 
@@ -119,12 +120,28 @@ func MissionOptDeployment(cmd, execC string, whiteListC []string) MissionBuildOp
 // 任务创建或更新内部实现
 func (m *Mission) CreateOrUpdate(ctx context.Context) (err error) {
 	db := GetGlobalDB().WithContext(ctx)
-	if m.ID == 0 {
-		if err = db.Create(m).Error; err != nil {
-			return
+	if err = db.Transaction(func(tx *gorm.DB) error {
+		// 检查Deployment是否存在
+		if _err := tx.First(new(Deployment), m.Deployment).Error; _err != nil {
+			return ErrMissionDeploymentNotExist
 		}
+
+		// 创建
+		if m.ID == 0 {
+			if _err := tx.Create(m).Error; _err != nil {
+				return _err
+			}
+			return nil
+		}
+
+		// 更新
+		_err := tx.Save(m).Error
+
+		return _err
+	}); err != nil {
+		return
 	}
-	return db.Save(m).Error
+	return
 }
 
 // 创建并更新任务
