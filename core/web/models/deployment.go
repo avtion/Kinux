@@ -60,6 +60,7 @@ func CrateOrUpdateDeployment(ctx context.Context, name string, raw []byte) (id u
 	return dp.ID, nil
 }
 
+// 批量获取
 func ListDeployment(ctx context.Context, name string, page *PageBuilder) (res []*Deployment, err error) {
 	db := GetGlobalDB().WithContext(ctx).Model(new(Deployment))
 	if name != "" {
@@ -72,6 +73,7 @@ func ListDeployment(ctx context.Context, name string, page *PageBuilder) (res []
 	return
 }
 
+// 指定ID获取
 func GetDeployment(ctx context.Context, id uint) (res *Deployment, err error) {
 	res = new(Deployment)
 	err = GetGlobalDB().WithContext(ctx).First(res, id).Error
