@@ -73,7 +73,9 @@ func ListDepartments(ctx context.Context, name string, page *PageBuilder, _ ...D
 	}
 
 	// 模糊搜索
-	db = db.Where("name = ?", "%"+name+"%")
+	if name != "" {
+		db = db.Where("name LIKE ?", "%"+name+"%")
+	}
 
 	err = db.Find(&ds).Error
 	return
