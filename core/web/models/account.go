@@ -220,7 +220,15 @@ func (a *Account) Verify(ctx context.Context, pw string) (err error) {
 
 // 获取用户的个人资料
 func (a *Account) GetProfile(ctx context.Context) (p *Profile, err error) {
-	err = GetGlobalDB().WithContext(ctx).First(&p, a.Profile).Error
+	p = new(Profile)
+	err = GetGlobalDB().WithContext(ctx).First(p, a.Profile).Error
+	return
+}
+
+// 根据用户资料获取对应的班级
+func (p *Profile) GetDepartment(ctx context.Context) (d *Department, err error) {
+	d = new(Department)
+	err = GetGlobalDB().WithContext(ctx).First(d, p.Department).Error
 	return
 }
 
@@ -241,5 +249,12 @@ func ListAccountsByDepartment(ctx context.Context, d uint, builder *PageBuilder)
 
 // TODO 根据角色批量查询账号
 func ListAccountsByRole(ctx context.Context, r RoleIdentify, builder *PageBuilder) (acs []*Account, err error) {
+	return
+}
+
+// 根据用户名获取对应的用户
+func GetAccountByUsername(ctx context.Context, username string) (ac *Account, err error) {
+	ac = new(Account)
+	err = GetGlobalDB().WithContext(ctx).Where(&Account{Username: username}).First(ac).Error
 	return
 }
