@@ -26,6 +26,7 @@ type Mission struct {
 	Desc      string // 描述
 	Namespace string `gorm:"uniqueIndex:mission_name_ns"` // 命名空间(默认为default)
 	Total     uint   // 任务总分（默认值为100）
+	Guide     string `gorm:"type:text"` // 以markdown为格式的说明文档
 
 	// K8S Deployment相关
 	Deployment         uint   // k8s部署文件
