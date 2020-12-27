@@ -13,6 +13,7 @@ import (
 	"strings"
 )
 
+// label标签定义
 const (
 	accountLabel    = "account-id"
 	missionLabel    = "mission-id"
