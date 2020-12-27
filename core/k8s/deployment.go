@@ -72,8 +72,21 @@ func ParseDeploymentConfig(fileRaw []byte, strict bool) (dp *appV1.Deployment, e
 
 // 删除Deployment
 func DeleteDeployments(ctx context.Context, ns string, s labels.Set) (err error) {
+	if err = clientSet.AppsV1().Deployments(ns).DeleteCollection(ctx, metaV1.DeleteOptions{
+		PropagationPolicy: &deletePolicy,
+	}, metaV1.ListOptions{
+		LabelSelector: s.String(),
+	}); err != nil {
+		return
+	}
+	return
+}
+
+// 批量查询Deployment
+func ListDeployments(ctx context.Context, ns string, s labels.Set) (dps *appV1.DeploymentList, err error) {
 	if s == nil || len(s) == 0 {
-		return errors.New("删除Deployment失败: 选择器为空")
+		err = errors.New("删除Deployment失败: 选择器为空")
+		return
 	}
 
 	// 修复因命名空间导致的错误
@@ -81,27 +94,11 @@ func DeleteDeployments(ctx context.Context, ns string, s labels.Set) (err error)
 		ns = namespace
 	}
 
-	// 检查用户是否有正在使用的Deployment
-	dps, err := clientSet.AppsV1().Deployments(ns).List(ctx, metaV1.ListOptions{
+	dps, err = clientSet.AppsV1().Deployments(ns).List(ctx, metaV1.ListOptions{
 		LabelSelector: s.String(),
 	})
 	if err != nil {
 		return
-	}
-
-	// 逐个将原本使用的Deployment删除
-	if len(dps.Items) > 0 {
-		logrus.WithField("选择器", s).Debug("发现用户拥有正在使用的Deployment")
-		// TODO 防止误操作
-		for _, deployment := range dps.Items {
-			if err = clientSet.AppsV1().Deployments(deployment.Namespace).Delete(ctx, deployment.Name, metaV1.DeleteOptions{
-				PropagationPolicy: &deletePolicy,
-			}); err != nil {
-				logrus.Error(err)
-				return
-			}
-			logrus.WithField("deployment", deployment.Name).Debug("删除用户正在使用的Deployment")
-		}
 	}
 	return
 }
