@@ -3,6 +3,7 @@ package middlewares
 import (
 	"Kinux/core/web/models"
 	"github.com/spf13/cast"
+	"net/http"
 	"testing"
 )
 
@@ -42,5 +43,23 @@ func Test_initCasbinRule(t *testing.T) {
 				t.Log("no permission")
 			}
 		})
+	}
+}
+
+// 新增一个全局允许的路由规则用于测试
+func Test_TurnOffCasbin(t *testing.T) {
+	enforcer, err := newEnforcer(&gormAdapter{DB: models.GetGlobalDB()})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if err = enforcer.SavePolicy(); err != nil {
+		t.Fatal(err)
+	}
+	if _, err = enforcer.AddPolicy(cast.ToString(models.RoleNormalAccount), "*",
+		http.MethodGet,
+		http.MethodPost,
+		http.MethodOptions,
+	); err != nil {
+		t.Fatal(err)
 	}
 }
