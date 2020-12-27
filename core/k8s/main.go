@@ -47,3 +47,8 @@ func initKubernetes(kubeConfig []byte, ns string) (err error) {
 	namespace = ns
 	return
 }
+
+// 导出命名空间
+func GetDefaultNS() string {
+	return namespace
+}
