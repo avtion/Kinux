@@ -9,12 +9,7 @@ import (
 	"net/http"
 )
 
-func init() {
-	addRouters(debugRouters())
-}
-
-// Debug调试专用路由
-// TODO 注释
+// Debug调试专用路由，只有在单元测试的条件下才生效
 func debugRouters() initFunc {
 	return func(r *gin.Engine) {
 		debug := r.Group("/debug")

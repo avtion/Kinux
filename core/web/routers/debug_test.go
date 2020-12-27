@@ -11,6 +11,10 @@ import (
 	"testing"
 )
 
+func init() {
+	addRouters(debugRouters())
+}
+
 func TestCasbinRouter(t *testing.T) {
 	const route = "/debug/casbin_test"
 	var testRouter = NewRouters()
