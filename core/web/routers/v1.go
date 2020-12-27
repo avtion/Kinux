@@ -23,5 +23,12 @@ func v1Routers() initFunc {
 			ac.POST("/login", controllers.LoginAccount)
 		}
 
+		// 任务相关
+		ms := v1.Group("/mission")
+		{
+			// 批量查询任务
+			ms.GET("/", controllers.QueryMissions)
+		}
+
 	}
 }
