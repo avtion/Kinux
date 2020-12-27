@@ -6,10 +6,17 @@ import (
 	"Kinux/tools"
 	"context"
 	"errors"
+	"github.com/sirupsen/logrus"
 	"github.com/spf13/cast"
 	appV1 "k8s.io/api/apps/v1"
 	"k8s.io/apimachinery/pkg/labels"
 	"strings"
+)
+
+const (
+	accountLabel    = "account-id"
+	missionLabel    = "mission-id"
+	deploymentLabel = "deployment-id"
 )
 
 type mcOpt func(mc *MissionController) error
@@ -30,29 +37,6 @@ type MissionController struct {
 // 创建任务控制器
 func NewMissionController(ctx context.Context) (mc *MissionController) {
 	mc = &MissionController{ctx: ctx}
-	return
-}
-
-// 追加任务操作
-func (mc *MissionController) appendOpt(opt mcOpt) {
-	mc.opts = append(mc.opts, opt)
-	return
-}
-
-// 执行操作
-func (mc *MissionController) exec() (err error) {
-	for _, opt := range mc.opts {
-		// 上下文判断结束
-		select {
-		case <-mc.ctx.Done():
-			return mc.ctx.Err()
-		default:
-			if err = opt(mc); err != nil {
-
-			}
-			return
-		}
-	}
 	return
 }
 
@@ -78,6 +62,78 @@ func (mc *MissionController) SetMission(m *models.Mission) *MissionController {
 		return nil
 	})
 	return mc
+}
+
+// 创建新的Deployment
+func (mc *MissionController) NewDeployment() (err error) {
+	defer func() {
+		if err != nil {
+			logrus.WithField("err", err).Error("创建新的Deployment失败")
+			return
+		}
+		logrus.WithField("deployment名称", mc.dpCfg.GetName()).Debug("创建新的Deployment成功")
+	}()
+
+	// 初始化控制器配置
+	mc.getDpCfg().parseDpCfg().generateAndApplyDpName().generateSelector(nil).applySelector().fixNamespace()
+
+	// 创建新的Deployment之前先清除正在进行的任务
+	if err = mc.ClearAllMission(); err != nil {
+		return
+	}
+
+	mc.appendOpt(
+		func(mc *MissionController) error {
+			if mc.dpCfg == nil || mc.dpSelector == nil {
+				return errors.New("创建新的Deployment失败: 配置未初始化")
+			}
+			// 调用K8S模块方法
+			_err := k8s.NewDeployment(mc.ctx, mc.dpCfg, mc.dpSelector)
+			return _err
+		})
+	return mc.exec()
+}
+
+// 清除用户正在进行的Deployment
+func (mc *MissionController) ClearAllMission() (err error) {
+	mc.appendOpt(func(mc *MissionController) error {
+		if mc.Ac == nil {
+			return errors.New("无法清除用户正在进行的任务: 用户信息未初始化")
+		}
+		var ns string
+		if mc.dpCfg != nil {
+			ns = mc.dpCfg.GetNamespace()
+		}
+		return k8s.DeleteDeployments(mc.ctx, ns, labels.Set{accountLabel: cast.ToString(mc.Ac.ID)})
+	})
+	return mc.exec()
+}
+
+// 追加任务操作
+func (mc *MissionController) appendOpt(opt mcOpt) {
+	mc.opts = append(mc.opts, opt)
+	return
+}
+
+// 执行操作
+func (mc *MissionController) exec() (err error) {
+	defer func() {
+		// 当目前执行队列所有的任务执行完毕的时候应当清空队列
+		// 以释放所有的函数空间，便于GC
+		mc.opts = make([]mcOpt, 0, 0)
+	}()
+	for _, opt := range mc.opts {
+		// 上下文判断结束
+		select {
+		case <-mc.ctx.Done():
+			return mc.ctx.Err()
+		default:
+			if err = opt(mc); err != nil {
+				return
+			}
+		}
+	}
+	return
 }
 
 // 获取K8S Deployment部署配置
@@ -107,7 +163,7 @@ func (mc *MissionController) parseDpCfg() *MissionController {
 		if mc.dp == nil {
 			return errors.New("mission的deployment为空")
 		}
-		dpCfg, err := k8s.ParseDeploymentConfig(mc.ctx, mc.dp.Raw, true)
+		dpCfg, err := k8s.ParseDeploymentConfig(mc.dp.Raw, true)
 		if err != nil {
 			return err
 		}
@@ -143,13 +199,13 @@ func (mc *MissionController) generateSelector(other map[string]string) *MissionC
 	mc.appendOpt(func(mc *MissionController) error {
 		mc.dpSelector = make(labels.Set, 3)
 		if mc.Ac != nil && mc.Ac.ID != 0 {
-			mc.dpSelector["accountID"] = cast.ToString(mc.Ac.ID)
+			mc.dpSelector[accountLabel] = cast.ToString(mc.Ac.ID)
 		}
 		if mc.Mission != nil {
-			mc.dpSelector["missionID"] = cast.ToString(mc.Mission.ID)
+			mc.dpSelector[missionLabel] = cast.ToString(mc.Mission.ID)
 		}
 		if mc.Mission != nil && mc.Mission.Deployment != 0 {
-			mc.dpSelector["deploymentID"] = cast.ToString(mc.Mission.Deployment)
+			mc.dpSelector[deploymentLabel] = cast.ToString(mc.Mission.Deployment)
 		}
 		for k, v := range other {
 			mc.dpSelector[k] = v
@@ -176,13 +232,27 @@ func (mc *MissionController) applySelector() *MissionController {
 	return mc
 }
 
-// 生成并应用K8S Deployment节点选择器用于测试环境
-func (mc *MissionController) generateAndApplyNodeSelector(cpu string) *MissionController {
+// 特殊对外的方法, 用于在测试环境生成并应用K8S Deployment节点选择器
+func (mc *MissionController) GenerateAndApplyNodeSelector(cpu string) *MissionController {
 	mc.appendOpt(func(mc *MissionController) error {
 		if mc.dpCfg == nil {
 			return errors.New("生成节点选择器失败: mission的部署配置信息未初始化")
 		}
 		mc.dpCfg.Spec.Template.Spec.NodeSelector["cpu"] = cpu
+		return nil
+	})
+	return mc
+}
+
+// 修改Deployment配置文件的命名空间，防止错误执行
+func (mc *MissionController) fixNamespace(pass ...bool) *MissionController {
+	if len(pass) > 0 && pass[0] {
+		return mc
+	}
+	mc.appendOpt(func(mc *MissionController) error {
+		if mc.dpCfg != nil {
+			mc.dpCfg.SetNamespace(k8s.GetDefaultNS())
+		}
 		return nil
 	})
 	return mc
