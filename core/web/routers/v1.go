@@ -2,6 +2,7 @@ package routers
 
 import (
 	"Kinux/core/web/controllers"
+	"Kinux/core/web/middlewares"
 	"github.com/gin-gonic/gin"
 )
 
@@ -11,7 +12,7 @@ func init() {
 
 func v1Routers() initFunc {
 	return func(r *gin.Engine) {
-		v1 := r.Group("v1")
+		v1 := r.Group("v1", middlewares.JsonWebTokenAuth)
 
 		// WebSocket
 		v1.GET("/ws", controllers.WebSocketHandlerV1)
