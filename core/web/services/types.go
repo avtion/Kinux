@@ -26,3 +26,25 @@ type TerminalMessage struct {
 	Rows uint16 `json:"rows"`
 	Cols uint16 `json:"cols"`
 }
+
+type MissionStatus = int
+
+// 任务状态
+const (
+	_                    MissionStatus = iota
+	MissionStatusStop                  // 未启动
+	MissionStatusPending               // 正在启动
+	MissionStatusWorking               // 运行中
+	MissionStatusDone                  // 已经完成
+)
+
+var _ = [...]MissionStatus{MissionStatusStop, MissionStatusPending, MissionStatusWorking, MissionStatusDone}
+
+// 业务层的任务结构体, 用于响应
+type Mission struct {
+	ID     uint
+	Name   string
+	Desc   string
+	Guide  string
+	Status MissionStatus
+}
