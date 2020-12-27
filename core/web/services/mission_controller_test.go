@@ -23,7 +23,7 @@ func TestNewMissionController(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			mc := NewMissionController(tt.args.ctx)
 
-			ms, err := models.ListMissions(tt.args.ctx, "", nil)
+			ms, err := models.ListMissions(tt.args.ctx, "", nil, nil)
 			if err != nil {
 				t.Fatal(err)
 			}

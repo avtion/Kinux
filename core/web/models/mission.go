@@ -157,10 +157,13 @@ func CrateOrUpdateMission(ctx context.Context, name string, dp *Deployment, opts
 }
 
 // 批量查询任务
-func ListMissions(ctx context.Context, name string, builder *PageBuilder) (ms []*Mission, err error) {
+func ListMissions(ctx context.Context, name string, ns []string, builder *PageBuilder) (ms []*Mission, err error) {
 	db := GetGlobalDB().WithContext(ctx)
 	if name != "" {
 		db = db.Where("name LIKE ?", "%"+name+"%")
+	}
+	if len(ns) > 0 {
+		db = db.Where("namespace IN ?", ns)
 	}
 	if builder != nil {
 		db = builder.build(db)
