@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"gorm.io/gorm"
+	"sort"
 	"strings"
 )
 
@@ -95,7 +96,17 @@ func DepartmentNsOpt(ns ...string) DepartmentOpt {
 				return errors.New("命名空间包括分号")
 			}
 		}
-		d.Namespace = strings.Join(append([]string{defaultDepartmentNamespace}, ns...), ";")
+
+		// 需要进行一次排序
+		_ns := append([]string{defaultDepartmentNamespace}, ns...)
+		sort.Strings(_ns)
+
+		d.Namespace = strings.Join(_ns, ";")
 		return nil
 	}
+}
+
+// 获取班级的命名空间
+func (d *Department) GetNS() []string {
+	return strings.Split(d.Namespace, ";")
 }
