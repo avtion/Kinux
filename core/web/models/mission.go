@@ -155,3 +155,16 @@ func CrateOrUpdateMission(ctx context.Context, name string, dp *Deployment, opts
 	}
 	return
 }
+
+// 批量查询任务
+func ListMissions(ctx context.Context, name string, builder *PageBuilder) (ms []*Mission, err error) {
+	db := GetGlobalDB().WithContext(ctx)
+	if name != "" {
+		db = db.Where("name LIKE ?", "%"+name+"%")
+	}
+	if builder != nil {
+		db = builder.build(db)
+	}
+	err = db.Find(&ms).Error
+	return
+}
