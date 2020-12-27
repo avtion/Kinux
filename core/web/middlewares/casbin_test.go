@@ -55,7 +55,7 @@ func Test_TurnOffCasbin(t *testing.T) {
 	if err = enforcer.SavePolicy(); err != nil {
 		t.Fatal(err)
 	}
-	if _, err = enforcer.AddPolicy(cast.ToString(models.RoleNormalAccount), "*",
+	if _, err = enforcer.AddPolicy(cast.ToString(models.RoleAnonymous), "*",
 		http.MethodGet,
 		http.MethodPost,
 		http.MethodOptions,
