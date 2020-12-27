@@ -1,6 +1,7 @@
 package services
 
 import (
+	"Kinux/core/web/middlewares"
 	"Kinux/core/web/models"
 	"errors"
 	"github.com/gin-gonic/gin"
@@ -25,5 +26,21 @@ func LoginAccount(c *gin.Context, username, password string) (ac *models.Account
 		err = ErrAccountVerifyFailed
 		return
 	}
+	return
+}
+
+// 从上下文中获取用户账户
+func GetAccountFromCtx(c *gin.Context) (ac *models.Account, err error) {
+	_u, isExist := c.Get(middlewares.TokenIdentityKey)
+	if !isExist {
+		err = errors.New("上下文不存在用户信息")
+		return
+	}
+	u, ok := _u.(*middlewares.TokenPayload)
+	if !ok {
+		err = errors.New("上下用户信息转换失败")
+		return
+	}
+	ac, err = models.GetAccountByUsername(c, u.Username)
 	return
 }
