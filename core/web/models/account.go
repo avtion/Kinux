@@ -217,3 +217,29 @@ func (a *Account) Verify(ctx context.Context, pw string) (err error) {
 	}
 	return
 }
+
+// 获取用户的个人资料
+func (a *Account) GetProfile(ctx context.Context) (p *Profile, err error) {
+	err = GetGlobalDB().WithContext(ctx).First(&p, a.Profile).Error
+	return
+}
+
+// 批量查询Accounts
+func ListAccounts(ctx context.Context, builder *PageBuilder) (acs []*Account, err error) {
+	db := GetGlobalDB().WithContext(ctx)
+	if builder != nil {
+		db = builder.build(db)
+	}
+	err = db.Find(&acs).Error
+	return
+}
+
+// TODO 根据班级批量查询账号
+func ListAccountsByDepartment(ctx context.Context, d uint, builder *PageBuilder) (acs []*Account, err error) {
+	return
+}
+
+// TODO 根据角色批量查询账号
+func ListAccountsByRole(ctx context.Context, r RoleIdentify, builder *PageBuilder) (acs []*Account, err error) {
+	return
+}
