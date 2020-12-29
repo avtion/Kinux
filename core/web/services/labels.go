@@ -51,16 +51,13 @@ func (l *labelMaker) WithString(k, v string) *labelMaker {
 }
 
 func (l *labelMaker) WithAccount(id interface{}) *labelMaker {
-	l.raw[accountLabel] = cast.ToString(id)
-	return l
+	return l.WithString(accountLabel, cast.ToString(id))
 }
 
 func (l *labelMaker) WithMission(id interface{}) *labelMaker {
-	l.raw[missionLabel] = cast.ToString(id)
-	return l
+	return l.WithString(missionLabel, cast.ToString(id))
 }
 
 func (l *labelMaker) WithDeployment(id interface{}) *labelMaker {
-	l.raw[deploymentLabel] = cast.ToString(id)
-	return l
+	return l.WithString(deploymentLabel, cast.ToString(id))
 }
