@@ -3,6 +3,7 @@ package services
 import (
 	"Kinux/core/k8s"
 	"Kinux/core/web/models"
+	"context"
 	"errors"
 	"github.com/gin-gonic/gin"
 	"github.com/spf13/cast"
@@ -56,23 +57,9 @@ func ListMissions(c *gin.Context, u *models.Account, name string, ns []string, p
 	}
 
 	// TODO 获取已完成的任务
-
-	// 从K8S调度模块查询Deployment的情况
-	dps, err := k8s.ListDeployments(c, "", NewLabelMarker().WithAccount(u.ID).Do())
+	dpStatusMapper, err := getDeploymentStatusForMission(c, "", NewLabelMarker().WithAccount(u.ID))
 	if err != nil {
 		return
-	}
-	var dpStatusMapper = make(map[uint]MissionStatus, len(dps.Items))
-	if len(dps.Items) > 0 {
-		for _, item := range dps.Items {
-			// 如果可用的副本等于要求的副本数量
-			missionID := cast.ToUint(labels.Set(item.GetLabels()).Get(missionLabel))
-			if item.Status.AvailableReplicas == *item.Spec.Replicas {
-				dpStatusMapper[missionID] = MissionStatusWorking
-			} else {
-				dpStatusMapper[missionID] = MissionStatusPending
-			}
-		}
 	}
 
 	// 遍历构造对应的响应结果
@@ -88,6 +75,36 @@ func ListMissions(c *gin.Context, u *models.Account, name string, ns []string, p
 			Guide:  mission.Guide,
 			Status: status,
 		})
+	}
+
+	return
+}
+
+// 根据Deployment的状态获取对应任务的状态
+func getDeploymentStatusForMission(ctx context.Context, namespace string, l *labelMaker) (
+	res map[uint]MissionStatus, err error) {
+	if l == nil {
+		l = NewLabelMarker()
+	}
+
+	// 从K8S调度模块查询Deployment的情况
+	dps, err := k8s.ListDeployments(ctx, namespace, l.Do())
+	if err != nil {
+		return
+	}
+
+	// 遍历
+	res = make(map[uint]MissionStatus, len(dps.Items))
+	if len(dps.Items) > 0 {
+		for _, item := range dps.Items {
+			// 如果可用的副本等于要求的副本数量
+			missionID := cast.ToUint(labels.Set(item.GetLabels()).Get(missionLabel))
+			if item.Status.AvailableReplicas == *item.Spec.Replicas {
+				res[missionID] = MissionStatusWorking
+			} else {
+				res[missionID] = MissionStatusPending
+			}
+		}
 	}
 
 	return
