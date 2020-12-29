@@ -58,7 +58,7 @@ func ListMissions(c *gin.Context, u *models.Account, name string, ns []string, p
 	// TODO 获取已完成的任务
 
 	// 从K8S调度模块查询Deployment的情况
-	dps, err := k8s.ListDeployments(c, "", labels.Set{accountLabel: cast.ToString(u.ID)})
+	dps, err := k8s.ListDeployments(c, "", NewLabelMarker().WithAccount(u.ID).Do())
 	if err != nil {
 		return
 	}
