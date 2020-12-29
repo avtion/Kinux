@@ -110,3 +110,21 @@ func DepartmentNsOpt(ns ...string) DepartmentOpt {
 func (d *Department) GetNS() []string {
 	return strings.Split(d.Namespace, ";")
 }
+
+// 校验命名空间是否被允许访问 TODO 有一定的优化空间
+func (d *Department) IsNamespaceAllowed(namespaces ...string) bool {
+	switch len(namespaces) {
+	case 0:
+	default:
+		for _, ns := range namespaces {
+			if strings.ContainsRune(ns, ';') {
+				return false
+			}
+			if !strings.Contains(d.Namespace, ns) {
+				return false
+			}
+		}
+		return true
+	}
+	return false
+}

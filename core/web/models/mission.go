@@ -172,3 +172,10 @@ func ListMissions(ctx context.Context, name string, ns []string, builder *PageBu
 	err = db.Find(&ms).Error
 	return
 }
+
+// 根据ID获取任务
+func GetMission(ctx context.Context, id uint) (ms *Mission, err error) {
+	ms = new(Mission)
+	err = GetGlobalDB().WithContext(ctx).First(ms, id).Error
+	return
+}

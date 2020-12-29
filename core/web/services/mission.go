@@ -6,6 +6,7 @@ import (
 	"context"
 	"errors"
 	"github.com/gin-gonic/gin"
+	"github.com/sirupsen/logrus"
 	"github.com/spf13/cast"
 	"k8s.io/apimachinery/pkg/labels"
 	"strings"
@@ -107,5 +108,45 @@ func getDeploymentStatusForMission(ctx context.Context, namespace string, l *lab
 		}
 	}
 
+	return
+}
+
+// 创建任务，会销毁已有的Deployment
+func ActiveMission(ctx context.Context, ac *models.Account, targetMission uint) (err error) {
+	defer func() {
+		if err != nil {
+			logrus.WithFields(logrus.Fields{
+				"account": ac.ID,
+				"mission": targetMission,
+			}).Error("创建任务失败")
+		}
+	}()
+	if ac == nil {
+		return errors.New("用户信息为空")
+	}
+
+	ms, err := models.GetMission(ctx, targetMission)
+	if err != nil {
+		return
+	}
+
+	// 校验任务的命名空间是否被允许访问
+	p, err := ac.GetProfile(ctx)
+	if err != nil {
+		return
+	}
+
+	d, err := p.GetDepartment(ctx)
+	if err != nil {
+		return
+	}
+	if !d.IsNamespaceAllowed(ms.Namespace) {
+		err = errors.New("越界访问命名空间")
+		return
+	}
+
+	if err = NewMissionController(ctx).SetAc(ac).SetMission(ms).NewDeployment(); err != nil {
+		return
+	}
 	return
 }

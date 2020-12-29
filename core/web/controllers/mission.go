@@ -4,6 +4,7 @@ import (
 	"Kinux/core/web/msg"
 	"Kinux/core/web/services"
 	"github.com/gin-gonic/gin"
+	"github.com/spf13/cast"
 	"net/http"
 )
 
@@ -34,4 +35,23 @@ func QueryMissions(c *gin.Context) {
 	}
 	c.JSON(http.StatusOK, msg.BuildSuccess(ms))
 	return
+}
+
+// 创建新的任务
+func NewMission(c *gin.Context) {
+	id := cast.ToUint(c.Param("id"))
+	if id == 0 {
+		c.AbortWithStatusJSON(http.StatusOK, msg.BuildFailed("任务id为空"))
+		return
+	}
+	ac, err := services.GetAccountFromCtx(c)
+	if err != nil {
+		c.AbortWithStatusJSON(http.StatusOK, msg.BuildFailed(err))
+		return
+	}
+	if err = services.ActiveMission(c, ac, id); err != nil {
+		c.AbortWithStatusJSON(http.StatusOK, msg.BuildFailed(err))
+		return
+	}
+	c.JSON(http.StatusOK, msg.BuildSuccess("任务创建成功"))
 }
