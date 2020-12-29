@@ -232,6 +232,15 @@ func (p *Profile) GetDepartment(ctx context.Context) (d *Department, err error) 
 	return
 }
 
+// 根据用户获取对应的班级（是 GetProfile 和 GetDepartment 的快捷方式）
+func (a *Account) GetDepartment(ctx context.Context) (d *Department, err error) {
+	p, err := a.GetProfile(ctx)
+	if err != nil {
+		return
+	}
+	return p.GetDepartment(ctx)
+}
+
 // 批量查询Accounts
 func ListAccounts(ctx context.Context, builder *PageBuilder) (acs []*Account, err error) {
 	db := GetGlobalDB().WithContext(ctx)

@@ -131,12 +131,7 @@ func ActiveMission(ctx context.Context, ac *models.Account, targetMission uint) 
 	}
 
 	// 校验任务的命名空间是否被允许访问
-	p, err := ac.GetProfile(ctx)
-	if err != nil {
-		return
-	}
-
-	d, err := p.GetDepartment(ctx)
+	d, err := ac.GetDepartment(ctx)
 	if err != nil {
 		return
 	}
