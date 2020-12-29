@@ -112,19 +112,19 @@ func (d *Department) GetNS() []string {
 }
 
 // 校验命名空间是否被允许访问 TODO 有一定的优化空间
-func (d *Department) IsNamespaceAllowed(namespaces ...string) bool {
+func (d *Department) IsNamespaceAllowed(namespaces ...string) error {
 	switch len(namespaces) {
 	case 0:
 	default:
 		for _, ns := range namespaces {
 			if strings.ContainsRune(ns, ';') {
-				return false
+				return errors.New("命名空间包含分隔符")
 			}
 			if !strings.Contains(d.Namespace, ns) {
-				return false
+				return errors.New("越界访问命名空间")
 			}
 		}
-		return true
+		return nil
 	}
-	return false
+	return errors.New("越界访问命名空间")
 }

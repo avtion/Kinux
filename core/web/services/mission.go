@@ -135,8 +135,7 @@ func ActiveMission(ctx context.Context, ac *models.Account, targetMission uint) 
 	if err != nil {
 		return
 	}
-	if !d.IsNamespaceAllowed(ms.Namespace) {
-		err = errors.New("越界访问命名空间")
+	if err = d.IsNamespaceAllowed(ms.Namespace); err != nil {
 		return
 	}
 
