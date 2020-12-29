@@ -7,17 +7,9 @@ import (
 	"context"
 	"errors"
 	"github.com/sirupsen/logrus"
-	"github.com/spf13/cast"
 	appV1 "k8s.io/api/apps/v1"
 	"k8s.io/apimachinery/pkg/labels"
 	"strings"
-)
-
-// label标签定义
-const (
-	accountLabel    = "account-id"
-	missionLabel    = "mission-id"
-	deploymentLabel = "deployment-id"
 )
 
 type mcOpt func(mc *MissionController) error
@@ -105,7 +97,7 @@ func (mc *MissionController) ClearAllMission() (err error) {
 		if mc.dpCfg != nil {
 			ns = mc.dpCfg.GetNamespace()
 		}
-		return k8s.DeleteDeployments(mc.ctx, ns, labels.Set{accountLabel: cast.ToString(mc.Ac.ID)})
+		return k8s.DeleteDeployments(mc.ctx, ns, NewLabelMarker().WithAccount(mc.Ac.ID).Do())
 	})
 	return mc.exec()
 }
@@ -198,19 +190,22 @@ func (mc *MissionController) generateAndApplyDpName() *MissionController {
 // 格式：map[string]string{"accountID", "departmentID", "missionID"，other...}
 func (mc *MissionController) generateSelector(other map[string]string) *MissionController {
 	mc.appendOpt(func(mc *MissionController) error {
-		mc.dpSelector = make(labels.Set, 3)
+		// 创建标签生成器
+		l := NewLabelMarker(3)
 		if mc.Ac != nil && mc.Ac.ID != 0 {
-			mc.dpSelector[accountLabel] = cast.ToString(mc.Ac.ID)
+			l.WithAccount(mc.Ac.ID)
 		}
 		if mc.Mission != nil {
-			mc.dpSelector[missionLabel] = cast.ToString(mc.Mission.ID)
+			l.WithMission(mc.Mission.ID)
 		}
 		if mc.Mission != nil && mc.Mission.Deployment != 0 {
-			mc.dpSelector[deploymentLabel] = cast.ToString(mc.Mission.Deployment)
+			l.WithDeployment(mc.Mission.Deployment)
 		}
 		for k, v := range other {
-			mc.dpSelector[k] = v
+			l.WithString(k, v)
 		}
+
+		mc.dpSelector = l.Do()
 		return nil
 	})
 	return mc
