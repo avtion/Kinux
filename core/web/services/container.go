@@ -10,6 +10,7 @@ import (
 	"fmt"
 	"github.com/gorilla/websocket"
 	"github.com/sirupsen/logrus"
+	"github.com/spf13/cast"
 	"k8s.io/client-go/tools/remotecommand"
 )
 
@@ -62,7 +63,7 @@ func (t *ContainerSessionAdapter) Read(p []byte) (int, error) {
 		logrus.Errorf("read message err: %v", err)
 		return copy(p, EndOfTransmission), err
 	}
-	var msg = new(TerminalMessage)
+	var msg = new(WebsocketMessage)
 	if err := json.Unmarshal(message, msg); err != nil {
 		logrus.Errorf("read parse message err: %v", err)
 		return copy(p, EndOfTransmission), err
@@ -73,7 +74,8 @@ func (t *ContainerSessionAdapter) Read(p []byte) (int, error) {
 	switch msg.Operation {
 	case Operations.Stdin:
 		// TODO 历史命令
-		return copy(p, msg.Data), nil
+		// TODO 20201229 兼容性测试
+		return copy(p, cast.ToString(msg.Data)), nil
 	case Operations.Resize:
 		logrus.Trace("重新调整窗口大小", msg.Cols, msg.Rows)
 		t.sizeChan <- remotecommand.TerminalSize{Width: msg.Cols, Height: msg.Rows}
@@ -88,7 +90,7 @@ func (t *ContainerSessionAdapter) Read(p []byte) (int, error) {
 
 // Write 将参数p中的数据拷贝到 websocket 连接中
 func (t *ContainerSessionAdapter) Write(p []byte) (int, error) {
-	tm := TerminalMessage{
+	tm := WebsocketMessage{
 		Operation: Operations.Stdout,
 		Data:      bytesconv.BytesToString(p),
 	}
