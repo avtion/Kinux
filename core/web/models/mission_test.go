@@ -29,13 +29,13 @@ func TestCrateOrUpdateMission(t *testing.T) {
 			name: "test",
 			args: args{
 				ctx:  context.Background(),
-				name: "centos-测试2",
+				name: "centos",
 				dp:   dp,
 				opts: []MissionBuildOpt{
 					MissionOptNs("test"),
 					MissionOptDesc("测试描述"),
-					MissionOptVnc("centos", "6777"),
-					MissionOptDeployment("bash", "centos", []string{"1", "2", "3"}),
+					//MissionOptVnc("centos", "6777"),
+					MissionOptDeployment("bash", "centos", []string{"centos"}),
 				},
 			},
 			wantErr: false,
