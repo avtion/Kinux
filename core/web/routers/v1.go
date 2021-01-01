@@ -26,8 +26,9 @@ func v1Routers() initFunc {
 		// 任务相关
 		ms := v1.Group("/mission")
 		{
-			ms.GET("/", controllers.QueryMissions)   // 批量查询任务
-			ms.POST("/:id/", controllers.NewMission) // 创建任务
+			ms.GET("/", controllers.QueryMissions)        // 批量查询任务
+			ms.POST("/:id/", controllers.NewMission)      // 创建任务
+			ms.DELETE("/:id/", controllers.DeleteMission) // 删除任务
 		}
 
 	}

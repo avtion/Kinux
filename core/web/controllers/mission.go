@@ -49,9 +49,31 @@ func NewMission(c *gin.Context) {
 		c.AbortWithStatusJSON(http.StatusOK, msg.BuildFailed(err))
 		return
 	}
-	if err = services.ActiveMission(c, ac, id); err != nil {
+	if err = services.AccountMissionOpera(c, ac, id, services.MissionCreate); err != nil {
 		c.AbortWithStatusJSON(http.StatusOK, msg.BuildFailed(err))
 		return
 	}
 	c.JSON(http.StatusOK, msg.BuildSuccess("任务创建成功"))
+}
+
+// 删除正在进行的任务
+func DeleteMission(c *gin.Context) {
+	id := cast.ToUint(c.Param("id"))
+	if id == 0 {
+		c.AbortWithStatusJSON(http.StatusOK, msg.BuildFailed("任务id为空"))
+		return
+	}
+	ac, err := services.GetAccountFromCtx(c)
+	if err != nil {
+		c.AbortWithStatusJSON(http.StatusOK, msg.BuildFailed(err))
+		return
+	}
+
+	// TODO 任务点检查
+
+	if err = services.AccountMissionOpera(c, ac, id, services.MissionDelete); err != nil {
+		c.AbortWithStatusJSON(http.StatusOK, msg.BuildFailed(err))
+		return
+	}
+	c.JSON(http.StatusOK, msg.BuildSuccess("任务删除成功"))
 }
