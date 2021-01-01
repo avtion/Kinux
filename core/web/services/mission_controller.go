@@ -89,15 +89,31 @@ func (mc *MissionController) NewDeployment() (err error) {
 
 // 清除用户正在进行的Deployment
 func (mc *MissionController) ClearAllMission() (err error) {
+	return mc.destroyMission(nil)
+}
+
+// 删除用户指定的dp
+func (mc *MissionController) DestroyMission() (err error) {
+	if mc.Mission == nil || mc.Mission.ID == 0 {
+		return errors.New("无法删除用户指定的任务: 任务信息未初始化")
+	}
+	return mc.destroyMission(NewLabelMarker().WithMission(mc.Mission.ID))
+}
+
+// 删除操作的内部实现
+func (mc *MissionController) destroyMission(l *labelMaker) (err error) {
 	mc.appendOpt(func(mc *MissionController) error {
 		if mc.Ac == nil {
-			return errors.New("无法清除用户正在进行的任务: 用户信息未初始化")
+			return errors.New("无法删除用户指定的任务: 用户信息未初始化")
 		}
 		var ns string
 		if mc.dpCfg != nil {
 			ns = mc.dpCfg.GetNamespace()
 		}
-		return k8s.DeleteDeployments(mc.ctx, ns, NewLabelMarker().WithAccount(mc.Ac.ID).Do())
+		if l == nil {
+			l = NewLabelMarker()
+		}
+		return k8s.DeleteDeployments(mc.ctx, ns, l.WithAccount(mc.Ac.ID).Do())
 	})
 	return mc.exec()
 }
