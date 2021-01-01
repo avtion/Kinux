@@ -111,8 +111,18 @@ func getDeploymentStatusForMission(ctx context.Context, namespace string, l *lab
 	return
 }
 
-// 创建任务，会销毁已有的Deployment
-func ActiveMission(ctx context.Context, ac *models.Account, targetMission uint) (err error) {
+// 任务操作
+type MissionOperation = uint
+
+const (
+	_             MissionOperation = iota
+	MissionCreate                  // 创建
+	MissionDelete                  // 删除
+)
+
+// 用户账号与任务绑定操作
+func AccountMissionOpera(ctx context.Context, ac *models.Account,
+	targetMission uint, operation MissionOperation) (err error) {
 	defer func() {
 		if err != nil {
 			logrus.WithFields(logrus.Fields{
@@ -139,8 +149,15 @@ func ActiveMission(ctx context.Context, ac *models.Account, targetMission uint) 
 		return
 	}
 
-	if err = NewMissionController(ctx).SetAc(ac).SetMission(ms).NewDeployment(); err != nil {
-		return
+	// 创建任务控制器
+	mc := NewMissionController(ctx).SetAc(ac).SetMission(ms)
+	switch operation {
+	case MissionCreate:
+		err = mc.NewDeployment()
+	case MissionDelete:
+		err = mc.DestroyDeployment()
+	default:
+		return errors.New("unknown mission operation")
 	}
 	return
 }
