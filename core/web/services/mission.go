@@ -96,6 +96,13 @@ func getDeploymentStatusForMission(ctx context.Context, namespace string, l *lab
 		for _, item := range dps.Items {
 			// 如果可用的副本等于要求的副本数量
 			missionID := cast.ToUint(labels.Set(item.GetLabels()).Get(missionLabel))
+
+			// FIX 修复mission标签为空的情况
+			if missionID == 0 {
+				continue
+			}
+
+			// 检查可用副本数量
 			if item.Status.AvailableReplicas == *item.Spec.Replicas {
 				res[missionID] = MissionStatusWorking
 			} else {
