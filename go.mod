@@ -12,6 +12,7 @@ require (
 	github.com/go-playground/validator/v10 v10.4.1
 	github.com/gorilla/websocket v1.4.2
 	github.com/heptiolabs/healthcheck v0.0.0-20180807145615-6ff867650f40
+	github.com/json-iterator/go v1.1.10
 	github.com/leodido/go-urn v1.2.1 // indirect
 	github.com/matttproud/golang_protobuf_extensions v1.0.2-0.20181231171920-c182affec369 // indirect
 	github.com/prometheus/client_golang v1.8.0 // indirect
