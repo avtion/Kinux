@@ -38,6 +38,7 @@ func QueryMissions(c *gin.Context) {
 }
 
 // 创建新的任务
+// TODO 前端测试
 func NewMission(c *gin.Context) {
 	id := cast.ToUint(c.Param("id"))
 	if id == 0 {
@@ -57,6 +58,7 @@ func NewMission(c *gin.Context) {
 }
 
 // 删除正在进行的任务
+// TODO 前端测试
 func DeleteMission(c *gin.Context) {
 	id := cast.ToUint(c.Param("id"))
 	if id == 0 {
