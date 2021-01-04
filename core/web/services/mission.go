@@ -20,15 +20,11 @@ func ListMissions(c *gin.Context, u *models.Account, name string, ns []string, p
 	}
 
 	// 获取用户资料后获取班级信息，用于确定命名空间的访问
-	profile, err := u.GetProfile(c)
+	d, err := u.GetDepartment(c)
 	if err != nil {
 		return
 	}
-	department, err := profile.GetDepartment(c)
-	if err != nil {
-		return
-	}
-	departmentNS := department.GetNS()
+	departmentNS := d.GetNS()
 	if len(departmentNS) == 0 {
 		return
 	}
@@ -41,7 +37,7 @@ func ListMissions(c *gin.Context, u *models.Account, name string, ns []string, p
 				err = errors.New("输入的命名空间包括分隔符")
 				return
 			}
-			if !strings.Contains(department.Namespace, v) {
+			if !strings.Contains(d.Namespace, v) {
 				err = errors.New("命名空间合法访问")
 				return
 			}
