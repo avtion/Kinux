@@ -5,7 +5,6 @@ import (
 	"Kinux/core/web/models"
 	"context"
 	"errors"
-	"github.com/gin-gonic/gin"
 	"github.com/sirupsen/logrus"
 	"github.com/spf13/cast"
 	"k8s.io/apimachinery/pkg/labels"
@@ -13,14 +12,14 @@ import (
 )
 
 // 批量获取任务信息
-func ListMissions(c *gin.Context, u *models.Account, name string, ns []string, page, size int) (res []*Mission, err error) {
+func ListMissions(ctx context.Context, u *models.Account, name string, ns []string, page, size int) (res []*Mission, err error) {
 	if u == nil {
 		err = errors.New("用户信息不存在")
 		return
 	}
 
 	// 获取用户资料后获取班级信息，用于确定命名空间的访问
-	d, err := u.GetDepartment(c)
+	d, err := u.GetDepartment(ctx)
 	if err != nil {
 		return
 	}
@@ -48,13 +47,13 @@ func ListMissions(c *gin.Context, u *models.Account, name string, ns []string, p
 	}
 
 	// 从数据库中查询对应命名空间的任务集合
-	ms, err := models.ListMissions(c, name, ns, models.NewPageBuilder(page, size))
+	ms, err := models.ListMissions(ctx, name, ns, models.NewPageBuilder(page, size))
 	if err != nil {
 		return
 	}
 
 	// TODO 获取已完成的任务
-	dpStatusMapper, err := getDeploymentStatusForMission(c, "", NewLabelMarker().WithAccount(u.ID))
+	dpStatusMapper, err := getDeploymentStatusForMission(ctx, "", NewLabelMarker().WithAccount(u.ID))
 	if err != nil {
 		return
 	}
