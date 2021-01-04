@@ -11,6 +11,28 @@ import (
 	"strings"
 )
 
+// 任务状态
+type MissionStatus = int
+
+const (
+	_                    MissionStatus = iota
+	MissionStatusStop                  // 未启动
+	MissionStatusPending               // 正在启动
+	MissionStatusWorking               // 运行中
+	MissionStatusDone                  // 已经完成
+)
+
+var _ = [...]MissionStatus{MissionStatusStop, MissionStatusPending, MissionStatusWorking, MissionStatusDone}
+
+// 业务层的任务结构体, 用于响应
+type Mission struct {
+	ID     uint
+	Name   string
+	Desc   string
+	Guide  string
+	Status MissionStatus
+}
+
 // 批量获取任务信息
 func ListMissions(ctx context.Context, u *models.Account, name string, ns []string, page, size int) (res []*Mission, err error) {
 	if u == nil {
@@ -128,9 +150,10 @@ func AccountMissionOpera(ctx context.Context, ac *models.Account,
 	defer func() {
 		if err != nil {
 			logrus.WithFields(logrus.Fields{
-				"account": ac.ID,
-				"mission": targetMission,
-			}).Error("创建任务失败")
+				"account":   ac.ID,
+				"mission":   targetMission,
+				"operation": operation,
+			}).Error("任务操作失败")
 		}
 	}()
 	if ac == nil {
@@ -152,12 +175,11 @@ func AccountMissionOpera(ctx context.Context, ac *models.Account,
 	}
 
 	// 创建任务控制器
-	mc := NewMissionController(ctx).SetAc(ac).SetMission(ms)
 	switch operation {
 	case MissionCreate:
-		err = mc.NewDeployment()
+		err = NewMissionController(ctx).SetAc(ac).SetMission(ms).NewDeployment()
 	case MissionDelete:
-		err = mc.DestroyDeployment()
+		err = NewMissionController(ctx).SetAc(ac).SetMission(ms).DestroyDeployment()
 	default:
 		return errors.New("unknown mission operation")
 	}
