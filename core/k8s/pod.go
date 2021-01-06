@@ -4,12 +4,16 @@ import (
 	"context"
 	coreV1 "k8s.io/api/core/v1"
 	metaV1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/labels"
 )
 
-// 根据Account和Job获取对应的POD
-func GetPods(ctx context.Context, account, job string) (p *coreV1.PodList, err error) {
+// 获取POD列表
+func GetPods(ctx context.Context, ns string, s labels.Set) (p *coreV1.PodList, err error) {
+	if ns == "" {
+		ns = namespace
+	}
 	return clientSet.CoreV1().
-		Pods(namespace).
+		Pods(ns).
 		List(ctx,
-			metaV1.ListOptions{LabelSelector: selectorFactory(account, selectorJobOpt(job)).String()})
+			metaV1.ListOptions{LabelSelector: s.String()})
 }
