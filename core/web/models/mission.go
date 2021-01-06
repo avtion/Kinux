@@ -179,3 +179,22 @@ func GetMission(ctx context.Context, id uint) (ms *Mission, err error) {
 	err = GetGlobalDB().WithContext(ctx).First(ms, id).Error
 	return
 }
+
+// 校验容器是否在白名单内
+func (m *Mission) IsContainerAllowed(container string) (res bool) {
+	if strings.ContainsRune(container, ';') {
+		return false
+	}
+	WhiteListC := strings.Split(m.WhiteListContainer, ";")
+	for _, v := range WhiteListC {
+		if strings.EqualFold(container, v) {
+			return true
+		}
+	}
+	return false
+}
+
+// TODO CMD的分割
+func (m *Mission) GetCommand() (cmd []string) {
+	return []string{m.Command}
+}
