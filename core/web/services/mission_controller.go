@@ -8,6 +8,7 @@ import (
 	"errors"
 	"github.com/sirupsen/logrus"
 	appV1 "k8s.io/api/apps/v1"
+	coreV1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/labels"
 	"strings"
 )
@@ -268,4 +269,14 @@ func (mc *MissionController) fixNamespace(pass ...bool) *MissionController {
 		return nil
 	})
 	return mc
+}
+
+// 获取POD列表
+func (mc *MissionController) GetPods(ns string) (p *coreV1.PodList, err error) {
+	// 初始化控制器配置
+	mc.generateSelector(nil).fixNamespace()
+	if ns == "" {
+		ns = k8s.GetDefaultNS()
+	}
+	return k8s.GetPods(mc.ctx, ns, mc.dpSelector)
 }
