@@ -2,6 +2,7 @@
 package services
 
 import (
+	"Kinux/core/k8s"
 	"Kinux/core/web/msg"
 	"Kinux/tools/bytesconv"
 	"github.com/gin-gonic/gin"
@@ -9,7 +10,6 @@ import (
 	jsoniter "github.com/json-iterator/go"
 	"github.com/sirupsen/logrus"
 	"golang.org/x/tools/go/ssa/interp/testdata/src/errors"
-	"io"
 	"k8s.io/client-go/tools/remotecommand"
 	"net/http"
 	"sync"
@@ -129,6 +129,7 @@ type WebsocketMessage struct {
 
 const (
 	_          wsOperation = iota
+	wsOpNewPty             // 用于创建终端链接，由 Mission 负责实现
 	wsOpStdin              // 用于终端的输入
 	wsOpStdout             // 用于终端的输出
 	wsOpResize             // 用于终端重新调整窗体大小
@@ -138,18 +139,22 @@ const (
 )
 
 // 用于终端的websocket装饰器
-type wsPtyWrapper struct {
+type WsPtyWrapper struct {
 	ws       *WebsocketSchedule
 	sizeChan chan remotecommand.TerminalSize
 }
 
-var (
-	_ io.ReadWriter                   = (*wsPtyWrapper)(nil)
-	_ remotecommand.TerminalSizeQueue = (*wsPtyWrapper)(nil)
-)
+var _ k8s.PtyHandler = (*WsPtyWrapper)(nil)
+
+func (ws *WebsocketSchedule) InitPtyWrapper() *WsPtyWrapper {
+	return &WsPtyWrapper{
+		ws:       ws,
+		sizeChan: make(chan remotecommand.TerminalSize),
+	}
+}
 
 // 对调度器进行封装用于适配终端场景
-func (pw *wsPtyWrapper) Read(p []byte) (n int, err error) {
+func (pw *WsPtyWrapper) Read(p []byte) (n int, err error) {
 	_, message, err := pw.ws.ReadMessage()
 	if err != nil {
 		logrus.WithField("err", err).Debug("获取客户端数据时发生错误")
@@ -193,7 +198,7 @@ func (pw *wsPtyWrapper) Read(p []byte) (n int, err error) {
 }
 
 // 对调度器进行封用于装适配终端
-func (pw *wsPtyWrapper) Write(p []byte) (n int, err error) {
+func (pw *WsPtyWrapper) Write(p []byte) (n int, err error) {
 	raw, err := jsoniter.Marshal(&WebsocketMessage{
 		Op:   wsOpStdout,
 		Data: bytesconv.BytesToString(p),
@@ -208,7 +213,7 @@ func (pw *wsPtyWrapper) Write(p []byte) (n int, err error) {
 }
 
 // 实现 remotecommand.TerminalSizeQueue 接口
-func (pw *wsPtyWrapper) Next() *remotecommand.TerminalSize {
+func (pw *WsPtyWrapper) Next() *remotecommand.TerminalSize {
 	select {
 	case size := <-pw.sizeChan:
 		return &size
@@ -217,10 +222,15 @@ func (pw *wsPtyWrapper) Next() *remotecommand.TerminalSize {
 	}
 }
 
+// 实现 k8s.PtyHandler 接口
+func (pw *WsPtyWrapper) Done() {
+	return
+}
+
 /*
 	Websocket链接相关操作
 */
-type wsOperationHandler func(ws *WebsocketSchedule, any jsoniter.Any) (err error)
+type WsOperationHandler func(ws *WebsocketSchedule, any jsoniter.Any) (err error)
 
 // 给客户端发送消息 - 利用原有的消息构建框架
 func (ws *WebsocketSchedule) SendMsg(result msg.Result) (err error) {
@@ -234,9 +244,14 @@ func (ws *WebsocketSchedule) SendMsg(result msg.Result) (err error) {
 	return ws.WriteMessage(websocket.TextMessage, data)
 }
 
-var wsOperationsMapper = map[wsOperation]wsOperationHandler{
+var wsOperationsMapper = map[wsOperation]WsOperationHandler{
 	wsOpResourceApply: func(ws *WebsocketSchedule, any jsoniter.Any) (err error) {
 		// TODO 完成资源申请接口的实现
 		return errors.New("未实现")
 	},
+}
+
+// 注册websocket链接操作
+func RegisterWebsocketOperation(op wsOperation, handler WsOperationHandler) {
+	wsOperationsMapper[op] = handler
 }
