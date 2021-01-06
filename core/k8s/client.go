@@ -4,6 +4,7 @@ package k8s
 import (
 	"context"
 	"errors"
+	"io"
 	coreV1 "k8s.io/api/core/v1"
 	"k8s.io/client-go/kubernetes/scheme"
 	"k8s.io/client-go/rest"
@@ -12,6 +13,13 @@ import (
 )
 
 type clientReqOption func(r *rest.Request)
+
+// PtyHandler 定义remoteCommand所需要的方法集
+type PtyHandler interface {
+	io.ReadWriter
+	remotecommand.TerminalSizeQueue // 调整终端大小
+	Done()                          // 终止
+}
 
 // Pod建立连接
 func ConnectToPod(ctx context.Context, p *coreV1.Pod, container string, pty PtyHandler, cmd []string,
