@@ -1,14 +1,17 @@
 package controllers
 
 import (
+	"Kinux/core/web/msg"
 	"Kinux/core/web/services"
 	"github.com/gin-gonic/gin"
+	"net/http"
 )
 
 // Websocket处理器
 func WebSocketHandlerV1(c *gin.Context) {
-	// TODO 身份校验 / 模式校验
-	// TODO 指定容器
-	services.NewWebSocketService(c,
-		services.WsOperator.NewK8SPodConnection("", "", "", []string{"/bin/bash"}))
+	_, err := services.NewWebsocketSchedule(c)
+	if err != nil {
+		c.AbortWithStatusJSON(http.StatusOK, msg.BuildFailed(err))
+		return
+	}
 }
