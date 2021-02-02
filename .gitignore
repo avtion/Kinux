@@ -3,8 +3,8 @@
 go.sum
 kinux.db
 .idea
-frontend/init/node_modules
-frontend/init/.DS_Store
-frontend/init/dist
-frontend/init/dist-ssr
-frontend/init/*.local
+frontend/node_modules
+frontend/.DS_Store
+frontend/dist
+frontend/dist-ssr
+frontend/*.local
