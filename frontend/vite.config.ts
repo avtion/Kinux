@@ -6,6 +6,8 @@ import { resolve } from "path"
 export default defineConfig({
   alias: {
     "@": resolve(__dirname, "./src"),
+    "@api": resolve(__dirname, "./src/apis"),
+    "@image": resolve(__dirname, "./src/assets/images"),
   },
   plugins: [vue()],
 })
