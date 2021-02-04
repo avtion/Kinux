@@ -31,7 +31,7 @@ func (t *TokenPayload) MapClaims() jwt.MapClaims {
 }
 
 // 将 MapClaims 转换成 TokenPayload
-func claimsToTokenPayload(claims jwt.MapClaims) *TokenPayload {
+func ClaimsToTokenPayload(claims jwt.MapClaims) *TokenPayload {
 	username, _ := claims["username"]
 	role, _ := claims["role"]
 	return &TokenPayload{
@@ -62,7 +62,7 @@ var TokenCentral = &jwt.GinJWTMiddleware{
 	},
 	Authenticator: nil, // 登陆使用，直接忽略
 	IdentityHandler: func(c *gin.Context) interface{} {
-		return claimsToTokenPayload(jwt.ExtractClaims(c))
+		return ClaimsToTokenPayload(jwt.ExtractClaims(c))
 	},
 	Authorizator: func(data interface{}, c *gin.Context) bool {
 		// RBAC 验证权限
@@ -96,9 +96,12 @@ var TokenCentral = &jwt.GinJWTMiddleware{
 
 // 创建密钥管理中间件
 func NewJsonWebTokenAuth() gin.HandlerFunc {
-	md, err := jwt.New(TokenCentral)
+	var err error
+
+	// 因为 jwt.New 函数对 jwt.GinJWTMiddleware 进行了校验， 所以这里重写了 TokenCentral
+	TokenCentral, err = jwt.New(TokenCentral)
 	if err != nil {
 		panic(err)
 	}
-	return md.MiddlewareFunc()
+	return TokenCentral.MiddlewareFunc()
 }

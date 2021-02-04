@@ -17,6 +17,12 @@ func v1Routers() initFunc {
 		// 用户登陆接口不使用鉴权中间件
 		v1.POST("/account/login", controllers.LoginAccount)
 
+		// WebSocket需要手动进行鉴权
+		ws := v1.Group("/ws")
+		{
+			ws.GET("/", controllers.WebSocketHandlerV1)
+		}
+
 		// 挂载JWT鉴权中间件
 		v1 = v1.Group("", middlewares.JsonWebTokenAuth)
 
@@ -24,12 +30,6 @@ func v1Routers() initFunc {
 		//ac := v1.Group("/account")
 		{
 			//ac.POST("/login", controllers.LoginAccount)
-		}
-
-		// WebSocket
-		ws := v1.Group("/ws")
-		{
-			ws.GET("/", controllers.WebSocketHandlerV1)
 		}
 
 		// 任务相关

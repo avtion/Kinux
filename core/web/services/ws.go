@@ -3,8 +3,12 @@ package services
 
 import (
 	"Kinux/core/k8s"
+	"Kinux/core/web/middlewares"
 	"Kinux/core/web/msg"
 	"Kinux/tools/bytesconv"
+	"fmt"
+	GinJWT "github.com/appleboy/gin-jwt/v2"
+	"github.com/dgrijalva/jwt-go"
 	"github.com/gin-gonic/gin"
 	"github.com/gorilla/websocket"
 	jsoniter "github.com/json-iterator/go"
@@ -12,6 +16,7 @@ import (
 	"golang.org/x/tools/go/ssa/interp/testdata/src/errors"
 	"k8s.io/client-go/tools/remotecommand"
 	"net/http"
+	"strings"
 	"sync"
 )
 
@@ -35,6 +40,9 @@ type WebsocketSchedule struct {
 	daemonStopCh chan struct{}
 
 	mutex sync.RWMutex
+
+	// 用户JWT密钥
+	userToken *jwt.Token
 }
 
 type WsFn func(ws *WebsocketSchedule) (err error)
@@ -78,18 +86,22 @@ func (ws *WebsocketSchedule) Apply(fns ...WsFn) (err error) {
 // 守护协程 - 用于读取数据并根据对应的操作进行分发
 // 当该websocket链接交付给容器进行交互时，守护协程应当结束监听
 func (ws *WebsocketSchedule) daemon() {
+	l := logrus.WithField("module", "websocket守护协程")
 	for {
 		select {
 		case <-ws.Done():
-			logrus.Trace("websocket守护协程上下文结束")
+			l.Trace("上下文结束")
 			return
 		case <-ws.daemonStopCh:
-			logrus.Trace("websocket守护协程接收到关闭消息")
+			l.Trace("接收到主动关闭消息")
 			return
 		default:
 			_, message, err := ws.ReadMessage()
 			if err != nil {
-				logrus.WithField("err", err).Debug("websocket守护协程获取客户端数据时发生错误")
+				if websocket.IsCloseError(err, websocket.CloseGoingAway) {
+					l.WithField("err", err).Debug("客户端结束")
+				}
+				l.WithField("err", err).Debug("获取客户端数据时发生错误")
 				return
 			}
 			any := jsoniter.Get(message)
@@ -99,12 +111,13 @@ func (ws *WebsocketSchedule) daemon() {
 			}
 			fn, isExist := wsOperationsMapper[op]
 			if !isExist {
-				logrus.WithField("raw", bytesconv.BytesToString(message)).Debug(
-					"websocket守护协程无法识别客户端发送的请求")
+				l.WithField("raw", bytesconv.BytesToString(message)).Debug(
+					"无法识别客户端发送的请求")
 				continue
 			}
 			if err = fn(ws, any); err != nil {
-				logrus.WithField("err", err).Error("websocket守护协程解析数据失败")
+				l.WithField("err", err).Error("解析数据发生错误")
+				_ = ws.SendMsg(msg.BuildFailed(err))
 				continue
 			}
 		}
@@ -136,6 +149,8 @@ const (
 
 	wsOpMsg           // 服务端向客户端发送通知
 	wsOpResourceApply // 客户端资源申请
+
+	wsOpAuth // 客户端向服务端发起鉴权
 )
 
 // 用于终端的websocket装饰器
@@ -230,6 +245,8 @@ func (pw *WsPtyWrapper) Done() {
 /*
 	Websocket链接相关操作
 */
+
+// ws处理函数 - any指向未解析的原数据
 type WsOperationHandler func(ws *WebsocketSchedule, any jsoniter.Any) (err error)
 
 // 给客户端发送消息 - 利用原有的消息构建框架
@@ -248,6 +265,31 @@ var wsOperationsMapper = map[wsOperation]WsOperationHandler{
 	wsOpResourceApply: func(ws *WebsocketSchedule, any jsoniter.Any) (err error) {
 		// TODO 完成资源申请接口的实现
 		return errors.New("未实现")
+	},
+	// 处理客户端向服务端发起鉴权的实现
+	wsOpAuth: func(ws *WebsocketSchedule, any jsoniter.Any) (err error) {
+		rawToken := any.Get("data").ToString()
+		if strings.TrimSpace(rawToken) == "" {
+			return errors.New("密钥为空")
+		}
+
+		// 解析密钥
+		ws.userToken, err = middlewares.TokenCentral.ParseTokenString(rawToken)
+		if err != nil {
+			return
+		}
+
+		// 解构用户参数
+		userPayload := middlewares.ClaimsToTokenPayload(GinJWT.ExtractClaimsFromToken(ws.userToken))
+
+		// 将用户信息写在上下文
+		ws.Set(middlewares.TokenIdentityKey, userPayload)
+
+		// 向用户发送通知
+		if err = ws.SendMsg(msg.BuildSuccess(fmt.Sprintf("%s您好，websocket通信建立成功！", userPayload.Username))); err != nil {
+			return
+		}
+		return
 	},
 }
 
