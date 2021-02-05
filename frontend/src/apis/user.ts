@@ -1,6 +1,6 @@
-import { defaultClient, paths, BaseResponse } from "./request"
-import { store } from "../store/store"
-import { JWT } from "../store/interfaces"
+import { defaultClient, paths, BaseResponse } from './request'
+import { store } from '../store/store'
+import { JWT } from '../store/interfaces'
 
 export { Account }
 
@@ -21,7 +21,7 @@ class Account {
   login(): Promise<any> {
     return new Promise((resolve, reject) => {
       defaultClient
-        .post(paths["login"], {
+        .post(paths.ac.login, {
           username: this.username,
           password: this.password,
         })
@@ -29,7 +29,7 @@ class Account {
           const resp = new BaseResponse(res.data)
 
           // Json Web Token
-          const token: Token = new Token(resp.Data["token"], resp.Data["ttl"])
+          const token: Token = new Token(resp.Data['token'], resp.Data['ttl'])
           token.UpdateToken()
 
           resolve(res)
@@ -60,7 +60,11 @@ class Token {
       Token: this.key,
       TTL: this.ttl,
     }
-    store.commit("UpdateJWT", jwt)
+    store.commit('UpdateJWT', jwt)
     // console.log("正在更新token, key:", this.key, "过期时间:", this.ttl)
+  }
+
+  ClearToken() {
+    store.commit('ClearJWT')
   }
 }
