@@ -47,7 +47,7 @@ func newRouters(fns ...initFunc) (r *gin.Engine) {
 			http.MethodPut,
 			http.MethodHead,
 		},
-		AllowHeaders:     []string{"Origin", "Content-Length", "Content-Type"},
+		AllowHeaders:     []string{"Origin", "Content-Length", "Content-Type", "Authorization"},
 		AllowCredentials: true,
 		MaxAge:           12 * time.Hour,
 	}))
