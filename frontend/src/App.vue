@@ -1,16 +1,12 @@
 <template>
-  <login></login>
+  <router-view></router-view>
 </template>
 
 <script lang="ts">
 import { defineComponent } from "vue"
-import login from "./components/login.vue"
 
 export default defineComponent({
   name: "App",
-  components: {
-    login,
-  },
 })
 </script>
 
