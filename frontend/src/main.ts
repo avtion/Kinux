@@ -14,4 +14,8 @@ app.use(Antd)
 import {store, key} from "./store/store"
 app.use(store, key)
 
+// vue-router
+import router from '@/routers/routers'
+app.use(router)
+
 app.mount("#app")
