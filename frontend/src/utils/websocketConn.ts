@@ -10,6 +10,8 @@ export class WebSocketConn extends WebSocket {
   // 构建函数 - 发起链接之后需要使用JWT的Token进行认证校验
   constructor(url: string, token: string, protocols?: string | string[]) {
     super(url, protocols)
+    // 初始化等待队列
+    this.waitQueue = []
 
     // 挂载处理器
     this.onmessage = messageHandler
@@ -21,21 +23,29 @@ export class WebSocketConn extends WebSocket {
         data: token,
       }
       this.send(JSON.stringify(msg))
+
+      // 完成等待队列
+      this.waitQueue.forEach((fn) => {
+        fn(this)
+      })
+      this.waitQueue = []
     }
   }
 
   // Websocket挂钩的终端
   public term: Terminal
+
+  public waitQueue: ((ws: WebSocketConn) => any)[]
 }
 
 // 后端定义Websocket交互对象
 export interface WebsocketMessage {
-  op: number
+  op: WebsocketOperation
   data: any
 }
 
 // 后端定义的标准操作枚举
-enum WebsocketOperation {
+export enum WebsocketOperation {
   newPty = 1, // 发送创建新终端
   Stdin, // 发送终端输入
   Stdout, // 接收终端输出
