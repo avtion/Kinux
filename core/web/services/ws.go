@@ -192,6 +192,8 @@ func (pw *WsPtyWrapper) Read(p []byte) (n int, err error) {
 		}
 
 		return 0, nil
+	case wsOpNewPty:
+		// TODO 暂时修复并发情况下创建pty导致的panic
 	default:
 		// 对于非终端指令兼容
 		fn, isExist := wsOperationsMapper[op]

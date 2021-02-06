@@ -256,7 +256,7 @@ func missionPtyRegister() WsOperationHandler {
 		if pod.Status.Phase != v1.PodRunning || len(pod.Spec.Containers) == 0 {
 			return errors.New("目标任务的节点未准备就绪或无可用容器")
 		}
-		var c v1.Container
+		var c = pod.Spec.Containers[0]
 		for _, v := range pod.Spec.Containers {
 			if v.Name == missionRaw.Container {
 				c = v
@@ -267,6 +267,7 @@ func missionPtyRegister() WsOperationHandler {
 		}
 
 		// 使用装饰器维护websocket链接，并终止守护协程
+		// TODO 并发情况下会导致通道重复关闭并panic
 		ws.StopDaemon()
 
 		return k8s.ConnectToPod(ws.Context, &pod, c.Name, ws.InitPtyWrapper(), mission.GetCommand())
