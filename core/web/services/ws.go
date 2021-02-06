@@ -3,11 +3,8 @@ package services
 
 import (
 	"Kinux/core/k8s"
-	"Kinux/core/web/middlewares"
 	"Kinux/core/web/msg"
 	"Kinux/tools/bytesconv"
-	"fmt"
-	GinJWT "github.com/appleboy/gin-jwt/v2"
 	"github.com/dgrijalva/jwt-go"
 	"github.com/gin-gonic/gin"
 	"github.com/gorilla/websocket"
@@ -16,7 +13,6 @@ import (
 	"golang.org/x/tools/go/ssa/interp/testdata/src/errors"
 	"k8s.io/client-go/tools/remotecommand"
 	"net/http"
-	"strings"
 	"sync"
 )
 
@@ -265,31 +261,6 @@ var wsOperationsMapper = map[wsOperation]WsOperationHandler{
 	wsOpResourceApply: func(ws *WebsocketSchedule, any jsoniter.Any) (err error) {
 		// TODO 完成资源申请接口的实现
 		return errors.New("未实现")
-	},
-	// 处理客户端向服务端发起鉴权的实现
-	wsOpAuth: func(ws *WebsocketSchedule, any jsoniter.Any) (err error) {
-		rawToken := any.Get("data").ToString()
-		if strings.TrimSpace(rawToken) == "" {
-			return errors.New("密钥为空")
-		}
-
-		// 解析密钥
-		ws.userToken, err = middlewares.TokenCentral.ParseTokenString(rawToken)
-		if err != nil {
-			return
-		}
-
-		// 解构用户参数
-		userPayload := middlewares.ClaimsToTokenPayload(GinJWT.ExtractClaimsFromToken(ws.userToken))
-
-		// 将用户信息写在上下文
-		ws.Set(middlewares.TokenIdentityKey, userPayload)
-
-		// 向用户发送通知
-		if err = ws.SendMsg(msg.BuildSuccess(fmt.Sprintf("%s您好，websocket通信建立成功！", userPayload.Username))); err != nil {
-			return
-		}
-		return
 	},
 }
 
