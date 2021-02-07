@@ -39,6 +39,9 @@ type WebsocketSchedule struct {
 
 	// 用户JWT密钥
 	userToken *jwt.Token
+
+	// SSH终端相关
+	sizeChan chan remotecommand.TerminalSize
 }
 
 type WsFn func(ws *WebsocketSchedule) (err error)
@@ -53,6 +56,7 @@ func NewWebsocketSchedule(c *gin.Context, fns ...WsFn) (ws *WebsocketSchedule, e
 		Conn:         wsConn,
 		Context:      c,
 		daemonStopCh: make(chan struct{}),
+		sizeChan:     make(chan remotecommand.TerminalSize),
 	}
 	if err = ws.Apply(fns...); err != nil {
 		return
@@ -151,16 +155,14 @@ const (
 
 // 用于终端的websocket装饰器
 type WsPtyWrapper struct {
-	ws       *WebsocketSchedule
-	sizeChan chan remotecommand.TerminalSize
+	ws *WebsocketSchedule
 }
 
 var _ k8s.PtyHandler = (*WsPtyWrapper)(nil)
 
 func (ws *WebsocketSchedule) InitPtyWrapper() *WsPtyWrapper {
 	return &WsPtyWrapper{
-		ws:       ws,
-		sizeChan: make(chan remotecommand.TerminalSize),
+		ws: ws,
 	}
 }
 
@@ -177,23 +179,6 @@ func (pw *WsPtyWrapper) Read(p []byte) (n int, err error) {
 	case wsOpStdin:
 		// 进行写入操作
 		return copy(p, bytesconv.StringToBytes(any.Get("data").ToString())), nil
-	case wsOpResize:
-		// 调整窗口大小
-		var size = &struct {
-			Rows uint16 `json:"rows"`
-			Cols uint16 `json:"cols"`
-		}{}
-		any.Get("data").ToVal(size)
-
-		// 防止 Read 接口发生阻塞
-		select {
-		case pw.sizeChan <- remotecommand.TerminalSize{Width: size.Cols, Height: size.Rows}:
-		default:
-		}
-
-		return 0, nil
-	case wsOpNewPty:
-		// TODO 暂时修复并发情况下创建pty导致的panic
 	default:
 		// 对于非终端指令兼容
 		fn, isExist := wsOperationsMapper[op]
@@ -228,7 +213,7 @@ func (pw *WsPtyWrapper) Write(p []byte) (n int, err error) {
 // 实现 remotecommand.TerminalSizeQueue 接口
 func (pw *WsPtyWrapper) Next() *remotecommand.TerminalSize {
 	select {
-	case size := <-pw.sizeChan:
+	case size := <-pw.ws.sizeChan:
 		return &size
 	case <-pw.ws.Done():
 		return nil
