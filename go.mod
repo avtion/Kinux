@@ -3,6 +3,7 @@ module Kinux
 go 1.15
 
 require (
+	github.com/Nerdmaster/terminal v0.12.1
 	github.com/appleboy/gin-jwt/v2 v2.6.4
 	github.com/casbin/casbin/v2 v2.19.4
 	github.com/dgrijalva/jwt-go v3.2.0+incompatible

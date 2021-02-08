@@ -269,11 +269,14 @@ func missionPtyRegister(ws *WebsocketSchedule, any jsoniter.Any) (err error) {
 		return errors.New("目标任务无可用容器")
 	}
 
-	// 使用装饰器维护websocket链接，并终止守护协程
-	//ws.StopDaemon()
+	// TODO 移除监听者测试
+	stdinListenerOpt, stdinListener := NewPtyWrapperListenerOpt(ListenStdin)
+	stdinListener.DebugPrint()
+	stdoutListenerOpt, stdoutListener := NewPtyWrapperListenerOpt(ListenStdout)
+	stdoutListener.DebugPrint()
 
 	go func() {
-		if _err := k8s.ConnectToPod(ws.Context, &pod, c.Name, ws.InitPtyWrapper(), mission.GetCommand()); _err != nil {
+		if _err := k8s.ConnectToPod(ws.Context, &pod, c.Name, ws.InitPtyWrapper(stdinListenerOpt, stdoutListenerOpt), mission.GetCommand()); _err != nil {
 			logrus.Error("创建POD终端失败", err)
 		}
 	}()

@@ -188,25 +188,35 @@ const (
 type WsPtyWrapper struct {
 	ws     *WebsocketSchedule
 	reader io.Reader
+
+	// 输出监听者 - 输入监听者需要在调度器中进行注入
+	stdoutListener io.Writer
 }
+
+type WsPtyWrapperOption = func(w *WsPtyWrapper)
 
 var _ k8s.PtyHandler = (*WsPtyWrapper)(nil)
 
 // 初始化终端装饰器
-func (ws *WebsocketSchedule) InitPtyWrapper() *WsPtyWrapper {
+func (ws *WebsocketSchedule) InitPtyWrapper(opts ...WsPtyWrapperOption) *WsPtyWrapper {
 	// 使用io管道对输入的数据进行拷贝
 	r, w := io.Pipe()
 
-	// 兼容多终端监听者
+	// 兼容多输入监听者
 	if ws.PtyStdin != nil {
 		ws.PtyStdin = io.MultiWriter(ws.PtyStdin, w)
 	} else {
 		ws.PtyStdin = w
 	}
-	return &WsPtyWrapper{
+
+	wrapper := &WsPtyWrapper{
 		ws:     ws,
 		reader: r,
 	}
+	for _, opt := range opts {
+		opt(wrapper)
+	}
+	return wrapper
 }
 
 // 对调度器进行封装用于适配终端场景
@@ -216,6 +226,10 @@ func (pw *WsPtyWrapper) Read(p []byte) (n int, err error) {
 
 // 对调度器进行封用于装适配终端
 func (pw *WsPtyWrapper) Write(p []byte) (n int, err error) {
+	// 监听器输出
+	if pw.stdoutListener != nil {
+		_, _ = pw.stdoutListener.Write(p)
+	}
 	raw, err := jsoniter.Marshal(&WebsocketMessage{
 		Op:   wsOpStdout,
 		Data: bytesconv.BytesToString(p),
