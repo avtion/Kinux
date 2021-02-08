@@ -47,6 +47,14 @@ export default defineComponent({
           background: '#1b1b1b'
       },
     })
+    ter.onData((input: string): void => {
+      const msg: WebsocketMessage = {
+        op: WebsocketOperation.Stdin,
+        data: input
+      }
+      console.log(msg)
+      ws.send(JSON.stringify(msg))
+    })
 
     // 插件 - DOM适应器
     const fitAddon = new FitAddon()
@@ -71,13 +79,6 @@ export default defineComponent({
 
     // 插件 - 链接检测器
     ter.loadAddon(new WebLinksAddon())
-    ter.onData((input: string): void => {
-      const msg: WebsocketMessage = {
-        op: WebsocketOperation.Stdin,
-        data: input
-      }
-      ws.send(JSON.stringify(msg))
-    })
 
     onMounted(() => {
       ter.open(terminalRef.value)
