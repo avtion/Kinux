@@ -7,10 +7,13 @@ import (
 	"errors"
 	"fmt"
 	GinJWT "github.com/appleboy/gin-jwt/v2"
+	"github.com/dgrijalva/jwt-go"
 	"github.com/gin-gonic/gin"
+	"github.com/gorilla/websocket"
 	jsoniter "github.com/json-iterator/go"
 	"github.com/sirupsen/logrus"
 	"strings"
+	"time"
 )
 
 var (
@@ -81,5 +84,57 @@ func JWTRegister(ws *WebsocketSchedule, any jsoniter.Any) (err error) {
 	if err = ws.SendMsg(msg.BuildSuccess(fmt.Sprintf("%s您好，websocket通信建立成功！", userPayload.Username))); err != nil {
 		return
 	}
+
+	// 创建新协程守护刷新密钥
+	go func() {
+		const refreshT = 10 * time.Minute
+		// 发送新密钥方法
+		var sendNewTokenFn = func() {
+			newToken, _, _err := middlewares.TokenCentral.TokenGenerator(userPayload)
+			if _err != nil {
+				logrus.WithField("payload", userPayload).WithField("err", _err).Error("用户JWT刷新失败")
+				return
+			}
+			data, _ := jsoniter.Marshal(&WebsocketMessage{
+				Op:   wsOpRefreshToken,
+				Data: newToken,
+			})
+			_ = ws.WriteMessage(websocket.TextMessage, data)
+		}
+
+		// 脉冲定时器
+		t := time.NewTicker(refreshT)
+		defer t.Stop()
+
+		claims := token.Claims.(jwt.MapClaims)
+		oldTTL, ok := claims["exp"].(int64)
+		if !ok {
+			logrus.WithFields(logrus.Fields{
+				"payload": userPayload,
+				"err":     "无法确定用户原本密钥的TTL",
+				"claims":  claims,
+			}).Error("用户JWT刷新失败")
+			return
+		}
+
+		// 密钥过期时间小于刷新时间则直接推送一次
+		if middlewares.TokenCentral.TimeFunc().Sub(time.Unix(oldTTL, 0)) < refreshT {
+			sendNewTokenFn()
+		}
+
+		// 循环发送
+		for {
+			select {
+			case <-ws.daemonStopCh:
+				// websocket关闭通道
+			case <-ws.Context.Done():
+				// 上下文结束也退出
+			case <-t.C:
+				// 定期推送刷新新的密钥
+				sendNewTokenFn()
+			}
+		}
+	}()
+
 	return
 }

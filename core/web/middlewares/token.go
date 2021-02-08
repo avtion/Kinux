@@ -50,7 +50,7 @@ var TokenCentral = &jwt.GinJWTMiddleware{
 	// TODO 分布式密钥生成
 	Key:         bytesconv.StringToBytes(tools.GetRandomString(12)),
 	Timeout:     time.Hour,
-	MaxRefresh:  time.Hour,
+	MaxRefresh:  0,
 	IdentityKey: TokenIdentityKey,
 	PayloadFunc: func(data interface{}) jwt.MapClaims {
 		// 用于创建jwt自定义载体

@@ -14,6 +14,7 @@ import (
 	"io"
 	"k8s.io/client-go/tools/remotecommand"
 	"net/http"
+	"time"
 )
 
 // 终止标识符EOT
@@ -64,6 +65,16 @@ func NewWebsocketSchedule(c *gin.Context, fns ...WsFn) (ws *WebsocketSchedule, e
 	if err = ws.Apply(fns...); err != nil {
 		return
 	}
+
+	wsConn.SetCloseHandler(func(code int, text string) error {
+		// websocket原本的方法
+		message := websocket.FormatCloseMessage(code, "")
+		_ = wsConn.WriteControl(websocket.CloseMessage, message, time.Now().Add(time.Second))
+
+		// 关闭监听者
+		ws.StopDaemon()
+		return nil
+	})
 
 	// 启动守护协程
 	go ws.daemon()
@@ -168,8 +179,9 @@ const (
 	wsOpMsg           // 服务端向客户端发送通知
 	wsOpResourceApply // 客户端资源申请
 
-	wsOpAuth        // 客户端向服务端发起鉴权
-	wsOpRequireAuth // 服务端要求客户端进行鉴权
+	wsOpAuth         // 客户端向服务端发起鉴权
+	wsOpRequireAuth  // 服务端要求客户端进行鉴权
+	wsOpRefreshToken // 刷新密钥
 )
 
 // 用于终端的websocket装饰器
