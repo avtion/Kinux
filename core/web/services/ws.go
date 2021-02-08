@@ -33,6 +33,9 @@ type WebsocketSchedule struct {
 	*websocket.Conn
 	*gin.Context
 
+	// 消息发送通道
+	dataSenderCh chan []byte
+
 	// 操作中间件
 	operationMiddlewares []WsOperationHandler
 
@@ -61,6 +64,7 @@ func NewWebsocketSchedule(c *gin.Context, fns ...WsFn) (ws *WebsocketSchedule, e
 		daemonStopCh:         make(chan struct{}),
 		sizeChan:             make(chan remotecommand.TerminalSize),
 		operationMiddlewares: []WsOperationHandler{authMiddleware},
+		dataSenderCh:         make(chan []byte, 1<<5),
 	}
 	if err = ws.Apply(fns...); err != nil {
 		return
@@ -78,6 +82,9 @@ func NewWebsocketSchedule(c *gin.Context, fns ...WsFn) (ws *WebsocketSchedule, e
 
 	// 启动守护协程
 	go ws.daemon()
+
+	// 启动数据发送协程
+	go ws.dataSender()
 
 	return ws, nil
 }
@@ -158,6 +165,33 @@ func (ws *WebsocketSchedule) StopDaemon() {
 	close(ws.daemonStopCh)
 }
 
+// 数据发送器
+func (ws *WebsocketSchedule) dataSender() {
+	// 修复并发写会导致panic https://github.com/gorilla/websocket/issues/380
+	for {
+		select {
+		case <-ws.daemonStopCh:
+			return
+		case <-ws.Context.Done():
+			return
+		case data := <-ws.dataSenderCh:
+			if err := ws.WriteMessage(websocket.TextMessage, data); err != nil {
+				logrus.WithField("err", err).Error("消息发送失败")
+				return
+			}
+		}
+	}
+}
+
+// 向客户端发送数据
+func (ws *WebsocketSchedule) SendData(p []byte) {
+	select {
+	case <-ws.daemonStopCh:
+		return
+	case ws.dataSenderCh <- p:
+	}
+}
+
 /*
 	定义通信接口
 */
@@ -170,18 +204,17 @@ type WebsocketMessage struct {
 }
 
 const (
-	_          wsOperation = iota
-	wsOpNewPty             // 用于创建终端链接，由 Mission 负责实现
-	wsOpStdin              // 用于终端的输入
-	wsOpStdout             // 用于终端的输出
-	wsOpResize             // 用于终端重新调整窗体大小
-
-	wsOpMsg           // 服务端向客户端发送通知
-	wsOpResourceApply // 客户端资源申请
-
-	wsOpAuth         // 客户端向服务端发起鉴权
-	wsOpRequireAuth  // 服务端要求客户端进行鉴权
-	wsOpRefreshToken // 刷新密钥
+	_                 wsOperation = iota
+	wsOpNewPty                    // 用于创建终端链接，由 Mission 负责实现
+	wsOpStdin                     // 用于终端的输入
+	wsOpStdout                    // 用于终端的输出
+	wsOpResize                    // 用于终端重新调整窗体大小
+	wsOpMsg                       // 服务端向客户端发送通知
+	wsOpResourceApply             // 客户端资源申请
+	wsOpAuth                      // 客户端向服务端发起鉴权
+	wsOpRequireAuth               // 服务端要求客户端进行鉴权
+	wsOpRefreshToken              // 刷新密钥
+	wsOpShutdownPty               // 关闭终端链接
 )
 
 // 用于终端的websocket装饰器
@@ -237,9 +270,8 @@ func (pw *WsPtyWrapper) Write(p []byte) (n int, err error) {
 	if err != nil {
 		return 0, err
 	}
-	if err = pw.ws.WriteMessage(websocket.TextMessage, raw); err != nil {
-		return 0, err
-	}
+
+	pw.ws.SendData(raw)
 	return len(p), nil
 }
 
@@ -274,7 +306,9 @@ func (ws *WebsocketSchedule) SendMsg(result msg.Result) (err error) {
 	if err != nil {
 		return
 	}
-	return ws.WriteMessage(websocket.TextMessage, data)
+
+	ws.SendData(data)
+	return
 }
 
 // websocket处理函数映射
@@ -296,7 +330,7 @@ func (ws *WebsocketSchedule) RequireClientAuth() {
 		Op:   wsOpRequireAuth,
 		Data: "请重新登录",
 	})
-	_ = ws.WriteMessage(websocket.TextMessage, data)
+	ws.SendData(data)
 	return
 }
 

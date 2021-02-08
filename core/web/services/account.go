@@ -9,7 +9,6 @@ import (
 	GinJWT "github.com/appleboy/gin-jwt/v2"
 	"github.com/dgrijalva/jwt-go"
 	"github.com/gin-gonic/gin"
-	"github.com/gorilla/websocket"
 	jsoniter "github.com/json-iterator/go"
 	"github.com/sirupsen/logrus"
 	"github.com/spf13/cast"
@@ -105,7 +104,7 @@ func JWTRegister(ws *WebsocketSchedule, any jsoniter.Any) (err error) {
 				},
 			})
 
-			_ = ws.WriteMessage(websocket.TextMessage, data)
+			ws.SendData(data)
 		}
 
 		// 脉冲定时器
