@@ -62,10 +62,14 @@ func JWTRegister(ws *WebsocketSchedule, any jsoniter.Any) (err error) {
 	}
 
 	// 解析密钥
-	ws.userToken, err = middlewares.TokenCentral.ParseTokenString(rawToken)
+	token, err := middlewares.TokenCentral.ParseTokenString(rawToken)
 	if err != nil {
+		ws.RequireClientAuth()
 		return
 	}
+
+	// 写入ws
+	ws.userToken = token
 
 	// 解构用户参数
 	userPayload := middlewares.ClaimsToTokenPayload(GinJWT.ExtractClaimsFromToken(ws.userToken))

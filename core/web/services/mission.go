@@ -3,6 +3,7 @@ package services
 import (
 	"Kinux/core/k8s"
 	"Kinux/core/web/models"
+	"Kinux/tools/bytesconv"
 	"context"
 	"errors"
 	jsoniter "github.com/json-iterator/go"
@@ -17,6 +18,7 @@ import (
 func init() {
 	RegisterWebsocketOperation(wsOpNewPty, missionPtyRegister)
 	RegisterWebsocketOperation(wsOpResize, missionPtyResizeRegister)
+	RegisterWebsocketOperation(wsOpStdin, missionPtyStdinRegister)
 }
 
 // 任务状态
@@ -268,13 +270,18 @@ func missionPtyRegister(ws *WebsocketSchedule, any jsoniter.Any) (err error) {
 	}
 
 	// 使用装饰器维护websocket链接，并终止守护协程
-	// TODO 并发情况下会导致通道重复关闭并panic
-	ws.StopDaemon()
+	//ws.StopDaemon()
 
-	return k8s.ConnectToPod(ws.Context, &pod, c.Name, ws.InitPtyWrapper(), mission.GetCommand())
+	go func() {
+		if _err := k8s.ConnectToPod(ws.Context, &pod, c.Name, ws.InitPtyWrapper(), mission.GetCommand()); _err != nil {
+			logrus.Error("创建POD终端失败", err)
+		}
+	}()
+
+	return
 }
 
-// 调整终端窗体大小
+// 调整终端窗体大小处理函数
 func missionPtyResizeRegister(ws *WebsocketSchedule, any jsoniter.Any) (err error) {
 	// 调整窗口大小
 	var size = &struct {
@@ -290,4 +297,10 @@ func missionPtyResizeRegister(ws *WebsocketSchedule, any jsoniter.Any) (err erro
 	}
 
 	return
+}
+
+// 终端写入处理函数
+func missionPtyStdinRegister(ws *WebsocketSchedule, any jsoniter.Any) (err error) {
+	_, err = ws.PtyStdin.Write(bytesconv.StringToBytes(any.Get("data").ToString()))
+	return nil
 }

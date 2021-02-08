@@ -11,9 +11,9 @@ import (
 	jsoniter "github.com/json-iterator/go"
 	"github.com/sirupsen/logrus"
 	"golang.org/x/tools/go/ssa/interp/testdata/src/errors"
+	"io"
 	"k8s.io/client-go/tools/remotecommand"
 	"net/http"
-	"sync"
 )
 
 // 终止标识符EOT
@@ -31,17 +31,19 @@ var defaultUpgrader = &websocket.Upgrader{
 type WebsocketSchedule struct {
 	*websocket.Conn
 	*gin.Context
-	isDebug bool
 
+	// 操作中间件
+	operationMiddlewares []WsOperationHandler
+
+	// 关闭通知
 	daemonStopCh chan struct{}
-
-	mutex sync.RWMutex
 
 	// 用户JWT密钥
 	userToken *jwt.Token
 
 	// SSH终端相关
 	sizeChan chan remotecommand.TerminalSize
+	PtyStdin io.Writer
 }
 
 type WsFn func(ws *WebsocketSchedule) (err error)
@@ -53,10 +55,11 @@ func NewWebsocketSchedule(c *gin.Context, fns ...WsFn) (ws *WebsocketSchedule, e
 		return
 	}
 	ws = &WebsocketSchedule{
-		Conn:         wsConn,
-		Context:      c,
-		daemonStopCh: make(chan struct{}),
-		sizeChan:     make(chan remotecommand.TerminalSize),
+		Conn:                 wsConn,
+		Context:              c,
+		daemonStopCh:         make(chan struct{}),
+		sizeChan:             make(chan remotecommand.TerminalSize),
+		operationMiddlewares: []WsOperationHandler{authMiddleware},
 	}
 	if err = ws.Apply(fns...); err != nil {
 		return
@@ -84,7 +87,6 @@ func (ws *WebsocketSchedule) Apply(fns ...WsFn) (err error) {
 }
 
 // 守护协程 - 用于读取数据并根据对应的操作进行分发
-// 当该websocket链接交付给容器进行交互时，守护协程应当结束监听
 func (ws *WebsocketSchedule) daemon() {
 	l := logrus.WithField("module", "websocket守护协程")
 	for {
@@ -104,7 +106,23 @@ func (ws *WebsocketSchedule) daemon() {
 				l.WithField("err", err).Debug("获取客户端数据时发生错误")
 				return
 			}
+
+			// 解析数据
 			any := jsoniter.Get(message)
+
+			// 应用中间件
+			if err = func() error {
+				for _, fn := range ws.operationMiddlewares {
+					if _err := fn(ws, any); _err != nil {
+						return _err
+					}
+				}
+				return nil
+			}(); err != nil {
+				continue
+			}
+
+			// 执行对应的操作
 			op := any.Get("op").ToUint()
 			if op == 0 {
 				continue
@@ -150,49 +168,38 @@ const (
 	wsOpMsg           // 服务端向客户端发送通知
 	wsOpResourceApply // 客户端资源申请
 
-	wsOpAuth // 客户端向服务端发起鉴权
+	wsOpAuth        // 客户端向服务端发起鉴权
+	wsOpRequireAuth // 服务端要求客户端进行鉴权
 )
 
 // 用于终端的websocket装饰器
 type WsPtyWrapper struct {
-	ws *WebsocketSchedule
+	ws     *WebsocketSchedule
+	reader io.Reader
 }
 
 var _ k8s.PtyHandler = (*WsPtyWrapper)(nil)
 
+// 初始化终端装饰器
 func (ws *WebsocketSchedule) InitPtyWrapper() *WsPtyWrapper {
+	// 使用io管道对输入的数据进行拷贝
+	r, w := io.Pipe()
+
+	// 兼容多终端监听者
+	if ws.PtyStdin != nil {
+		ws.PtyStdin = io.MultiWriter(ws.PtyStdin, w)
+	} else {
+		ws.PtyStdin = w
+	}
 	return &WsPtyWrapper{
-		ws: ws,
+		ws:     ws,
+		reader: r,
 	}
 }
 
 // 对调度器进行封装用于适配终端场景
 func (pw *WsPtyWrapper) Read(p []byte) (n int, err error) {
-	_, message, err := pw.ws.ReadMessage()
-	if err != nil {
-		logrus.WithField("err", err).Debug("获取客户端数据时发生错误")
-		return
-	}
-	any := jsoniter.Get(message)
-	op := any.Get("op").ToUint()
-	switch op {
-	case wsOpStdin:
-		// 进行写入操作
-		return copy(p, bytesconv.StringToBytes(any.Get("data").ToString())), nil
-	default:
-		// 对于非终端指令兼容
-		fn, isExist := wsOperationsMapper[op]
-		if !isExist {
-			logrus.WithField("raw", bytesconv.BytesToString(message)).Debug(
-				"websocket无法识别客户端发送的请求")
-			return copy(p, EndOfTransmission), nil
-		}
-		if err = fn(pw.ws, any); err != nil {
-			logrus.WithField("err", err).Error("websocket解析数据失败")
-			return copy(p, EndOfTransmission), err
-		}
-	}
-	return
+	return pw.reader.Read(p)
 }
 
 // 对调度器进行封用于装适配终端
@@ -244,6 +251,7 @@ func (ws *WebsocketSchedule) SendMsg(result msg.Result) (err error) {
 	return ws.WriteMessage(websocket.TextMessage, data)
 }
 
+// websocket处理函数映射
 var wsOperationsMapper = map[wsOperation]WsOperationHandler{
 	wsOpResourceApply: func(ws *WebsocketSchedule, any jsoniter.Any) (err error) {
 		// TODO 完成资源申请接口的实现
@@ -254,4 +262,23 @@ var wsOperationsMapper = map[wsOperation]WsOperationHandler{
 // 注册websocket链接操作
 func RegisterWebsocketOperation(op wsOperation, handler WsOperationHandler) {
 	wsOperationsMapper[op] = handler
+}
+
+// 向客户端发起鉴权请求
+func (ws *WebsocketSchedule) RequireClientAuth() {
+	data, _ := jsoniter.Marshal(&WebsocketMessage{
+		Op:   wsOpRequireAuth,
+		Data: "请重新登录",
+	})
+	_ = ws.WriteMessage(websocket.TextMessage, data)
+	return
+}
+
+// 鉴权中间件
+func authMiddleware(ws *WebsocketSchedule, any jsoniter.Any) (err error) {
+	if op := any.Get("op").ToUint(); op != wsOpAuth && ws.userToken == nil {
+		ws.RequireClientAuth()
+		return errors.New("要求客户端进行鉴权")
+	}
+	return nil
 }
