@@ -23,7 +23,7 @@ const routes = [
         component: workspaceComponents,
       },
       {
-        path: 'shell',
+        path: 'shell/:id',
         name: 'shell',
         component: shellComponents,
       },

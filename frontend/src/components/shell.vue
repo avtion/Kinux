@@ -30,6 +30,9 @@ import App from '@/App.vue'
 export default defineComponent({
   components: { App },
   name: 'shell',
+  props: {
+    id: Number,
+  },
   setup(props, ctx) {
     // 从上下文中获取对象
     const ws: WebSocketConn =inject<WebSocketConn>('websocket')
@@ -62,7 +65,10 @@ export default defineComponent({
     window.addEventListener('resize', (e: UIEvent) =>{
       fitAddon.fit()
     }, false)
-    ter.onResize((size): void => {
+    ter.onResize((size: {
+          cols: number;
+          rows: number;
+      }): any => {
       const msg: WebsocketMessage = {
         op: WebsocketOperation.Resize,
         data: size
@@ -82,20 +88,21 @@ export default defineComponent({
 
     onMounted(() => {
       ter.open(terminalRef.value)
-
-      setTimeout(() => {
-        fitAddon.fit()
-      }, 1);
-
       ter.focus()
 
       ws.term = ter
       if (ws.readyState !== WebSocket.OPEN) {
         ws.waitQueue.push((_ws)=>{
-          connectToPOD(ws, 1, "")
+          connectToPOD(ws, props.id, "")
+          setTimeout(() => {
+            fitAddon.fit()
+          }, 1);
         })
       } else {
         connectToPOD(ws, 1, "")
+        setTimeout(() => {
+          fitAddon.fit()
+        }, 1);
       }
     })
 

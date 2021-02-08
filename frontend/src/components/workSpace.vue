@@ -106,6 +106,7 @@
 <script lang="ts" type="module">
 import { reactive, ref } from 'vue'
 import { mission, missionList, missionStatus } from '@api/mission'
+import routers from '@/routers/routers'
 
 export default {
   setup() {
@@ -228,6 +229,7 @@ function MissionHandler(m: missionList): void{
     case missionStatus.Pending:
       return
     case missionStatus.Working:
+      routers.push({name:"shell", params: {id: m.ID}})
       return
     case missionStatus.Done:
       return
