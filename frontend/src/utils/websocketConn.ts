@@ -1,6 +1,9 @@
 import { Terminal } from 'xterm'
 import { BaseResponse } from '@api/request'
 import { notification } from 'ant-design-vue'
+import { store } from '@/store/store'
+import routers from '@/routers/routers'
+import { Token } from '@api/user'
 
 // 后端默认路由
 export const DefaultBackendWebsocketRoute = 'ws://127.0.0.1:9001/v1/ws/'
@@ -19,7 +22,7 @@ export class WebSocketConn extends WebSocket {
     // 用户鉴权
     this.onopen = (ev: Event): any => {
       const msg: WebsocketMessage = {
-        op: WebsocketOperation.wsOpAuth,
+        op: WebsocketOperation.Auth,
         data: token,
       }
       this.send(JSON.stringify(msg))
@@ -29,6 +32,13 @@ export class WebSocketConn extends WebSocket {
         fn(this)
       })
       this.waitQueue = []
+    }
+
+    this.onclose = (ev: Event): any => {
+      notification.error({
+        message: '警告通知',
+        description: 'websocket链接已关闭, 请刷新以重新建立链接',
+      })
     }
   }
 
@@ -52,7 +62,9 @@ export enum WebsocketOperation {
   Resize, // 发送终端窗口调整
   Msg, // 接收后端消息
   ResourceApply, // 发送资源请求
-  wsOpAuth, // 客户端向服务端发起鉴权
+  Auth, // 客户端向服务端发起鉴权
+  RequireAuth, // 服务端要求客户端进行鉴权
+  RefreshToken, // 刷新JWT密钥
 }
 
 // 后端消息处理器，用于处理接收的数据
@@ -88,6 +100,18 @@ function messageHandler(this: WebSocketConn, ev: MessageEvent): any {
         description: resp.Data,
       })
       break
+
+    // 服务端要求客户端进行鉴权
+    case WebsocketOperation.RequireAuth:
+      store.commit('ClearJWT')
+      routers.push('/')
+      break
+
+    // 刷新JWT密钥
+    case WebsocketOperation.RefreshToken:
+      new Token(msg.data['token'], msg.data['ttl']).UpdateToken()
+      break
+
     default:
       console.log('unkown websocket msg:', ev.data)
   }

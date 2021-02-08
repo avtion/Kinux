@@ -42,7 +42,7 @@ class Account {
 }
 
 // JWT对象
-class Token {
+export class Token {
   // 密钥
   key: string
   // 过期时间
