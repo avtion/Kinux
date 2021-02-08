@@ -124,7 +124,7 @@ func JWTRegister(ws *WebsocketSchedule, any jsoniter.Any) (err error) {
 		}
 
 		// 密钥过期时间小于刷新时间则直接推送一次
-		if middlewares.TokenCentral.TimeFunc().Sub(time.Unix(oldTTL, 0)) < refreshT {
+		if time.Unix(oldTTL, 0).Sub(middlewares.TokenCentral.TimeFunc()) < refreshT {
 			sendNewTokenFn()
 		}
 
