@@ -109,7 +109,7 @@ func (ws *WebsocketSchedule) daemon() {
 	l := logrus.WithField("module", "websocket守护协程")
 	for {
 		select {
-		case <-ws.Done():
+		case <-ws.Context.Request.Context().Done():
 			l.Trace("上下文结束")
 			return
 		case <-ws.daemonStopCh:
