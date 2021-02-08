@@ -12,6 +12,8 @@ import (
 	"github.com/gorilla/websocket"
 	jsoniter "github.com/json-iterator/go"
 	"github.com/sirupsen/logrus"
+	"github.com/spf13/cast"
+	"strconv"
 	"strings"
 	"time"
 )
@@ -90,15 +92,19 @@ func JWTRegister(ws *WebsocketSchedule, any jsoniter.Any) (err error) {
 		const refreshT = 10 * time.Minute
 		// 发送新密钥方法
 		var sendNewTokenFn = func() {
-			newToken, _, _err := middlewares.TokenCentral.TokenGenerator(userPayload)
+			newToken, ttl, _err := middlewares.TokenCentral.TokenGenerator(userPayload)
 			if _err != nil {
 				logrus.WithField("payload", userPayload).WithField("err", _err).Error("用户JWT刷新失败")
 				return
 			}
 			data, _ := jsoniter.Marshal(&WebsocketMessage{
-				Op:   wsOpRefreshToken,
-				Data: newToken,
+				Op: wsOpRefreshToken,
+				Data: map[string]interface{}{
+					"token": newToken,
+					"ttl":   strconv.FormatInt(ttl.Unix(), 10),
+				},
 			})
+
 			_ = ws.WriteMessage(websocket.TextMessage, data)
 		}
 
@@ -107,8 +113,8 @@ func JWTRegister(ws *WebsocketSchedule, any jsoniter.Any) (err error) {
 		defer t.Stop()
 
 		claims := token.Claims.(jwt.MapClaims)
-		oldTTL, ok := claims["exp"].(int64)
-		if !ok {
+		oldTTL := cast.ToInt64(claims["exp"])
+		if oldTTL == 0 {
 			logrus.WithFields(logrus.Fields{
 				"payload": userPayload,
 				"err":     "无法确定用户原本密钥的TTL",
@@ -127,8 +133,10 @@ func JWTRegister(ws *WebsocketSchedule, any jsoniter.Any) (err error) {
 			select {
 			case <-ws.daemonStopCh:
 				// websocket关闭通道
+				return
 			case <-ws.Context.Done():
 				// 上下文结束也退出
+				return
 			case <-t.C:
 				// 定期推送刷新新的密钥
 				sendNewTokenFn()
