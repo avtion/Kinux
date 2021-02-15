@@ -52,3 +52,50 @@ func TestCrateOrUpdateMission(t *testing.T) {
 		})
 	}
 }
+
+func TestEditMissionCheckpoints(t *testing.T) {
+	type args struct {
+		ctx         context.Context
+		missionID   uint
+		checkpoints []struct {
+			CheckpointID    uint
+			Percent         uint
+			Priority        int
+			TargetContainer string
+		}
+	}
+	tests := []struct {
+		name    string
+		args    args
+		wantErr bool
+	}{
+		{
+			name: "test",
+			args: args{
+				ctx:       context.Background(),
+				missionID: 1,
+				checkpoints: []struct {
+					CheckpointID    uint
+					Percent         uint
+					Priority        int
+					TargetContainer string
+				}{
+					{
+						CheckpointID:    1,
+						Percent:         0,
+						Priority:        0,
+						TargetContainer: "",
+					},
+				},
+			},
+			wantErr: false,
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			if err := EditMissionCheckpoints(tt.args.ctx, tt.args.missionID, tt.args.checkpoints...); (err != nil) != tt.wantErr {
+				t.Errorf("EditMissionCheckpoints() error = %v, wantErr %v", err, tt.wantErr)
+			}
+		})
+	}
+}
