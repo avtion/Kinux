@@ -4,7 +4,7 @@
     <a-page-header
       :ghost="false"
       style="border: 1px solid rgb(235, 237, 240)"
-      title="WorkSpace 工作间"
+      title="WorkSpace 学习空间"
       :breadcrumb="{ routes }"
       sub-title=""
     >
@@ -122,7 +122,7 @@ export default {
       },
       {
         path: '/workspace',
-        breadcrumbName: '工作间',
+        breadcrumbName: '学习空间',
       },
     ])
 
