@@ -10,10 +10,10 @@ func init() {
 type CheckpointMethod = uint
 
 const (
-	_ CheckpointMethod = iota
-	MethodExec
-	MethodStdout
-	MethodTargetPort
+	_                CheckpointMethod = iota
+	MethodExec                        // 用户执行的命令
+	MethodStdout                      // 终端输出的结果
+	MethodTargetPort                  // 指定端口
 )
 
 var _ = [...]CheckpointMethod{
