@@ -22,11 +22,11 @@
         <a-col :span="12">
           <div class="page-header-content">
             <div class="avatar">
-              <a-avatar size="large" />
+              <a-avatar size="large" :src="avatar" />
             </div>
             <div class="content">
               <div class="content-title">
-                早上好，Avtion，吃饭了吗
+                {{ username }} | 早上好，吃饭了吗
                 <span class="welcome-text">欢迎</span>
               </div>
               <div>学生 ｜ 计算机科学系 - 17网络工程</div>
@@ -76,12 +76,11 @@
                 <a-list-item-meta :description="item.Desc">
                   <!-- 标题 -->
                   <template #title>
-                    {{ index + 1 }} |
-                    <a href="https://www.antdv.com/">{{ item.Name }}</a>
+                    <a href="#">{{ index + 1 }} | {{ item.Name }}</a>
                   </template>
                   <!-- 头像 -->
                   <template #avatar>
-                    <a-avatar />
+                    <a-avatar :src="numberCreatorFn(index + 1)" />
                   </template>
                 </a-list-item-meta>
                 <!-- 操作 -->
@@ -107,9 +106,14 @@
 import { reactive, ref } from 'vue'
 import { mission, missionList, missionStatus } from '@api/mission'
 import routers from '@/routers/routers'
+import Avatars from '@dicebear/avatars'
+import AvatarsSprites from '@dicebear/avatars-male-sprites'
+import sprites from '@dicebear/avatars-initials-sprites'
 
 export default {
-  setup() {
+  setup(props, ctx) {
+    const username = ref<string>('用户名')
+
     // 顶部breadcrumb路径
     const breadcrumbPath = reactive([
       {
@@ -155,7 +159,21 @@ export default {
         isProjectDataLoading.value = false
       })
 
+    // 头像
+    const avatar = new Avatars(AvatarsSprites, {
+      dataUri: true,
+    }).create(username.value)
+
+    // 序号
+    const numberCreator = new Avatars(sprites, {
+      dataUri: true,
+    })
+    const numberCreatorFn = (str: any): string => {
+      return numberCreator.create(str + '')
+    }
+
     return {
+      username,
       routes: breadcrumbPath,
       isProjectDataLoading,
       tabList,
@@ -164,7 +182,9 @@ export default {
       GetMissionButtonType,
       GetMissionButtonLoadingStatus,
       GetMissionButtonDesc,
-      MissionHandler
+      MissionHandler,
+      avatar,
+      numberCreatorFn,
     }
   },
   methods: {
@@ -202,7 +222,7 @@ function GetMissionButtonLoadingStatus(t: number): boolean {
 
 // 获取任务按钮的描述
 function GetMissionButtonDesc(t: number): string {
-    switch (t) {
+  switch (t) {
     case missionStatus.Stop:
       return '开始'
     case missionStatus.Pending:
@@ -219,7 +239,7 @@ function GetMissionButtonDesc(t: number): string {
 }
 
 // 任务处理函数
-function MissionHandler(m: missionList): void{
+function MissionHandler(m: missionList): void {
   console.log(m)
   const status = m.Status
   m.Status = missionHandingStauts
@@ -229,7 +249,7 @@ function MissionHandler(m: missionList): void{
     case missionStatus.Pending:
       return
     case missionStatus.Working:
-      routers.push({name:"shell", params: {id: m.ID}})
+      routers.push({ name: 'shell', params: { id: m.ID } })
       return
     case missionStatus.Done:
       return
