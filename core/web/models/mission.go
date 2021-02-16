@@ -3,7 +3,6 @@ package models
 import (
 	"context"
 	"errors"
-	"flag"
 	"fmt"
 	"gorm.io/gorm"
 	"strings"
@@ -205,10 +204,9 @@ type MissionCheckpoints struct {
 }
 
 // 获取任务相关的全部检查点
-func FindAllCheckpoints(ctx context.Context, missionID uint) (mcs []*MissionCheckpoints, err error) {
+func FindAllMissionCheckpoints(ctx context.Context, mission uint, container string) (mcs []*MissionCheckpoints, err error) {
 	db := GetGlobalDB().WithContext(ctx)
-	err = db.Where(&MissionCheckpoints{Mission: missionID}).Find(&mcs).Error
-	flag.Parse()
+	err = db.Where(&MissionCheckpoints{Mission: mission, TargetContainer: container}).Find(&mcs).Error
 	return
 }
 
@@ -305,4 +303,33 @@ func EditMissionCheckpoints(ctx context.Context, missionID uint, checkpoints ...
 		return nil
 	})
 	return
+}
+
+// 获取用户需要完成的检查点
+func FindAllTodoCheckpoints(ctx context.Context, account, mission uint, container string) (cps []*Checkpoint, err error) {
+	// 首先获取全部的检查点
+	mcs, err := FindAllMissionCheckpoints(ctx, mission, container)
+	if err != nil {
+		return
+	}
+
+	// 查找已经完成的检查点
+	finishedCheckpointsIDs, err := FindAllAccountFinishMissionScore(ctx, account, mission)
+	if err != nil {
+		return
+	}
+
+	// 过滤已经完成的检查点
+	var idMapper = make(map[uint]struct{}, len(finishedCheckpointsIDs))
+	for _, id := range finishedCheckpointsIDs {
+		idMapper[id] = struct{}{}
+	}
+	var todoCheckpointIDs = make([]uint, 0)
+	for _, mc := range mcs {
+		if _, isExist := idMapper[mc.CheckPoint]; !isExist {
+			todoCheckpointIDs = append(todoCheckpointIDs, mc.CheckPoint)
+		}
+	}
+
+	return FindCheckpoints(ctx, todoCheckpointIDs...)
 }
