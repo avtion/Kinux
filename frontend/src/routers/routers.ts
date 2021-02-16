@@ -26,6 +26,7 @@ const routes = [
         path: 'shell/:id',
         name: 'shell',
         component: shellComponents,
+        props: true,
       },
     ],
   },
