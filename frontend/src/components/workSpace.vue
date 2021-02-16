@@ -76,7 +76,7 @@
                 <a-list-item-meta :description="item.Desc">
                   <!-- 标题 -->
                   <template #title>
-                    <a href="#">{{ index + 1 }} | {{ item.Name }}</a>
+                    <a href="#">{{ item.Name }}</a>
                   </template>
                   <!-- 头像 -->
                   <template #avatar>
