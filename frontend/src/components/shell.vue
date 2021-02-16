@@ -2,12 +2,14 @@
   <div class="back">
     <a-card class="markdown" title="说明文档"> whatever content </a-card>
     <a-card class="terminal" title="实操终端">
+      <!-- 按钮 -->
       <template #extra>
         <a-button-group>
           <a-button type="danger">重置容器</a-button>
           <a-button type="primary">结束实验</a-button>
         </a-button-group>
       </template>
+      <!-- 终端 -->
       <div class="xterm terminal-container" ref="terminalRef"></div>
     </a-card>
   </div>
@@ -31,7 +33,10 @@ export default defineComponent({
   components: { App },
   name: 'shell',
   props: {
-    id: Number,
+    id: {
+      type: Number,
+      required: true,
+    },
   },
   setup(props, ctx) {
     // 从上下文中获取对象
@@ -99,7 +104,7 @@ export default defineComponent({
           }, 1);
         })
       } else {
-        connectToPOD(ws, 1, "")
+        connectToPOD(ws, props.id, "")
         setTimeout(() => {
           fitAddon.fit()
         }, 1);
@@ -141,7 +146,7 @@ function connectToPOD(ws: WebSocket, id: number, container: string): void {
 .terminal {
   height: 700px;
   :deep(.ant-card-body) {
-    height: 620px;
+    height: 100%;
     padding: 0;
   }
 }
