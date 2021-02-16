@@ -109,9 +109,6 @@ func (ws *WebsocketSchedule) daemon() {
 	l := logrus.WithField("module", "websocket守护协程")
 	for {
 		select {
-		case <-ws.Context.Request.Context().Done():
-			l.Trace("上下文结束")
-			return
 		case <-ws.daemonStopCh:
 			l.Trace("接收到主动关闭消息")
 			return
@@ -247,7 +244,9 @@ func (ws *WebsocketSchedule) InitPtyWrapper(opts ...WsPtyWrapperOption) *WsPtyWr
 		reader: r,
 	}
 	for _, opt := range opts {
-		opt(wrapper)
+		if opt != nil {
+			opt(wrapper)
+		}
 	}
 	return wrapper
 }
@@ -288,6 +287,17 @@ func (pw *WsPtyWrapper) Next() *remotecommand.TerminalSize {
 // 实现 k8s.PtyHandler 接口
 func (pw *WsPtyWrapper) Done() {
 	return
+}
+
+// 组合多个Pty装饰器
+func CombineWsPtyWrapperOptions(wrappers ...WsPtyWrapperOption) WsPtyWrapperOption {
+	return func(w *WsPtyWrapper) {
+		for _, fn := range wrappers {
+			if fn != nil {
+				fn(w)
+			}
+		}
+	}
 }
 
 /*
