@@ -7,6 +7,7 @@ import (
 	"errors"
 	jsoniter "github.com/json-iterator/go"
 	"github.com/sirupsen/logrus"
+	"github.com/spf13/cast"
 	v1 "k8s.io/api/core/v1"
 	"k8s.io/client-go/tools/remotecommand"
 )
@@ -27,14 +28,14 @@ func missionPtyRegister(ws *WebsocketSchedule, any jsoniter.Any) (err error) {
 
 	// 获取任务信息
 	missionRaw := &struct {
-		ID        uint   `json:"id"`
+		ID        string `json:"id"`
 		Container string `json:"container"`
 	}{}
 	any.Get("data").ToVal(missionRaw)
-	if missionRaw.ID == 0 {
-		return errors.New("目标任务不存在")
+	if cast.ToInt(missionRaw.ID) == 0 {
+		return errors.New("目标任务为空")
 	}
-	mission, err := models.GetMission(ws.Context, missionRaw.ID)
+	mission, err := models.GetMission(ws.Context, cast.ToUint(missionRaw.ID))
 	if err != nil {
 		return
 	}
@@ -92,12 +93,20 @@ func missionPtyRegister(ws *WebsocketSchedule, any jsoniter.Any) (err error) {
 
 	// TODO 移除监听者测试
 	stdinListenerOpt, stdinListener := NewPtyWrapperListenerOpt(ListenStdin)
-	stdinListener.DebugPrint()
+	stdinListener.DebugPrint(ws.Context)
 	stdoutListenerOpt, stdoutListener := NewPtyWrapperListenerOpt(ListenStdout)
-	stdoutListener.DebugPrint()
+	stdoutListener.DebugPrint(ws.Context)
+
+	// 挂载检查点
+	cps, err := models.FindAllTodoCheckpoints(ws.Context, ac.ID, mission.ID, missionRaw.Container)
+	if err != nil {
+		return
+	}
+	checkpointListenerOpt := NewWrapperForCheckpointCallback(ws.Context, ac, nil, mission, cps...)
 
 	go func() {
-		if _err := k8s.ConnectToPod(ws.Context, &pod, c.Name, ws.InitPtyWrapper(stdinListenerOpt, stdoutListenerOpt), mission.GetCommand()); _err != nil {
+		if _err := k8s.ConnectToPod(ws.Context, &pod, c.Name, ws.InitPtyWrapper(
+			stdinListenerOpt, stdoutListenerOpt, checkpointListenerOpt), mission.GetCommand()); _err != nil {
 			logrus.Error("创建POD终端失败", err)
 		}
 	}()
