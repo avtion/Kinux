@@ -1,10 +1,12 @@
 package models
 
 import (
+	"Kinux/core/k8s"
 	"context"
 	"errors"
 	"fmt"
 	"gorm.io/gorm"
+	v1 "k8s.io/api/core/v1"
 	"strings"
 )
 
@@ -189,6 +191,33 @@ func (m *Mission) GetCommand() (cmd []string) {
 	return []string{m.Command}
 }
 
+// 根据mission的deployment获取可用的容器
+func (m *Mission) ListAllowedContainers(ctx context.Context) (res []v1.Container, err error) {
+	if m.Deployment == 0 {
+		err = errors.New("任务不存在deployment")
+		return
+	}
+	dp, err := GetDeployment(ctx, m.Deployment)
+	if err != nil {
+		return
+	}
+	dpCfg, err := k8s.ParseDeploymentConfig(dp.Raw, false)
+	if err != nil {
+		return
+	}
+	containers := dpCfg.Spec.Template.Spec.Containers
+	if len(containers) == 0 {
+		err = errors.New("该任务不存在可用容器")
+		return
+	}
+	for _, c := range containers {
+		if m.IsContainerAllowed(c.Name) {
+			res = append(res, c)
+		}
+	}
+	return
+}
+
 /*
 	任务和检查点
 */
@@ -307,6 +336,9 @@ func EditMissionCheckpoints(ctx context.Context, missionID uint, checkpoints ...
 
 // 获取用户需要完成的检查点
 func FindAllTodoCheckpoints(ctx context.Context, account, mission uint, container string) (cps []*Checkpoint, err error) {
+	if account == 0 || mission == 0 || container == "" {
+		return nil, errors.New("缺乏参数，无法获取用户需要完成的检查点")
+	}
 	// 首先获取全部的检查点
 	mcs, err := FindAllMissionCheckpoints(ctx, mission, container)
 	if err != nil {
@@ -314,7 +346,7 @@ func FindAllTodoCheckpoints(ctx context.Context, account, mission uint, containe
 	}
 
 	// 查找已经完成的检查点
-	finishedCheckpointsIDs, err := FindAllAccountFinishMissionScore(ctx, account, mission)
+	finishedCheckpointsIDs, err := FindAllAccountFinishMissionScore(ctx, account, mission, container)
 	if err != nil {
 		return
 	}
