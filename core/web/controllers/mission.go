@@ -79,3 +79,18 @@ func DeleteMission(c *gin.Context) {
 	}
 	c.JSON(http.StatusOK, msg.BuildSuccess("任务删除成功"))
 }
+
+// 获取任务允许的容器名列表
+func ListMissionAllowedContainersNames(c *gin.Context) {
+	id := cast.ToUint(c.Param("id"))
+	if id == 0 {
+		c.AbortWithStatusJSON(http.StatusOK, msg.BuildFailed("任务id为空"))
+		return
+	}
+	names, err := services.ListMissionAllowedContainersNames(c, id)
+	if err != nil {
+		c.AbortWithStatusJSON(http.StatusOK, msg.BuildFailed(err))
+		return
+	}
+	c.JSON(http.StatusOK, msg.BuildSuccess(names))
+}
