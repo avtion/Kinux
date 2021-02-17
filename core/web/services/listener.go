@@ -75,7 +75,7 @@ func (l *TerminalListener) DebugPrint(ctx context.Context) {
 
 // 创建检查点监听器
 func NewWrapperForCheckpointCallback(ctx context.Context, ac *models.Account, exam *models.Exam,
-	mission *models.Mission, checkpoints ...*models.Checkpoint) (opt WsPtyWrapperOption) {
+	mission *models.Mission, container string, checkpoints ...*models.Checkpoint) (opt WsPtyWrapperOption) {
 	if mission == nil || len(checkpoints) == 0 {
 		return
 	}
@@ -97,9 +97,9 @@ func NewWrapperForCheckpointCallback(ctx context.Context, ac *models.Account, ex
 				inMap = make(map[string]func(ctx context.Context) (err error))
 			}
 			if exam == nil {
-				inMap[cp.In] = models.NewMissionScoreCallback(ac.ID, mission.ID, cp.ID)
+				inMap[cp.In] = models.NewMissionScoreCallback(ac.ID, mission.ID, cp.ID, container)
 			} else {
-				inMap[cp.In] = models.NewExamScoreCallback(ac.ID, exam.ID, mission.ID, cp.ID)
+				inMap[cp.In] = models.NewExamScoreCallback(ac.ID, exam.ID, mission.ID, cp.ID, container)
 			}
 		case models.MethodStdout:
 			// 懒加载
@@ -110,9 +110,9 @@ func NewWrapperForCheckpointCallback(ctx context.Context, ac *models.Account, ex
 				outMap = make(map[string]func(ctx context.Context) (err error))
 			}
 			if exam == nil {
-				outMap[cp.Out] = models.NewMissionScoreCallback(ac.ID, mission.ID, cp.ID)
+				outMap[cp.Out] = models.NewMissionScoreCallback(ac.ID, mission.ID, cp.ID, container)
 			} else {
-				outMap[cp.Out] = models.NewExamScoreCallback(ac.ID, exam.ID, mission.ID, cp.ID)
+				outMap[cp.Out] = models.NewExamScoreCallback(ac.ID, exam.ID, mission.ID, cp.ID, container)
 			}
 		case models.MethodTargetPort:
 			// TODO 完成Web端口监听
