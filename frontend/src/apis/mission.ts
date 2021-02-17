@@ -21,6 +21,26 @@ export class mission {
       }
     )
   }
+
+  listContainersNames(missionID: string): Promise<String[]> {
+    return new Promise<string[]>(
+      (
+        resolve: (value: string[]) => void,
+        reject: (reason: string) => void
+      ) => {
+        defaultClient
+          .get(paths.ms.listContainersNames + missionID + '/')
+          .then((res: AxiosResponse) => {
+            const ml: string[] = new BaseResponse(res.data).Data
+            if (ml.length == 0) {
+              return reject('无可用数据')
+            }
+            return resolve(ml)
+          })
+        return
+      }
+    )
+  }
 }
 
 // 任务状态
