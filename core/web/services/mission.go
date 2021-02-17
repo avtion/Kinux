@@ -185,3 +185,20 @@ func AccountMissionOpera(ctx context.Context, ac *models.Account,
 	}
 	return
 }
+
+// 获取任务允许的容器名列表
+func ListMissionAllowedContainersNames(ctx context.Context, missionID uint) (
+	res []string, err error) {
+	mission, err := models.GetMission(ctx, missionID)
+	if err != nil {
+		return
+	}
+	containers, err := mission.ListAllowedContainers(ctx)
+	if err != nil {
+		return
+	}
+	for _, c := range containers {
+		res = append(res, c.Name)
+	}
+	return
+}
