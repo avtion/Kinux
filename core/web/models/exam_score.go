@@ -16,10 +16,11 @@ type ExamScore struct {
 	Exam       uint
 	Mission    uint
 	Checkpoint uint
+	Container  string
 }
 
 // 创建新的实验成绩
-func NewExamScoreCallback(ac, exam, mission, checkpoint uint) func(ctx context.Context) (err error) {
+func NewExamScoreCallback(ac, exam, mission, checkpoint uint, container string) func(ctx context.Context) (err error) {
 	return func(ctx context.Context) (err error) {
 		db := GetGlobalDB().WithContext(ctx)
 		return db.Create(&ExamScore{
@@ -27,6 +28,7 @@ func NewExamScoreCallback(ac, exam, mission, checkpoint uint) func(ctx context.C
 			Exam:       exam,
 			Mission:    mission,
 			Checkpoint: checkpoint,
+			Container:  container,
 		}).Error
 	}
 }
