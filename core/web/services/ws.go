@@ -3,8 +3,10 @@ package services
 
 import (
 	"Kinux/core/k8s"
+	"Kinux/core/web/models"
 	"Kinux/core/web/msg"
 	"Kinux/tools/bytesconv"
+	"context"
 	"github.com/dgrijalva/jwt-go"
 	"github.com/gin-gonic/gin"
 	"github.com/gorilla/websocket"
@@ -31,7 +33,7 @@ var defaultUpgrader = &websocket.Upgrader{
 // Websocket调度器
 type WebsocketSchedule struct {
 	*websocket.Conn
-	*gin.Context
+	context.Context
 
 	// 消息发送通道
 	dataSenderCh chan []byte
@@ -44,6 +46,7 @@ type WebsocketSchedule struct {
 
 	// 用户JWT密钥
 	userToken *jwt.Token
+	Account   *models.Account
 
 	// SSH终端相关
 	sizeChan chan remotecommand.TerminalSize
@@ -58,19 +61,24 @@ func NewWebsocketSchedule(c *gin.Context, fns ...WsFn) (ws *WebsocketSchedule, e
 	if err != nil {
 		return
 	}
+
+	ctx, cancel := context.WithCancel(context.Background())
+
 	ws = &WebsocketSchedule{
 		Conn:                 wsConn,
-		Context:              c,
+		Context:              ctx,
 		daemonStopCh:         make(chan struct{}),
 		sizeChan:             make(chan remotecommand.TerminalSize),
 		operationMiddlewares: []WsOperationHandler{authMiddleware},
 		dataSenderCh:         make(chan []byte, 1<<5),
 	}
 	if err = ws.Apply(fns...); err != nil {
+		cancel()
 		return
 	}
 
 	wsConn.SetCloseHandler(func(code int, text string) error {
+		logrus.Debug("wsConn关闭并执行closeHandler")
 		// websocket原本的方法
 		message := websocket.FormatCloseMessage(code, "")
 		_ = wsConn.WriteControl(websocket.CloseMessage, message, time.Now().Add(time.Second))
@@ -81,7 +89,7 @@ func NewWebsocketSchedule(c *gin.Context, fns ...WsFn) (ws *WebsocketSchedule, e
 	})
 
 	// 启动守护协程
-	go ws.daemon()
+	go ws.daemon(cancel)
 
 	// 启动数据发送协程
 	go ws.dataSender()
@@ -105,18 +113,27 @@ func (ws *WebsocketSchedule) Apply(fns ...WsFn) (err error) {
 }
 
 // 守护协程 - 用于读取数据并根据对应的操作进行分发
-func (ws *WebsocketSchedule) daemon() {
+func (ws *WebsocketSchedule) daemon(ctxCancelFn context.CancelFunc) {
 	l := logrus.WithField("module", "websocket守护协程")
+
+	// FIX 修复并发控制问题
+	// 当守护协程终止即该Websocket调度器旗下所有协程终结
+	defer ctxCancelFn()
+
 	for {
 		select {
 		case <-ws.daemonStopCh:
 			l.Trace("接收到主动关闭消息")
+
+			// 埋点 - 终止Pty终端
+			ws.SayGoodbyeToPty()
 			return
 		default:
 			_, message, err := ws.ReadMessage()
 			if err != nil {
 				if websocket.IsCloseError(err, websocket.CloseGoingAway) {
 					l.WithField("err", err).Debug("客户端结束")
+					continue
 				}
 				l.WithField("err", err).Debug("获取客户端数据时发生错误")
 				return
@@ -167,9 +184,7 @@ func (ws *WebsocketSchedule) dataSender() {
 	// 修复并发写会导致panic https://github.com/gorilla/websocket/issues/380
 	for {
 		select {
-		case <-ws.daemonStopCh:
-			return
-		case <-ws.Context.Done():
+		case <-ws.Done():
 			return
 		case data := <-ws.dataSenderCh:
 			if err := ws.WriteMessage(websocket.TextMessage, data); err != nil {
@@ -183,9 +198,17 @@ func (ws *WebsocketSchedule) dataSender() {
 // 向客户端发送数据
 func (ws *WebsocketSchedule) SendData(p []byte) {
 	select {
-	case <-ws.daemonStopCh:
+	case <-ws.Done():
 		return
 	case ws.dataSenderCh <- p:
+	}
+}
+
+// 发送终止信号给Pty
+func (ws *WebsocketSchedule) SayGoodbyeToPty() {
+	if ws.PtyStdin != nil {
+		_, _ = ws.PtyStdin.Write([]byte(EndOfTransmission))
+		ws.PtyStdin = nil
 	}
 }
 
@@ -201,17 +224,18 @@ type WebsocketMessage struct {
 }
 
 const (
-	_                 wsOperation = iota
-	wsOpNewPty                    // 用于创建终端链接，由 Mission 负责实现
-	wsOpStdin                     // 用于终端的输入
-	wsOpStdout                    // 用于终端的输出
-	wsOpResize                    // 用于终端重新调整窗体大小
-	wsOpMsg                       // 服务端向客户端发送通知
-	wsOpResourceApply             // 客户端资源申请
-	wsOpAuth                      // 客户端向服务端发起鉴权
-	wsOpRequireAuth               // 服务端要求客户端进行鉴权
-	wsOpRefreshToken              // 刷新密钥
-	wsOpShutdownPty               // 关闭终端链接
+	_                  wsOperation = iota
+	wsOpNewPty                     // 用于创建终端链接，由 Mission 负责实现
+	wsOpStdin                      // 用于终端的输入
+	wsOpStdout                     // 用于终端的输出
+	wsOpResize                     // 用于终端重新调整窗体大小
+	wsOpMsg                        // 服务端向客户端发送通知
+	wsOpResourceApply              // 客户端资源申请
+	wsOpAuth                       // 客户端向服务端发起鉴权
+	wsOpRequireAuth                // 服务端要求客户端进行鉴权
+	wsOpRefreshToken               // 刷新密钥
+	wsOpShutdownPty                // 关闭终端链接
+	wsOpResetContainer             // 重置容器
 )
 
 // 用于终端的websocket装饰器
@@ -229,6 +253,9 @@ var _ k8s.PtyHandler = (*WsPtyWrapper)(nil)
 
 // 初始化终端装饰器
 func (ws *WebsocketSchedule) InitPtyWrapper(opts ...WsPtyWrapperOption) *WsPtyWrapper {
+	// 埋点 - 终止上一个Pty终端
+	ws.SayGoodbyeToPty()
+
 	// 使用io管道对输入的数据进行拷贝
 	r, w := io.Pipe()
 
@@ -286,6 +313,8 @@ func (pw *WsPtyWrapper) Next() *remotecommand.TerminalSize {
 
 // 实现 k8s.PtyHandler 接口
 func (pw *WsPtyWrapper) Done() {
+	// 当POD的Stream终止时，触发
+	pw.ws.PtyStdin = nil
 	return
 }
 
