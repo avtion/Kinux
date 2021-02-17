@@ -8,17 +8,13 @@
         <a-dropdown>
           <template #overlay>
             <a-menu @click="changeContainer">
-              <a-menu-item key="1">
+              <a-menu-item
+                v-for="(name, index) in containersNames"
+                :key="index"
+                :disabled="selectContainer == name"
+              >
                 <CodeSandboxOutlined />
-                默认容器
-              </a-menu-item>
-              <a-menu-item key="2">
-                <CodeSandboxOutlined />
-                一号容器
-              </a-menu-item>
-              <a-menu-item key="3">
-                <CodeSandboxOutlined />
-                二号容器
+                {{ name }} {{ selectContainer == name ? '| 当前容器' : '' }}
               </a-menu-item>
             </a-menu>
           </template>
@@ -44,7 +40,14 @@
 
 <script lang="ts" type="module">
 // vue
-import { defineComponent, ref, onMounted, inject, createVNode } from 'vue'
+import {
+  defineComponent,
+  ref,
+  onMounted,
+  inject,
+  createVNode,
+  watch,
+} from 'vue'
 
 // xterm
 import 'xterm/css/xterm.css'
@@ -68,6 +71,7 @@ import {
   WebsocketOperation,
 } from '@/utils/websocketConn'
 import App from '@/App.vue'
+import { mission } from '@/apis/mission'
 
 export default defineComponent({
   components: { App, CodeSandboxOutlined, DownOutlined },
@@ -133,24 +137,44 @@ export default defineComponent({
       console.log('click', e)
     }
 
-    onMounted(() => {
-      // 加载终端
-      ter.open(terminalRef.value)
-      ter.focus()
-      ws.term = ter
+    // 选择的容器
+    const selectContainer = ref<string>('')
+    watch(selectContainer, (newValue) => {
+      console.log('当前选择的新容器', selectContainer.value)
+
+      // 将终端连接到新的控制台
       if (ws.readyState !== WebSocket.OPEN) {
         ws.waitQueue.push((_ws) => {
-          connectToPOD(ws, props.id, '')
+          connectToPOD(ws, props.id, newValue)
           setTimeout(() => {
             fitAddon.fit()
           }, 1)
         })
       } else {
-        connectToPOD(ws, props.id, '')
+        connectToPOD(ws, props.id, newValue)
         setTimeout(() => {
           fitAddon.fit()
         }, 1)
       }
+    })
+
+    // 获取容器列表
+    const containersNames = ref<string[]>()
+    new mission().listContainersNames(props.id).then((names: string[]) => {
+      containersNames.value = names
+      if (selectContainer.value == '') {
+        selectContainer.value = containersNames.value[0]
+      }
+    })
+
+    onMounted(() => {
+      // 加载终端
+      ter.open(terminalRef.value)
+      ter.focus()
+      ws.term = ter
+      setTimeout(() => {
+        fitAddon.fit()
+      }, 1)
     })
 
     return {
@@ -160,6 +184,8 @@ export default defineComponent({
       comfirmToResetContainer,
       comfirmToShutdownMission,
       changeContainer,
+      containersNames,
+      selectContainer,
     }
   },
 })
