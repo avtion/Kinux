@@ -52,6 +52,9 @@ func (c *Checkpoint) Create(ctx context.Context) (err error) {
 
 // 根据id查询所有的检查点
 func FindCheckpoints(ctx context.Context, ids ...uint) (cps []*Checkpoint, err error) {
+	if len(ids) == 0 {
+		return
+	}
 	err = GetGlobalDB().WithContext(ctx).Model(new(Checkpoint)).Find(&cps, ids).Error
 	return
 }
