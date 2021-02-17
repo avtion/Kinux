@@ -280,3 +280,23 @@ func (mc *MissionController) GetPods(ns string) (p *coreV1.PodList, err error) {
 	}
 	return k8s.GetPods(mc.ctx, ns, mc.dpSelector)
 }
+
+// 重置任务的容器（即删除POD）
+func (mc *MissionController) ResetMission(ns string) (err error) {
+	pods, err := mc.GetPods("")
+	if err != nil {
+		return err
+	}
+	if len(pods.Items) == 0 {
+		return
+	}
+	if ns == "" {
+		ns = k8s.GetDefaultNS()
+	}
+	for _, pod := range pods.Items {
+		if err = k8s.DeletePod(mc.ctx, ns, pod.Name); err != nil {
+			return
+		}
+	}
+	return
+}
