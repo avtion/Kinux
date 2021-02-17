@@ -20,10 +20,9 @@ func init() {
 
 // 创建任务终端
 func missionPtyRegister(ws *WebsocketSchedule, any jsoniter.Any) (err error) {
-	// 从 gin.Context 上下文获取用户信息
-	ac, err := GetAccountFromCtx(ws.Context)
-	if err != nil {
-		return
+	// 从 WebsocketSchedule 获取用户信息
+	if ws.Account == nil {
+		return errors.New("user info not exist")
 	}
 
 	// 获取任务信息
@@ -41,7 +40,7 @@ func missionPtyRegister(ws *WebsocketSchedule, any jsoniter.Any) (err error) {
 	}
 
 	// 校验命名空间
-	d, err := ac.GetDepartment(ws.Context)
+	d, err := ws.Account.GetDepartment(ws.Context)
 	if err != nil {
 		return
 	}
@@ -62,7 +61,7 @@ func missionPtyRegister(ws *WebsocketSchedule, any jsoniter.Any) (err error) {
 	}
 
 	// 确定目标容器
-	pods, err := NewMissionController(ws.Context).SetAc(ac).SetMission(mission).GetPods("")
+	pods, err := NewMissionController(ws.Context).SetAc(ws.Account).SetMission(mission).GetPods("")
 	if err != nil {
 		return
 	}
@@ -98,11 +97,11 @@ func missionPtyRegister(ws *WebsocketSchedule, any jsoniter.Any) (err error) {
 	stdoutListener.DebugPrint(ws.Context)
 
 	// 挂载检查点
-	cps, err := models.FindAllTodoCheckpoints(ws.Context, ac.ID, mission.ID, missionRaw.Container)
+	cps, err := models.FindAllTodoCheckpoints(ws.Context, ws.Account.ID, mission.ID, c.Name)
 	if err != nil {
 		return
 	}
-	checkpointListenerOpt := NewWrapperForCheckpointCallback(ws.Context, ac, nil, mission, cps...)
+	checkpointListenerOpt := NewWrapperForCheckpointCallback(ws.Context, ws.Account, nil, mission, c.Name, cps...)
 
 	go func() {
 		if _err := k8s.ConnectToPod(ws.Context, &pod, c.Name, ws.InitPtyWrapper(
@@ -134,6 +133,9 @@ func missionPtyResizeRegister(ws *WebsocketSchedule, any jsoniter.Any) (err erro
 
 // 终端写入处理函数
 func missionPtyStdinRegister(ws *WebsocketSchedule, any jsoniter.Any) (err error) {
+	if ws.PtyStdin == nil {
+		return errors.New("没有可用的终端")
+	}
 	_, err = ws.PtyStdin.Write(bytesconv.StringToBytes(any.Get("data").ToString()))
 	return nil
 }
