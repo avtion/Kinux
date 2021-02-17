@@ -17,3 +17,8 @@ func GetPods(ctx context.Context, ns string, s labels.Set) (p *coreV1.PodList, e
 		List(ctx,
 			metaV1.ListOptions{LabelSelector: s.String()})
 }
+
+// 删除POD
+func DeletePod(ctx context.Context, ns string, podName string) (err error) {
+	return clientSet.CoreV1().Pods(ns).Delete(ctx, podName, metaV1.DeleteOptions{})
+}
