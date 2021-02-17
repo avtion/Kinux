@@ -3,10 +3,10 @@ package k8s
 import (
 	"Kinux/tools/cfg"
 	"github.com/sirupsen/logrus"
-	"io/ioutil"
 	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/rest"
 	"k8s.io/client-go/tools/clientcmd"
+	"os"
 )
 
 var (
@@ -17,7 +17,7 @@ var (
 
 // 初始化集群配置信息
 func InitKubernetes() {
-	raw, err := ioutil.ReadFile(cfg.DefaultConfig.Kubernetes.KubeConfigPath)
+	raw, err := os.ReadFile(cfg.DefaultConfig.Kubernetes.KubeConfigPath)
 	if err != nil {
 		logrus.Panic(err)
 		return
