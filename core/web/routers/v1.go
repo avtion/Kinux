@@ -26,19 +26,13 @@ func v1Routers() initFunc {
 		// 挂载JWT鉴权中间件
 		v1 = v1.Group("", middlewares.JsonWebTokenAuth)
 
-		// Account
-		//ac := v1.Group("/account")
-		{
-			//ac.POST("/login", controllers.LoginAccount)
-		}
-
 		// 任务相关
 		ms := v1.Group("/mission")
 		{
-			ms.GET("/", controllers.QueryMissions)        // 批量查询任务
-			ms.POST("/:id/", controllers.NewMission)      // 创建任务
-			ms.DELETE("/:id/", controllers.DeleteMission) // 删除任务
+			ms.GET("/", controllers.QueryMissions)                                // 批量查询任务
+			ms.POST("/op/:id/", controllers.NewMission)                           // 创建任务
+			ms.DELETE("/op/:id/", controllers.DeleteMission)                      // 删除任务
+			ms.GET("/cnames/:id/", controllers.ListMissionAllowedContainersNames) // 获取任务允许的容器名列表
 		}
-
 	}
 }
