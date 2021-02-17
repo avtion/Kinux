@@ -77,9 +77,10 @@ func JWTRegister(ws *WebsocketSchedule, any jsoniter.Any) (err error) {
 
 	// 解构用户参数
 	userPayload := middlewares.ClaimsToTokenPayload(GinJWT.ExtractClaimsFromToken(ws.userToken))
-
-	// 将用户信息写在上下文
-	ws.Set(middlewares.TokenIdentityKey, userPayload)
+	ws.Account, err = models.GetAccountByUsername(ws, userPayload.Username)
+	if err != nil {
+		return
+	}
 
 	// 向用户发送通知
 	if err = ws.SendMsg(msg.BuildSuccess(fmt.Sprintf("%s您好，websocket通信建立成功！", userPayload.Username))); err != nil {
@@ -130,10 +131,7 @@ func JWTRegister(ws *WebsocketSchedule, any jsoniter.Any) (err error) {
 		// 循环发送
 		for {
 			select {
-			case <-ws.daemonStopCh:
-				// websocket关闭通道
-				return
-			case <-ws.Context.Done():
+			case <-ws.Done():
 				// 上下文结束也退出
 				return
 			case <-t.C:
