@@ -3,8 +3,8 @@ package k8s
 import (
 	"context"
 	"github.com/sirupsen/logrus"
-	"io/ioutil"
 	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"os"
 	"testing"
 	"time"
 )
@@ -12,7 +12,7 @@ import (
 // 测试环境初始化
 func init() {
 	// 读取配置
-	configRawData, err := ioutil.ReadFile("../../kubeConfig")
+	configRawData, err := os.ReadFile("../../kubeConfig")
 	if err != nil {
 		panic(err)
 	}

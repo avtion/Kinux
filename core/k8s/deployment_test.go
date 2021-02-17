@@ -2,9 +2,9 @@ package k8s
 
 import (
 	"context"
-	"io/ioutil"
 	appV1 "k8s.io/api/apps/v1"
 	"k8s.io/apimachinery/pkg/labels"
+	"os"
 
 	"testing"
 )
@@ -12,7 +12,7 @@ import (
 const __testDeploymentConfig = "../../example_configs/ubuntu-vnc-deploymnet.yaml"
 
 func Test_parseDeploymentConfig(t *testing.T) {
-	fileRaw, err := ioutil.ReadFile(__testDeploymentConfig)
+	fileRaw, err := os.ReadFile(__testDeploymentConfig)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -47,7 +47,7 @@ func Test_parseDeploymentConfig(t *testing.T) {
 }
 
 func TestNewDeployment(t *testing.T) {
-	dpData, err := ioutil.ReadFile(__testDeploymentConfig)
+	dpData, err := os.ReadFile(__testDeploymentConfig)
 	if err != nil {
 		t.Fatal(err)
 	}

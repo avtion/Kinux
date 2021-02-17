@@ -5,7 +5,7 @@ import (
 	"Kinux/core/web/models"
 	"Kinux/tools/bytesconv"
 	"github.com/spf13/cast"
-	"io/ioutil"
+	"io"
 	"net/http"
 	"net/http/httptest"
 	"testing"
@@ -50,7 +50,7 @@ func TestCasbinRouter(t *testing.T) {
 		req := httptest.NewRequest(http.MethodGet, route, nil)
 		req.Header.Set("Authorization", middlewares.TokenCentral.TokenHeadName+" "+token)
 		testRouter.ServeHTTP(w, req)
-		respData, _ := ioutil.ReadAll(w.Result().Body)
+		respData, _ := io.ReadAll(w.Result().Body)
 		t.Log(bytesconv.BytesToString(respData))
 		_ = w.Result().Body.Close()
 	}

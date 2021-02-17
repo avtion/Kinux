@@ -4,7 +4,7 @@ import (
 	"Kinux/core/web/middlewares"
 	"Kinux/core/web/models"
 	"Kinux/tools/bytesconv"
-	"io/ioutil"
+	"io"
 	"net/http"
 	"net/http/httptest"
 	"testing"
@@ -24,7 +24,7 @@ func Test_QueryMissions(t *testing.T) {
 	req := httptest.NewRequest(http.MethodGet, route, nil)
 	req.Header.Set("Authorization", middlewares.TokenCentral.TokenHeadName+" "+token)
 	NewRouters().ServeHTTP(w, req)
-	respData, _ := ioutil.ReadAll(w.Result().Body)
+	respData, _ := io.ReadAll(w.Result().Body)
 	t.Log(bytesconv.BytesToString(respData))
 	_ = w.Result().Body.Close()
 }
