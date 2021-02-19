@@ -76,7 +76,7 @@
                 <a-list-item-meta :description="item.Desc">
                   <!-- 标题 -->
                   <template #title>
-                    <a href="#">{{ item.Name }}</a>
+                    <a @click="openInstructions(item.ID)">{{ item.Name }}</a>
                   </template>
                   <!-- 头像 -->
                   <template #avatar>
@@ -99,13 +99,38 @@
         </a-card>
       </a-layout-content>
     </a-layout>
+
+    <!-- 说明文档Modal -->
+    <a-modal
+      v-model:visible="instructionsVisible"
+      title="实验文档"
+      :footer="null"
+      :afterClose="instructionsTipAfterClose"
+      width="720px"
+    >
+      <a-skeleton v-if="instructionsLoading" :active="true" />
+      <v-md-editor
+        v-model="instructions"
+        height="800px"
+        mode="preview"
+        v-if="!instructionsLoading"
+      >
+      </v-md-editor>
+    </a-modal>
   </div>
 </template>
 
 <script lang="ts" type="module">
-import { reactive, ref } from 'vue'
+// vue
+import { reactive, ref, h } from 'vue'
+
+// apis
 import { mission, missionList, missionStatus } from '@api/mission'
+
+// 路由
 import routers from '@/routers/routers'
+
+// 图标生成
 import Avatars from '@dicebear/avatars'
 import AvatarsSprites from '@dicebear/avatars-male-sprites'
 import sprites from '@dicebear/avatars-initials-sprites'
@@ -172,6 +197,29 @@ export default {
       return numberCreator.create(str + '')
     }
 
+    // 说明文档提示
+    const instructionsVisible = ref<boolean>(false)
+    const instructionsLoading = ref<boolean>(true)
+    const instructions = ref<string>(
+      `🤪无实验文档数据，请联系刷新页面或实验教师`
+    )
+    const openInstructions = (missionID: string) => {
+      instructionsVisible.value = true
+      new mission()
+        .getGuide(missionID)
+        .then((res: string) => {
+          instructions.value = res
+        })
+        .finally(() => {
+          instructionsLoading.value = false
+        })
+    }
+    const instructionsTipAfterClose = () => {
+      instructionsLoading.value = true
+      instructionsVisible.value = false
+      instructions.value = `🤪无实验文档数据，请联系刷新页面或实验教师`
+    }
+
     return {
       username,
       routes: breadcrumbPath,
@@ -185,6 +233,11 @@ export default {
       MissionHandler,
       avatar,
       numberCreatorFn,
+      instructionsVisible,
+      instructionsLoading,
+      instructions,
+      openInstructions,
+      instructionsTipAfterClose,
     }
   },
   methods: {
