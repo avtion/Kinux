@@ -94,3 +94,18 @@ func ListMissionAllowedContainersNames(c *gin.Context) {
 	}
 	c.JSON(http.StatusOK, msg.BuildSuccess(names))
 }
+
+// 获取任务的实验文档
+func GetMissionGuide(c *gin.Context) {
+	id := cast.ToUint(c.Param("id"))
+	if id == 0 {
+		c.AbortWithStatusJSON(http.StatusOK, msg.BuildFailed("任务id为空"))
+		return
+	}
+	res, err := services.GetMissionGuide(c, id)
+	if err != nil {
+		c.AbortWithStatusJSON(http.StatusOK, msg.BuildFailed(err))
+		return
+	}
+	c.JSON(http.StatusOK, msg.BuildSuccess(res))
+}

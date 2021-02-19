@@ -32,6 +32,7 @@ func v1Routers() initFunc {
 			ms.GET("/", controllers.QueryMissions)                                // 批量查询任务
 			ms.POST("/op/:id/", controllers.NewMission)                           // 创建任务
 			ms.DELETE("/op/:id/", controllers.DeleteMission)                      // 删除任务
+			ms.GET("/guide/:id/", controllers.GetMissionGuide)                    // 获取任务的实验文档
 			ms.GET("/cnames/:id/", controllers.ListMissionAllowedContainersNames) // 获取任务允许的容器名列表
 		}
 	}

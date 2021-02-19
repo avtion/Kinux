@@ -202,3 +202,12 @@ func ListMissionAllowedContainersNames(ctx context.Context, missionID uint) (
 	}
 	return
 }
+
+// 获取任务的实验文档
+func GetMissionGuide(ctx context.Context, missionID uint) (res string, err error) {
+	mission, err := models.GetMission(ctx, missionID)
+	if err != nil {
+		return
+	}
+	return mission.Guide, nil
+}
