@@ -16,6 +16,7 @@ func init() {
 	RegisterWebsocketOperation(wsOpNewPty, missionPtyRegister)
 	RegisterWebsocketOperation(wsOpResize, missionPtyResizeRegister)
 	RegisterWebsocketOperation(wsOpStdin, missionPtyStdinRegister)
+	RegisterWebsocketOperation(wsOpShutdownPty, missionPtyShutdownRegister)
 }
 
 // 创建任务终端
@@ -137,5 +138,11 @@ func missionPtyStdinRegister(ws *WebsocketSchedule, any jsoniter.Any) (err error
 		return errors.New("没有可用的终端")
 	}
 	_, err = ws.PtyStdin.Write(bytesconv.StringToBytes(any.Get("data").ToString()))
+	return nil
+}
+
+// 关闭终端链接处理函数
+func missionPtyShutdownRegister(ws *WebsocketSchedule, _ jsoniter.Any) (err error) {
+	ws.SayGoodbyeToPty()
 	return nil
 }

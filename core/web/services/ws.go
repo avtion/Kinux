@@ -234,7 +234,7 @@ const (
 	wsOpAuth                       // 客户端向服务端发起鉴权
 	wsOpRequireAuth                // 服务端要求客户端进行鉴权
 	wsOpRefreshToken               // 刷新密钥
-	wsOpShutdownPty                // 关闭终端链接
+	wsOpShutdownPty                // 关闭终端链接（即向终端发送 EndOfTransmission）
 	wsOpResetContainer             // 重置容器
 )
 

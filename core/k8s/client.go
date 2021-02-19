@@ -4,6 +4,7 @@ package k8s
 import (
 	"context"
 	"errors"
+	"github.com/sirupsen/logrus"
 	"io"
 	coreV1 "k8s.io/api/core/v1"
 	"k8s.io/client-go/kubernetes/scheme"
@@ -25,7 +26,10 @@ type PtyHandler interface {
 func ConnectToPod(ctx context.Context, p *coreV1.Pod, container string, pty PtyHandler, cmd []string,
 	options ...clientReqOption) (err error) {
 	// 关闭pty连接
-	defer pty.Done()
+	defer func() {
+		logrus.Debug("pty被释放")
+		pty.Done()
+	}()
 
 	// 设置默认容器
 	if len(container) == 0 {
