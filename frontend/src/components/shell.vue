@@ -47,6 +47,7 @@ import {
   inject,
   createVNode,
   watch,
+  onUnmounted,
 } from 'vue'
 
 // xterm
@@ -72,6 +73,9 @@ import {
 } from '@/utils/websocketConn'
 import App from '@/App.vue'
 import { mission } from '@/apis/mission'
+
+// vue-router
+import routers from '@/routers/routers'
 
 export default defineComponent({
   components: { App, CodeSandboxOutlined, DownOutlined },
@@ -167,6 +171,7 @@ export default defineComponent({
       }
     })
 
+    // 页面挂载的钩子函数
     onMounted(() => {
       // 加载终端
       ter.open(terminalRef.value)
@@ -175,6 +180,11 @@ export default defineComponent({
       setTimeout(() => {
         fitAddon.fit()
       }, 1)
+    })
+
+    // 页面卸载的钩子函数
+    onUnmounted(() => {
+      shutdownPtyConn(ws)
     })
 
     return {
@@ -186,12 +196,13 @@ export default defineComponent({
       changeContainer,
       containersNames,
       selectContainer,
+      leaveShell,
     }
   },
 })
 
 // 建立POD链接
-function connectToPOD(ws: WebSocket, id: String, container: string): void {
+function connectToPOD(ws: WebSocketConn, id: String, container: string): void {
   const msg: WebsocketMessage = {
     op: WebsocketOperation.newPty,
     data: {
@@ -203,6 +214,16 @@ function connectToPOD(ws: WebSocket, id: String, container: string): void {
   return
 }
 
+// 主动关闭Pty链接
+function shutdownPtyConn(ws: WebSocketConn): void {
+  console.log('主动关闭pty链接')
+  const msg: WebsocketMessage = {
+    op: WebsocketOperation.ShutdownPty,
+    data: {},
+  }
+  ws.send(JSON.stringify(msg))
+}
+
 // 确定是否离开当前终端页面
 function comfirmToLeave(): void {
   Modal.confirm({
@@ -212,9 +233,7 @@ function comfirmToLeave(): void {
     okText: '确定',
     cancelText: '取消',
     onOk() {
-      return new Promise((resolve, reject) => {
-        setTimeout(Math.random() > 0.5 ? resolve : reject, 1000)
-      })
+      leaveShell()
     },
     onCancel() {},
   })
@@ -255,6 +274,11 @@ function comfirmToShutdownMission(): void {
     },
     onCancel() {},
   })
+}
+
+// 离开终端
+function leaveShell() {
+  routers.push({ name: 'workspace' })
 }
 </script>
 

@@ -65,6 +65,7 @@ export enum WebsocketOperation {
   Auth, // 客户端向服务端发起鉴权
   RequireAuth, // 服务端要求客户端进行鉴权
   RefreshToken, // 刷新JWT密钥
+  ShutdownPty,
 }
 
 // 后端消息处理器，用于处理接收的数据
