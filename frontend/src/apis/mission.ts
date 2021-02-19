@@ -4,6 +4,7 @@ import { defaultClient, paths, BaseResponse } from './request'
 export class mission {
   ms: missionStatus
 
+  // 获取所有的任务
   list(): Promise<missionList[]> {
     return new Promise<missionList[]>(
       (
@@ -22,6 +23,7 @@ export class mission {
     )
   }
 
+  // 获取任务的容器名
   listContainersNames(missionID: string): Promise<String[]> {
     return new Promise<string[]>(
       (
@@ -36,6 +38,21 @@ export class mission {
               return reject('无可用数据')
             }
             return resolve(ml)
+          })
+        return
+      }
+    )
+  }
+
+  // 获取任务的实验文档
+  getGuide(missionID: string): Promise<string> {
+    return new Promise<string>(
+      (resolve: (value: string) => void, reject: (reason: string) => void) => {
+        defaultClient
+          .get(paths.ms.getGuide + missionID + '/')
+          .then((res: AxiosResponse) => {
+            const guide: string = new BaseResponse(res.data).Data
+            return resolve(guide)
           })
         return
       }

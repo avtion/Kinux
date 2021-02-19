@@ -122,6 +122,7 @@ export const paths: routePath = {
   ms: {
     list: 'v1/mission/',
     listContainersNames: 'v1/mission/cnames/',
+    getGuide: 'v1/mission/guide/'
   },
 }
 
@@ -137,4 +138,5 @@ interface account {
 interface mission {
   list: string
   listContainersNames: string
+  getGuide: string
 }

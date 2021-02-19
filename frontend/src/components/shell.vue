@@ -1,6 +1,12 @@
 <template>
   <div class="back">
-    <a-card class="markdown" title="说明文档"> whatever content </a-card>
+    <a-card class="markdown" title="实验文档" :loading="instructionsLoading">
+      <v-md-editor
+        v-model="instructions"
+        height="400px"
+        mode="preview"
+      ></v-md-editor>
+    </a-card>
     <a-card class="terminal" title="实操终端">
       <!-- 按钮 -->
       <template #extra>
@@ -52,9 +58,32 @@ import {
 
 // xterm
 import 'xterm/css/xterm.css'
-import { Terminal } from 'xterm'
+import { Terminal, ITheme } from 'xterm'
 import { WebLinksAddon } from 'xterm-addon-web-links'
 import { FitAddon } from 'xterm-addon-fit'
+const defaultTheme: ITheme = {
+  background: '#1E1E1E',
+  foreground: '#CCCCCC',
+  cursor: undefined,
+  cursorAccent: undefined,
+  selection: '#FFFFFF40',
+  black: '#000000',
+  red: '#cd3131',
+  green: '#0DBC79',
+  yellow: '#e5e510',
+  blue: '#2472c8',
+  magenta: '#bc3fbc',
+  cyan: '#11a8cd',
+  white: '#e5e5e5',
+  brightBlack: '#666666',
+  brightRed: '#f14c4c',
+  brightGreen: '#23d18b',
+  brightYellow: '#f5f543',
+  brightBlue: '#3b8eea',
+  brightMagenta: '#d670d6',
+  brightCyan: '#29b8db',
+  brightWhite: '#e5e5e5',
+}
 
 // antd
 import { Modal } from 'ant-design-vue'
@@ -72,10 +101,14 @@ import {
   WebsocketOperation,
 } from '@/utils/websocketConn'
 import App from '@/App.vue'
+
+// apis
 import { mission } from '@/apis/mission'
 
 // vue-router
 import routers from '@/routers/routers'
+
+
 
 export default defineComponent({
   components: { App, CodeSandboxOutlined, DownOutlined },
@@ -100,6 +133,7 @@ export default defineComponent({
         background: '#1b1b1b',
       },
     })
+    ter.setOption('theme', defaultTheme)
     ter.onData((input: string): void => {
       const msg: WebsocketMessage = {
         op: WebsocketOperation.Stdin,
@@ -171,6 +205,20 @@ export default defineComponent({
       }
     })
 
+    // 说明文档
+    const instructions = ref<string>(
+      `🤪无实验文档数据，请联系刷新页面或实验教师`
+    )
+    const instructionsLoading = ref<boolean>(true)
+    new mission()
+      .getGuide(props.id)
+      .then((res) => {
+        instructions.value = res
+      })
+      .finally(() => {
+        instructionsLoading.value = false
+      })
+
     // 页面挂载的钩子函数
     onMounted(() => {
       // 加载终端
@@ -197,6 +245,8 @@ export default defineComponent({
       containersNames,
       selectContainer,
       leaveShell,
+      instructions,
+      instructionsLoading,
     }
   },
 })
@@ -290,11 +340,10 @@ function leaveShell() {
   width: 100%;
 }
 .markdown {
-  height: 250px;
   margin-bottom: 15px;
 }
 .terminal {
-  height: 700px;
+  height: 600px;
   :deep(.ant-card-body) {
     height: 100%;
     padding: 0;
