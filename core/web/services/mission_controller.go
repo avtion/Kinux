@@ -300,3 +300,13 @@ func (mc *MissionController) ResetMission(ns string) (err error) {
 	}
 	return
 }
+
+// 监视Deployment
+func (mc *MissionController) WatchDeploymentToReady(ns string) (resCh <-chan error) {
+	if ns == "" {
+		ns = k8s.GetDefaultNS()
+	}
+	errCh := make(chan error)
+	k8s.WatchDeploymentsToReady(mc.ctx, ns, mc.dpSelector, errCh)
+	return errCh
+}

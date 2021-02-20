@@ -5,11 +5,17 @@ import (
 	"Kinux/core/web/models"
 	"context"
 	"errors"
+	jsoniter "github.com/json-iterator/go"
 	"github.com/sirupsen/logrus"
 	"github.com/spf13/cast"
 	"k8s.io/apimachinery/pkg/labels"
 	"strings"
+	"time"
 )
+
+func init() {
+	RegisterWebsocketOperation(wsOpResetContainers, missionResetRegister)
+}
 
 // 任务状态
 type MissionStatus = int
@@ -210,4 +216,60 @@ func GetMissionGuide(ctx context.Context, missionID uint) (res string, err error
 		return
 	}
 	return mission.Guide, nil
+}
+
+// 实验重置处理函数
+func missionResetRegister(ws *WebsocketSchedule, any jsoniter.Any) (err error) {
+	// 从 WebsocketSchedule 获取用户信息
+	if ws.Account == nil {
+		return errors.New("user info not exist")
+	}
+
+	// 获取任务信息
+	missionRaw := &struct {
+		ID string `json:"id"`
+	}{}
+	any.Get("data").ToVal(missionRaw)
+	if cast.ToInt(missionRaw.ID) == 0 {
+		return errors.New("目标任务为空")
+	}
+	mission, err := models.GetMission(ws.Context, cast.ToUint(missionRaw.ID))
+	if err != nil {
+		return
+	}
+
+	// 校验命名空间
+	d, err := ws.Account.GetDepartment(ws.Context)
+	if err != nil {
+		return
+	}
+	if err = d.IsNamespaceAllowed(mission.Namespace); err != nil {
+		return
+	}
+	ctx, cancel := context.WithTimeout(ws.Context, 5*time.Minute)
+	defer cancel()
+
+	mc := NewMissionController(ctx).SetAc(ws.Account).SetMission(mission)
+
+	// 启动监听
+	errCh := mc.WatchDeploymentToReady("")
+
+	// 删除所有的可用POD
+	if err = mc.ResetMission(""); err != nil {
+		return
+	}
+
+	// 等待dp状态更新
+	if err = <-errCh; err != nil {
+		return
+	}
+	data, err := jsoniter.Marshal(&WebsocketMessage{
+		Op:   wsOpResetContainersDone,
+		Data: nil,
+	})
+	if err != nil {
+		return
+	}
+	ws.SendData(data)
+	return
 }

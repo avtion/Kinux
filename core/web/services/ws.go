@@ -227,18 +227,19 @@ type WebsocketMessage struct {
 }
 
 const (
-	_                  wsOperation = iota
-	wsOpNewPty                     // 用于创建终端链接，由 Mission 负责实现
-	wsOpStdin                      // 用于终端的输入
-	wsOpStdout                     // 用于终端的输出
-	wsOpResize                     // 用于终端重新调整窗体大小
-	wsOpMsg                        // 服务端向客户端发送通知
-	wsOpResourceApply              // 客户端资源申请
-	wsOpAuth                       // 客户端向服务端发起鉴权
-	wsOpRequireAuth                // 服务端要求客户端进行鉴权
-	wsOpRefreshToken               // 刷新密钥
-	wsOpShutdownPty                // 关闭终端链接（即向终端发送 EndOfTransmission）
-	wsOpResetContainer             // 重置容器
+	_                       wsOperation = iota
+	wsOpNewPty                          // 用于创建终端链接，由 Mission 负责实现
+	wsOpStdin                           // 用于终端的输入
+	wsOpStdout                          // 用于终端的输出
+	wsOpResize                          // 用于终端重新调整窗体大小
+	wsOpMsg                             // 服务端向客户端发送通知
+	wsOpResourceApply                   // 客户端资源申请
+	wsOpAuth                            // 客户端向服务端发起鉴权
+	wsOpRequireAuth                     // 服务端要求客户端进行鉴权
+	wsOpRefreshToken                    // 刷新密钥
+	wsOpShutdownPty                     // 关闭终端链接（即向终端发送 EndOfTransmission）
+	wsOpResetContainers                 // 重置容器
+	wsOpResetContainersDone             // 容器重置成功
 )
 
 // 用于终端的websocket装饰器
@@ -335,7 +336,7 @@ func (pw *WsPtyWrapper) Next() *remotecommand.TerminalSize {
 // 实现 k8s.PtyHandler 接口
 func (pw *WsPtyWrapper) Done() {
 	// 当POD的Stream终止时，触发
-	pw.ws.PtyStdin = nil
+	pw.ws.SayGoodbyeToPty()
 	return
 }
 

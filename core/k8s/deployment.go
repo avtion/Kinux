@@ -8,8 +8,10 @@ import (
 	"errors"
 	"github.com/sirupsen/logrus"
 	appV1 "k8s.io/api/apps/v1"
+	v1 "k8s.io/api/core/v1"
 	metaV1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/labels"
+	"k8s.io/apimachinery/pkg/watch"
 	"sigs.k8s.io/yaml"
 )
 
@@ -101,4 +103,46 @@ func ListDeployments(ctx context.Context, ns string, s labels.Set) (dps *appV1.D
 		return
 	}
 	return
+}
+
+// 监听Deployment
+func WatchDeploymentsToReady(ctx context.Context, ns string, s labels.Set, errCh chan<- error) {
+	w, err := clientSet.AppsV1().Deployments(ns).Watch(ctx, metaV1.ListOptions{
+		LabelSelector: s.String(),
+	})
+	if err != nil {
+		return
+	}
+	go func() {
+		defer w.Stop()
+		for {
+			select {
+			case <-ctx.Done():
+				logrus.Trace("WatchDeploymentsToReady 上下文结束")
+				errCh <- ctx.Err()
+				return
+			case event, ok := <-w.ResultChan():
+				if !ok {
+					return
+				}
+				logrus.WithField("event", event).Trace("WatchDeploymentsToReady 监听到事件")
+				switch event.Type {
+				case watch.Modified:
+					obj, ok := event.Object.(*appV1.Deployment)
+					if !ok {
+						continue
+					}
+					for k := range obj.Status.Conditions {
+						if obj.Status.Conditions[k].Type != appV1.DeploymentAvailable {
+							continue
+						}
+						if obj.Status.Conditions[k].Status == v1.ConditionTrue {
+							errCh <- nil
+						}
+					}
+				default:
+				}
+			}
+		}
+	}()
 }
