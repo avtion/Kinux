@@ -30,7 +30,7 @@
         <!-- 容器管理 -->
         <a-button-group>
           <a-button type="danger" @click="comfirmToResetContainer"
-            >重置容器</a-button
+            >重置实验</a-button
           >
           <a-button type="primary" @click="comfirmToShutdownMission"
             >结束实验</a-button
@@ -107,8 +107,6 @@ import { mission } from '@/apis/mission'
 
 // vue-router
 import routers from '@/routers/routers'
-
-
 
 export default defineComponent({
   components: { App, CodeSandboxOutlined, DownOutlined },
@@ -219,6 +217,35 @@ export default defineComponent({
         instructionsLoading.value = false
       })
 
+    // 重置实验
+    const comfirmToResetContainer = () => {
+      Modal.confirm({
+        title: '确定要重置实验容器吗?',
+        icon: createVNode(WarningOutlined),
+        content: '当你点击确认按钮，将会重置实验容器，一切数据将会被销毁！',
+        okText: '确定',
+        okType: 'danger',
+        cancelText: '取消',
+        onOk() {
+          ws.ptyRetryFn = (ws: WebSocketConn) => {
+            connectToPOD(ws, props.id, selectContainer.value)
+            setTimeout(() => {
+              fitAddon.fit()
+            }, 1)
+            ws.term.clear()
+          }
+          const msg: WebsocketMessage = {
+            op: WebsocketOperation.ResetContainers,
+            data: {
+              id: props.id,
+            },
+          }
+          ws.send(JSON.stringify(msg))
+        },
+        onCancel() {},
+      })
+    }
+
     // 页面挂载的钩子函数
     onMounted(() => {
       // 加载终端
@@ -272,6 +299,7 @@ function shutdownPtyConn(ws: WebSocketConn): void {
     data: {},
   }
   ws.send(JSON.stringify(msg))
+  ws.term = undefined
 }
 
 // 确定是否离开当前终端页面
@@ -284,24 +312,6 @@ function comfirmToLeave(): void {
     cancelText: '取消',
     onOk() {
       leaveShell()
-    },
-    onCancel() {},
-  })
-}
-
-// 确定是否重置容器
-function comfirmToResetContainer(): void {
-  Modal.confirm({
-    title: '确定要重置实验容器吗?',
-    icon: createVNode(WarningOutlined),
-    content: '当你点击确认按钮，将会重置实验容器，一切数据将会被销毁！',
-    okText: '确定',
-    okType: 'danger',
-    cancelText: '取消',
-    onOk() {
-      return new Promise((resolve, reject) => {
-        setTimeout(Math.random() > 0.5 ? resolve : reject, 1000)
-      })
     },
     onCancel() {},
   })

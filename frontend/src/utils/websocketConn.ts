@@ -44,7 +44,10 @@ export class WebSocketConn extends WebSocket {
 
   // Websocket挂钩的终端
   public term: Terminal
+  // 终端重连的函数
+  public ptyRetryFn: (ws: WebSocketConn) => any
 
+  // 等待链接成功时回调的函数队列
   public waitQueue: ((ws: WebSocketConn) => any)[]
 }
 
@@ -65,7 +68,9 @@ export enum WebsocketOperation {
   Auth, // 客户端向服务端发起鉴权
   RequireAuth, // 服务端要求客户端进行鉴权
   RefreshToken, // 刷新JWT密钥
-  ShutdownPty,
+  ShutdownPty, // 关闭终端链接（即向终端发送 EndOfTransmission）
+  ResetContainers, // 重置容器
+  ResetContainersDone, // 容器重置成功
 }
 
 // 后端消息处理器，用于处理接收的数据
@@ -111,6 +116,14 @@ function messageHandler(this: WebSocketConn, ev: MessageEvent): any {
     // 刷新JWT密钥
     case WebsocketOperation.RefreshToken:
       new Token(msg.data['token'], msg.data['ttl']).UpdateToken()
+      break
+
+    // 容器重启
+    case WebsocketOperation.ResetContainersDone:
+      if (this.term != undefined && this.ptyRetryFn != undefined) {
+        this.ptyRetryFn(this)
+        this.ptyRetryFn = undefined
+      }
       break
 
     default:
