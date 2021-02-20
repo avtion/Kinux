@@ -93,20 +93,22 @@ func missionPtyRegister(ws *WebsocketSchedule, any jsoniter.Any) (err error) {
 
 	// TODO 移除监听者测试
 	stdinListenerOpt, stdinListener := NewPtyWrapperListenerOpt(ListenStdin)
-	stdinListener.DebugPrint(ws.Context)
 	stdoutListenerOpt, stdoutListener := NewPtyWrapperListenerOpt(ListenStdout)
-	stdoutListener.DebugPrint(ws.Context)
 
 	// 挂载检查点
 	cps, err := models.FindAllTodoCheckpoints(ws.Context, ws.Account.ID, mission.ID, c.Name)
 	if err != nil {
 		return
 	}
-	checkpointListenerOpt := NewWrapperForCheckpointCallback(ws.Context, ws.Account, nil, mission, c.Name, cps...)
+	checkpointListenerOpt := NewWrapperForCheckpointCallback(ws.Account, nil, mission, c.Name, cps...)
+
+	// 初始化pty
+	ptyWrapper := ws.InitPtyWrapper(stdinListenerOpt, stdoutListenerOpt, checkpointListenerOpt)
+	stdinListener.DebugPrint()
+	stdoutListener.DebugPrint()
 
 	go func() {
-		if _err := k8s.ConnectToPod(ws.Context, &pod, c.Name, ws.InitPtyWrapper(
-			stdinListenerOpt, stdoutListenerOpt, checkpointListenerOpt), mission.GetCommand()); _err != nil {
+		if _err := k8s.ConnectToPod(ws.Context, &pod, c.Name, ptyWrapper, mission.GetCommand()); _err != nil {
 			logrus.Error("创建POD终端失败", err)
 		}
 	}()

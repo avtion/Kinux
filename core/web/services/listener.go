@@ -21,6 +21,7 @@ const (
 
 // 终端监听器
 type TerminalListener struct {
+	context.Context
 	*terminalReader.Reader
 }
 
@@ -51,15 +52,19 @@ func NewPtyWrapperListenerOpt(way listenWay) (opt WsPtyWrapperOption, listener *
 				w.stdoutListener = io.MultiWriter(w.stdoutListener, writer)
 			}
 		}
+		listener.Context = w.ChildCtx
 	}, listener
 }
 
 // Debug输出
-func (l *TerminalListener) DebugPrint(ctx context.Context) {
+func (l *TerminalListener) DebugPrint() {
+	if l.Context == nil {
+		logrus.Error("非法Debug输出，Pty未初始化")
+	}
 	go func() {
 		for {
 			select {
-			case <-ctx.Done():
+			case <-l.Context.Done():
 				return
 			default:
 			}
@@ -74,7 +79,7 @@ func (l *TerminalListener) DebugPrint(ctx context.Context) {
 }
 
 // 创建检查点监听器
-func NewWrapperForCheckpointCallback(ctx context.Context, ac *models.Account, exam *models.Exam,
+func NewWrapperForCheckpointCallback(ac *models.Account, exam *models.Exam,
 	mission *models.Mission, container string, checkpoints ...*models.Checkpoint) (opt WsPtyWrapperOption) {
 	if mission == nil || len(checkpoints) == 0 {
 		return
@@ -123,13 +128,13 @@ func NewWrapperForCheckpointCallback(ctx context.Context, ac *models.Account, ex
 	}
 
 	// 监听方法
-	listenFn := func(ctx context.Context, listener *TerminalListener,
+	listenFn := func(listener *TerminalListener,
 		callbackMap map[string]func(ctx context.Context) (err error)) {
 		// 比较器
 		dmp := diffmatchpatch.New()
 		for {
 			select {
-			case <-ctx.Done():
+			case <-listener.Context.Done():
 				return
 			default:
 			}
@@ -139,7 +144,7 @@ func NewWrapperForCheckpointCallback(ctx context.Context, ac *models.Account, ex
 				return
 			}
 			if callback, isExist := callbackMap[line]; isExist {
-				if _err := callback(ctx); _err != nil {
+				if _err := callback(listener.Context); _err != nil {
 					logrus.WithField("err", _err).Error("监听器执行回调函数失败")
 					continue
 				}
@@ -153,16 +158,16 @@ func NewWrapperForCheckpointCallback(ctx context.Context, ac *models.Account, ex
 		}
 	}
 
-	// 输入和输出监听
-	// TODO Web监听
-	for _, tmp := range []struct {
-		l *TerminalListener
-		m map[string]func(ctx context.Context) (err error)
-	}{{l: inReader, m: inMap}, {l: outReader, m: outMap}} {
-		if tmp.l != nil {
-			go listenFn(ctx, tmp.l, tmp.m)
+	return CombineWsPtyWrapperOptions(inOpt, outOpt, func(w *WsPtyWrapper) {
+		// 输入和输出监听
+		// TODO Web监听
+		for _, tmp := range []struct {
+			l *TerminalListener
+			m map[string]func(ctx context.Context) (err error)
+		}{{l: inReader, m: inMap}, {l: outReader, m: outMap}} {
+			if tmp.l != nil {
+				go listenFn(tmp.l, tmp.m)
+			}
 		}
-	}
-
-	return CombineWsPtyWrapperOptions(inOpt, outOpt)
+	})
 }

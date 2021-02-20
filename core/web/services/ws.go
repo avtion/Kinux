@@ -49,8 +49,9 @@ type WebsocketSchedule struct {
 	Account   *models.Account
 
 	// SSH终端相关
-	sizeChan chan remotecommand.TerminalSize
-	PtyStdin io.Writer
+	sizeChan    chan remotecommand.TerminalSize
+	PtyStdin    io.Writer
+	PtyCancelFn context.CancelFunc
 }
 
 type WsFn func(ws *WebsocketSchedule) (err error)
@@ -209,6 +210,8 @@ func (ws *WebsocketSchedule) SayGoodbyeToPty() {
 	if ws.PtyStdin != nil {
 		_, _ = ws.PtyStdin.Write([]byte(EndOfTransmission))
 		ws.PtyStdin = nil
+		ws.PtyCancelFn()
+		ws.PtyCancelFn = nil
 	}
 }
 
@@ -245,6 +248,9 @@ type WsPtyWrapper struct {
 
 	// 输出监听者 - 输入监听者需要在调度器中进行注入
 	stdoutListener io.Writer
+
+	// 并发控制
+	ChildCtx context.Context
 }
 
 type WsPtyWrapperOption = func(w *WsPtyWrapper)
@@ -266,9 +272,14 @@ func (ws *WebsocketSchedule) InitPtyWrapper(opts ...WsPtyWrapperOption) *WsPtyWr
 		ws.PtyStdin = w
 	}
 
+	// FIX 初始化并发控制
+	childCtx, cancel := context.WithCancel(ws.Context)
+	ws.PtyCancelFn = cancel
+
 	wrapper := &WsPtyWrapper{
-		ws:     ws,
-		reader: r,
+		ws:       ws,
+		reader:   r,
+		ChildCtx: childCtx,
 	}
 	for _, opt := range opts {
 		if opt != nil {
@@ -280,11 +291,21 @@ func (ws *WebsocketSchedule) InitPtyWrapper(opts ...WsPtyWrapperOption) *WsPtyWr
 
 // 对调度器进行封装用于适配终端场景
 func (pw *WsPtyWrapper) Read(p []byte) (n int, err error) {
+	select {
+	case <-pw.ChildCtx.Done():
+		return 0, io.EOF
+	default:
+	}
 	return pw.reader.Read(p)
 }
 
 // 对调度器进行封用于装适配终端
 func (pw *WsPtyWrapper) Write(p []byte) (n int, err error) {
+	select {
+	case <-pw.ChildCtx.Done():
+		return 0, io.EOF
+	default:
+	}
 	// 监听器输出
 	if pw.stdoutListener != nil {
 		_, _ = pw.stdoutListener.Write(p)
