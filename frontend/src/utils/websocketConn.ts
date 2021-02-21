@@ -40,15 +40,39 @@ export class WebSocketConn extends WebSocket {
         description: 'websocket链接已关闭, 请刷新以重新建立链接',
       })
     }
-  }
 
-  // Websocket挂钩的终端
-  public term: Terminal
-  // 终端重连的函数
-  public ptyRetryFn: (ws: WebSocketConn) => any
+    // 回调
+    this.callbacksMapper = new Map()
+    this.sendWithCallback = (data, op, callback, once) => {
+      this.callbacksMapper.set(
+        op,
+        (ws: WebSocketConn, msg: WebsocketMessage): void => {
+          callback(ws, msg)
+          if (once) {
+            this.callbacksMapper.delete(op)
+          }
+        }
+      )
+      super.send(data)
+    }
+  }
 
   // 等待链接成功时回调的函数队列
   public waitQueue: ((ws: WebSocketConn) => any)[]
+
+  // 回调Hash
+  public callbacksMapper: Map<
+    WebsocketOperation,
+    (ws: WebSocketConn, msg?: WebsocketMessage) => void
+  >
+
+  // 发送数据并挂载回调函数
+  public sendWithCallback: (
+    data: string | ArrayBufferLike | Blob | ArrayBufferView,
+    op: WebsocketOperation,
+    callback: (ws: WebSocketConn, msg?: WebsocketMessage) => void,
+    once?: boolean
+  ) => void
 }
 
 // 后端定义Websocket交互对象
@@ -64,13 +88,13 @@ export enum WebsocketOperation {
   Stdout, // 接收终端输出
   Resize, // 发送终端窗口调整
   Msg, // 接收后端消息
-  ResourceApply, // 发送资源请求
+  MissionApply, // 发送资源请求
   Auth, // 客户端向服务端发起鉴权
   RequireAuth, // 服务端要求客户端进行鉴权
   RefreshToken, // 刷新JWT密钥
   ShutdownPty, // 关闭终端链接（即向终端发送 EndOfTransmission）
   ResetContainers, // 重置容器
-  ResetContainersDone, // 容器重置成功
+  ContainersDone, // 容器重置成功
 }
 
 // 后端消息处理器，用于处理接收的数据
@@ -81,12 +105,6 @@ function messageHandler(this: WebSocketConn, ev: MessageEvent): any {
   console.log('接收到websocket消息 操作码:', msg.op, '数据:', msg.data)
 
   switch (msg.op) {
-    // 终端输出
-    case WebsocketOperation.Stdout:
-      if (this.term != null) {
-        this.term.write(msg.data)
-      }
-      break
 
     // 页面通知 - 采用Notification的形式
     case WebsocketOperation.Msg:
@@ -118,16 +136,13 @@ function messageHandler(this: WebSocketConn, ev: MessageEvent): any {
       new Token(msg.data['token'], msg.data['ttl']).UpdateToken()
       break
 
-    // 容器重启
-    case WebsocketOperation.ResetContainersDone:
-      if (this.term != undefined && this.ptyRetryFn != undefined) {
-        this.ptyRetryFn(this)
-        this.ptyRetryFn = undefined
-      }
-      break
-
     default:
-      console.log('unkown websocket msg:', ev.data)
+      const fn = this.callbacksMapper.get(msg.op)
+      if (fn == undefined) {
+        console.log('unkown websocket msg:', ev.data)
+        return
+      }
+      fn(this, msg)
   }
   return
 }
