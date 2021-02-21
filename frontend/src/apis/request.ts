@@ -47,10 +47,7 @@ export class BaseResponse {
 
   // 判断是否JWT鉴权失败
   IsJWTAuthFailed(): boolean {
-    if (this.Code == respCode.JWTAuthFailed) {
-      return true
-    }
-    return false
+    return this.Code == respCode.JWTAuthFailed
   }
 }
 
@@ -78,11 +75,16 @@ defaultClient.interceptors.response.use(
         description: resp.Data,
       })
 
-      if (resp.IsJWTAuthFailed) {
+      if (resp.IsJWTAuthFailed()) {
         // JWT密钥失效则清空密钥缓存并跳转至登陆界面
-        console.log('JWT鉴权失效')
+        console.log(
+          'JWT鉴权失效',
+          resp.Code,
+          resp.Data,
+        )
         store.commit('ClearJWT')
         routers.push('/')
+        return
       }
 
       // 控制台输出
@@ -122,7 +124,8 @@ export const paths: routePath = {
   ms: {
     list: 'v1/mission/',
     listContainersNames: 'v1/mission/cnames/',
-    getGuide: 'v1/mission/guide/'
+    getGuide: 'v1/mission/guide/',
+    dpOperation: 'v1/mission/op/',
   },
 }
 
@@ -139,4 +142,5 @@ interface mission {
   list: string
   listContainersNames: string
   getGuide: string
+  dpOperation: string
 }
