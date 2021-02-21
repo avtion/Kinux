@@ -58,6 +58,24 @@ export class mission {
       }
     )
   }
+
+  // 删除正在进行的deployment
+  deleteDeployment(missionID: string): Promise<string> {
+    return new Promise<string>(
+      (resolve: (value: string) => void, reject: (reason: string) => void) => {
+        defaultClient
+          .delete(paths.ms.dpOperation + missionID + '/')
+          .then((res: AxiosResponse) => {
+            const resp: BaseResponse = new BaseResponse(res.data)
+            if (!resp.IsSuccess) {
+              return reject(resp.Data)
+            }
+            return resolve(resp.Data)
+          })
+        return
+      }
+    )
+  }
 }
 
 // 任务状态
