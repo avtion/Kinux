@@ -15,6 +15,7 @@ import (
 
 func init() {
 	RegisterWebsocketOperation(wsOpResetContainers, missionResetRegister)
+	RegisterWebsocketOperation(wsOpMissionApply, missionApply)
 }
 
 // 任务状态
@@ -264,7 +265,61 @@ func missionResetRegister(ws *WebsocketSchedule, any jsoniter.Any) (err error) {
 		return
 	}
 	data, err := jsoniter.Marshal(&WebsocketMessage{
-		Op:   wsOpResetContainersDone,
+		Op:   wsOpContainersDone,
+		Data: nil,
+	})
+	if err != nil {
+		return
+	}
+	ws.SendData(data)
+	return
+}
+
+// 启动任务处理函数
+func missionApply(ws *WebsocketSchedule, any jsoniter.Any) (err error) {
+	// 从 WebsocketSchedule 获取用户信息
+	if ws.Account == nil {
+		return errors.New("user info not exist")
+	}
+
+	// 获取任务信息
+	missionRaw := &struct {
+		ID string `json:"id"`
+	}{}
+	any.Get("data").ToVal(missionRaw)
+	if cast.ToInt(missionRaw.ID) == 0 {
+		return errors.New("目标任务为空")
+	}
+	mission, err := models.GetMission(ws.Context, cast.ToUint(missionRaw.ID))
+	if err != nil {
+		return
+	}
+
+	// 校验命名空间
+	d, err := ws.Account.GetDepartment(ws.Context)
+	if err != nil {
+		return
+	}
+	if err = d.IsNamespaceAllowed(mission.Namespace); err != nil {
+		return
+	}
+
+	// 初始化
+	mc := NewMissionController(ws).SetAc(ws.Account).SetMission(mission)
+
+	// 启动监听
+	errCh := mc.WatchDeploymentToReady("")
+
+	// 创建新的Deployment
+	if err = mc.NewDeployment(); err != nil {
+		return
+	}
+	// 等待dp状态更新
+	if err = <-errCh; err != nil {
+		return
+	}
+	data, err := jsoniter.Marshal(&WebsocketMessage{
+		Op:   wsOpContainersDone,
 		Data: nil,
 	})
 	if err != nil {

@@ -39,10 +39,7 @@ func (mc *MissionController) SetAc(ac *models.Account) *MissionController {
 	if ac == nil {
 		return mc
 	}
-	mc.appendOpt(func(mc *MissionController) error {
-		mc.Ac = ac
-		return nil
-	})
+	mc.Ac = ac
 	return mc
 }
 
@@ -51,11 +48,8 @@ func (mc *MissionController) SetMission(m *models.Mission) *MissionController {
 	if m == nil {
 		return mc
 	}
-	mc.appendOpt(func(mc *MissionController) error {
-		mc.Mission = m
-		return nil
-	})
-	return mc
+	mc.Mission = m
+	return mc.getDpCfg().parseDpCfg().fixNamespace().generateSelector(nil).applySelector()
 }
 
 // 创建新的Deployment
@@ -69,7 +63,7 @@ func (mc *MissionController) NewDeployment() (err error) {
 	}()
 
 	// 初始化控制器配置
-	mc.getDpCfg().parseDpCfg().generateAndApplyDpName().generateSelector(nil).applySelector().fixNamespace()
+	mc.generateAndApplyDpName()
 
 	// 创建新的Deployment之前先清除正在进行的任务
 	if err = mc.ClearAllMission(); err != nil {
@@ -90,7 +84,7 @@ func (mc *MissionController) NewDeployment() (err error) {
 
 // 清除用户正在进行的Deployment
 func (mc *MissionController) ClearAllMission() (err error) {
-	return mc.destroyDeployment(nil)
+	return mc.destroyDeployment(missionLabel, deploymentLabel)
 }
 
 // 删除用户指定的dp
@@ -98,23 +92,43 @@ func (mc *MissionController) DestroyDeployment() (err error) {
 	if mc.Mission == nil || mc.Mission.ID == 0 {
 		return errors.New("无法删除用户指定的任务: 任务信息未初始化")
 	}
-	return mc.destroyDeployment(NewLabelMarker().WithMission(mc.Mission.ID))
+	return mc.destroyDeployment()
 }
 
 // 删除操作的内部实现
-func (mc *MissionController) destroyDeployment(l *labelMaker) (err error) {
+func (mc *MissionController) destroyDeployment(withoutLabels ...string) (err error) {
 	mc.appendOpt(func(mc *MissionController) error {
+		// FIX 排除deployment的label
+		var m = mc.dpSelector
+		if len(withoutLabels) > 0 {
+			filter := make(map[string]struct{}, len(withoutLabels))
+			for _, v := range withoutLabels {
+				filter[v] = struct{}{}
+			}
+			var tmp = make(labels.Set, len(m))
+			for k, v := range m {
+				if _, isExist := filter[k]; isExist {
+					continue
+				}
+				tmp[k] = v
+			}
+			m = tmp
+		}
+
 		if mc.Ac == nil {
 			return errors.New("无法删除用户指定的任务: 用户信息未初始化")
 		}
-		var ns string
-		if mc.dpCfg != nil {
-			ns = mc.dpCfg.GetNamespace()
+
+		dps, _err := k8s.ListDeployments(mc.ctx, mc.dpCfg.GetNamespace(), m)
+		if _err != nil {
+			return _err
 		}
-		if l == nil {
-			l = NewLabelMarker()
+		for _, dp := range dps.Items {
+			if _err = k8s.DeleteDeployment(mc.ctx, mc.dpCfg.GetNamespace(), dp.Name); _err != nil {
+				return _err
+			}
 		}
-		return k8s.DeleteDeployments(mc.ctx, ns, l.WithAccount(mc.Ac.ID).Do())
+		return nil
 	})
 	return mc.exec()
 }
@@ -221,8 +235,8 @@ func (mc *MissionController) generateSelector(other map[string]string) *MissionC
 		for k, v := range other {
 			l.WithString(k, v)
 		}
-
 		mc.dpSelector = l.Do()
+
 		return nil
 	})
 	return mc
@@ -272,18 +286,18 @@ func (mc *MissionController) fixNamespace(pass ...bool) *MissionController {
 }
 
 // 获取POD列表
-func (mc *MissionController) GetPods(ns string) (p *coreV1.PodList, err error) {
+func (mc *MissionController) GetPods() (p *coreV1.PodList, err error) {
 	// 初始化控制器配置
-	mc.generateSelector(nil).fixNamespace()
-	if ns == "" {
-		ns = k8s.GetDefaultNS()
+	mc.getDpCfg().parseDpCfg().generateAndApplyDpName().generateSelector(nil).applySelector().fixNamespace()
+	if err = mc.exec(); err != nil {
+		return
 	}
-	return k8s.GetPods(mc.ctx, ns, mc.dpSelector)
+	return k8s.GetPods(mc.ctx, mc.dpCfg.GetNamespace(), mc.dpSelector)
 }
 
 // 重置任务的容器（即删除POD）
 func (mc *MissionController) ResetMission(ns string) (err error) {
-	pods, err := mc.GetPods("")
+	pods, err := mc.GetPods()
 	if err != nil {
 		return err
 	}

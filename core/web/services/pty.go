@@ -62,7 +62,7 @@ func missionPtyRegister(ws *WebsocketSchedule, any jsoniter.Any) (err error) {
 	}
 
 	// 确定目标容器
-	pods, err := NewMissionController(ws.Context).SetAc(ws.Account).SetMission(mission).GetPods("")
+	pods, err := NewMissionController(ws.Context).SetAc(ws.Account).SetMission(mission).GetPods()
 	if err != nil {
 		return
 	}

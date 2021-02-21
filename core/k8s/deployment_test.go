@@ -85,33 +85,3 @@ func TestNewDeployment(t *testing.T) {
 		})
 	}
 }
-
-func TestDeleteDeployments(t *testing.T) {
-	type args struct {
-		ctx context.Context
-		ns  string
-		s   labels.Set
-	}
-	tests := []struct {
-		name    string
-		args    args
-		wantErr bool
-	}{
-		{
-			name: "test",
-			args: args{
-				ctx: context.Background(),
-				ns:  "default",
-				s:   labels.Set{"account-id": "1"},
-			},
-			wantErr: false,
-		},
-	}
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			if err := DeleteDeployments(tt.args.ctx, tt.args.ns, tt.args.s); (err != nil) != tt.wantErr {
-				t.Errorf("DeleteDeployments() error = %v, wantErr %v", err, tt.wantErr)
-			}
-		})
-	}
-}

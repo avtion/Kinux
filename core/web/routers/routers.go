@@ -46,6 +46,7 @@ func newRouters(fns ...initFunc) (r *gin.Engine) {
 			http.MethodPost,
 			http.MethodPut,
 			http.MethodHead,
+			http.MethodDelete,
 		},
 		AllowHeaders:     []string{"Origin", "Content-Length", "Content-Type", "Authorization"},
 		AllowCredentials: true,

@@ -227,19 +227,19 @@ type WebsocketMessage struct {
 }
 
 const (
-	_                       wsOperation = iota
-	wsOpNewPty                          // 用于创建终端链接，由 Mission 负责实现
-	wsOpStdin                           // 用于终端的输入
-	wsOpStdout                          // 用于终端的输出
-	wsOpResize                          // 用于终端重新调整窗体大小
-	wsOpMsg                             // 服务端向客户端发送通知
-	wsOpResourceApply                   // 客户端资源申请
-	wsOpAuth                            // 客户端向服务端发起鉴权
-	wsOpRequireAuth                     // 服务端要求客户端进行鉴权
-	wsOpRefreshToken                    // 刷新密钥
-	wsOpShutdownPty                     // 关闭终端链接（即向终端发送 EndOfTransmission）
-	wsOpResetContainers                 // 重置容器
-	wsOpResetContainersDone             // 容器重置成功
+	_                   wsOperation = iota
+	wsOpNewPty                      // 用于创建终端链接，由 Mission 负责实现
+	wsOpStdin                       // 用于终端的输入
+	wsOpStdout                      // 用于终端的输出
+	wsOpResize                      // 用于终端重新调整窗体大小
+	wsOpMsg                         // 服务端向客户端发送通知
+	wsOpMissionApply                // 客户端发起Mission
+	wsOpAuth                        // 客户端向服务端发起鉴权
+	wsOpRequireAuth                 // 服务端要求客户端进行鉴权
+	wsOpRefreshToken                // 刷新密钥
+	wsOpShutdownPty                 // 关闭终端链接（即向终端发送 EndOfTransmission）
+	wsOpResetContainers             // 重置容器
+	wsOpContainersDone              // 容器部署成功
 )
 
 // 用于终端的websocket装饰器
@@ -373,12 +373,7 @@ func (ws *WebsocketSchedule) SendMsg(result msg.Result) (err error) {
 }
 
 // websocket处理函数映射
-var wsOperationsMapper = map[wsOperation]WsOperationHandler{
-	wsOpResourceApply: func(ws *WebsocketSchedule, any jsoniter.Any) (err error) {
-		// TODO 完成资源申请接口的实现
-		return errors.New("未实现")
-	},
-}
+var wsOperationsMapper = make(map[wsOperation]WsOperationHandler)
 
 // 注册websocket链接操作
 func RegisterWebsocketOperation(op wsOperation, handler WsOperationHandler) {

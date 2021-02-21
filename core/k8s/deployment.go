@@ -44,6 +44,13 @@ func NewDeployment(ctx context.Context, dp *appV1.Deployment, s labels.Set, opts
 	if dpLabels := labels.Set(dp.GetLabels()); !dpLabels.Has(s.String()) {
 		s = labels.Merge(dpLabels, s)
 		dp.SetLabels(s)
+
+		var podLabels = labels.Set(dp.Spec.Template.GetLabels())
+		for k, v := range s {
+			podLabels[k] = v
+		}
+		dp.Spec.Template.SetLabels(podLabels)
+		dp.Spec.Selector.MatchLabels = podLabels
 	}
 
 	// 创建新的Deployment
@@ -73,21 +80,16 @@ func ParseDeploymentConfig(fileRaw []byte, strict bool) (dp *appV1.Deployment, e
 }
 
 // 删除Deployment
-func DeleteDeployments(ctx context.Context, ns string, s labels.Set) (err error) {
-	if err = clientSet.AppsV1().Deployments(ns).DeleteCollection(ctx, metaV1.DeleteOptions{
+func DeleteDeployment(ctx context.Context, ns string, dpName string) (err error) {
+	return clientSet.AppsV1().Deployments(ns).Delete(ctx, dpName, metaV1.DeleteOptions{
 		PropagationPolicy: &deletePolicy,
-	}, metaV1.ListOptions{
-		LabelSelector: s.String(),
-	}); err != nil {
-		return
-	}
-	return
+	})
 }
 
 // 批量查询Deployment
 func ListDeployments(ctx context.Context, ns string, s labels.Set) (dps *appV1.DeploymentList, err error) {
 	if s == nil || len(s) == 0 {
-		err = errors.New("删除Deployment失败: 选择器为空")
+		err = errors.New("批量查询Deployment失败: 选择器为空")
 		return
 	}
 
