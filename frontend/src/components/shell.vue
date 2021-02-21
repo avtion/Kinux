@@ -86,7 +86,7 @@ const defaultTheme: ITheme = {
 }
 
 // antd
-import { Modal } from 'ant-design-vue'
+import { Modal, notification } from 'ant-design-vue'
 import {
   ExclamationCircleOutlined,
   WarningOutlined,
@@ -140,6 +140,26 @@ export default defineComponent({
       console.log(msg)
       ws.send(JSON.stringify(msg))
     })
+
+    // 建立POD链接
+    const connectToPOD = (ws: WebSocketConn, id: String, container: string) => {
+      const msg: WebsocketMessage = {
+        op: WebsocketOperation.newPty,
+        data: {
+          id: id,
+          container: container,
+        },
+      }
+      ws.sendWithCallback(
+        JSON.stringify(msg),
+        WebsocketOperation.Stdout,
+        (ws, msg) => {
+          ter.write(msg.data)
+        },
+        false
+      )
+      return
+    }
 
     // 插件 - DOM适应器
     const fitAddon = new FitAddon()
@@ -227,20 +247,61 @@ export default defineComponent({
         okType: 'danger',
         cancelText: '取消',
         onOk() {
-          ws.ptyRetryFn = (ws: WebSocketConn) => {
-            connectToPOD(ws, props.id, selectContainer.value)
-            setTimeout(() => {
-              fitAddon.fit()
-            }, 1)
-            ws.term.clear()
-          }
           const msg: WebsocketMessage = {
             op: WebsocketOperation.ResetContainers,
             data: {
               id: props.id,
             },
           }
-          ws.send(JSON.stringify(msg))
+          ws.sendWithCallback(
+            JSON.stringify(msg),
+            WebsocketOperation.ContainersDone,
+            (ws) => {
+              connectToPOD(ws, props.id, selectContainer.value)
+              setTimeout(() => {
+                fitAddon.fit()
+              }, 1)
+              ter.clear()
+            },
+            true
+          )
+        },
+        onCancel() {},
+      })
+    }
+
+    // 结束实验
+    const comfirmToShutdownMission = () => {
+      Modal.confirm({
+        title: '确定要结束实验吗?',
+        icon: createVNode(WarningOutlined),
+        content:
+          '当你点击确认按钮，将会结束实验并退回学习空间，一切数据将会被销毁！',
+        okText: '确定',
+        okType: 'danger',
+        cancelText: '取消',
+        onOk() {
+          new mission().deleteDeployment(props.id).then((res) => {
+            notification.success({
+              message: res,
+            })
+            leaveShell()
+          })
+        },
+        onCancel() {},
+      })
+    }
+
+    // 确定是否离开当前终端页面
+    const comfirmToLeave = () => {
+      Modal.confirm({
+        title: '想要退出终端吗?',
+        icon: createVNode(ExclamationCircleOutlined),
+        content: '当你点击确认按钮，将会关闭终端',
+        okText: '确定',
+        cancelText: '取消',
+        onOk() {
+          leaveShell()
         },
         onCancel() {},
       })
@@ -251,7 +312,6 @@ export default defineComponent({
       // 加载终端
       ter.open(terminalRef.value)
       ter.focus()
-      ws.term = ter
       setTimeout(() => {
         fitAddon.fit()
       }, 1)
@@ -278,19 +338,6 @@ export default defineComponent({
   },
 })
 
-// 建立POD链接
-function connectToPOD(ws: WebSocketConn, id: String, container: string): void {
-  const msg: WebsocketMessage = {
-    op: WebsocketOperation.newPty,
-    data: {
-      id: id,
-      container: container,
-    },
-  }
-  ws.send(JSON.stringify(msg))
-  return
-}
-
 // 主动关闭Pty链接
 function shutdownPtyConn(ws: WebSocketConn): void {
   console.log('主动关闭pty链接')
@@ -299,41 +346,6 @@ function shutdownPtyConn(ws: WebSocketConn): void {
     data: {},
   }
   ws.send(JSON.stringify(msg))
-  ws.term = undefined
-}
-
-// 确定是否离开当前终端页面
-function comfirmToLeave(): void {
-  Modal.confirm({
-    title: '想要退出终端吗?',
-    icon: createVNode(ExclamationCircleOutlined),
-    content: '当你点击确认按钮，将会关闭终端',
-    okText: '确定',
-    cancelText: '取消',
-    onOk() {
-      leaveShell()
-    },
-    onCancel() {},
-  })
-}
-
-// 确定是否结束实验
-function comfirmToShutdownMission(): void {
-  Modal.confirm({
-    title: '确定要结束实验吗?',
-    icon: createVNode(WarningOutlined),
-    content:
-      '当你点击确认按钮，将会结束实验并退回学习空间，一切数据将会被销毁！',
-    okText: '确定',
-    okType: 'danger',
-    cancelText: '取消',
-    onOk() {
-      return new Promise((resolve, reject) => {
-        setTimeout(Math.random() > 0.5 ? resolve : reject, 1000)
-      })
-    },
-    onCancel() {},
-  })
 }
 
 // 离开终端
