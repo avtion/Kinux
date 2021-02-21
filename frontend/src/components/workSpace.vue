@@ -88,7 +88,7 @@
                   <a-button
                     :type="GetMissionButtonType(item.Status)"
                     :loading="GetMissionButtonLoadingStatus(item.Status)"
-                    @click="MissionHandler(item)"
+                    @click="MissionHandler(index, item)"
                   >
                     {{ GetMissionButtonDesc(item.Status) }}
                   </a-button>
@@ -122,7 +122,7 @@
 
 <script lang="ts" type="module">
 // vue
-import { reactive, ref, h } from 'vue'
+import { reactive, ref, inject, onMounted } from 'vue'
 
 // apis
 import { mission, missionList, missionStatus } from '@api/mission'
@@ -135,8 +135,17 @@ import Avatars from '@dicebear/avatars'
 import AvatarsSprites from '@dicebear/avatars-male-sprites'
 import sprites from '@dicebear/avatars-initials-sprites'
 
+import {
+  WebSocketConn,
+  WebsocketMessage,
+  WebsocketOperation,
+} from '@/utils/websocketConn'
+
 export default {
   setup(props, ctx) {
+    // 从上下文中获取对象
+    const ws: WebSocketConn = inject<WebSocketConn>('websocket')
+
     const username = ref<string>('用户名')
 
     // 顶部breadcrumb路径
@@ -175,14 +184,61 @@ export default {
 
     // 加载任务数据
     const dataList = ref(<missionList[]>[])
-    new mission()
-      .list()
-      .then((res) => {
-        dataList.value = res
-      })
-      .finally(() => {
-        isProjectDataLoading.value = false
-      })
+    onMounted(() => {
+      new mission()
+        .list()
+        .then((res) => {
+          dataList.value = res
+        })
+        .finally(() => {
+          isProjectDataLoading.value = false
+        })
+    })
+
+    // 任务处理函数
+    const MissionHandler = (index: number, m: missionList) => {
+      const status = m.Status
+      switch (status) {
+        case missionStatus.Stop:
+          startMission(index, m.ID + '')
+          return
+        case missionStatus.Pending:
+          return
+        case missionStatus.Working:
+          routers.push({ name: 'shell', params: { id: m.ID } })
+          return
+        case missionStatus.Done:
+          return
+        default:
+          return
+      }
+    }
+
+    // 启动任务
+    const startMission = (missionListIndex: number, missionID: string) => {
+      dataList.value[missionListIndex].Status = missionHandingStauts
+      const msg: WebsocketMessage = {
+        op: WebsocketOperation.MissionApply,
+        data: {
+          id: missionID,
+        },
+      }
+      const fn = (ws: WebSocketConn) => {
+        ws.sendWithCallback(
+          JSON.stringify(msg),
+          WebsocketOperation.ContainersDone,
+          (_ws: WebSocketConn): void => {
+            dataList.value[missionListIndex].Status = missionStatus.Working
+          },
+          true
+        )
+      }
+      if (ws.readyState !== WebSocket.OPEN) {
+        ws.waitQueue.push(fn)
+      } else {
+        fn(ws)
+      }
+    }
 
     // 头像
     const avatar = new Avatars(AvatarsSprites, {
@@ -288,26 +344,6 @@ function GetMissionButtonDesc(t: number): string {
       return '任务正在处理'
     default:
       return ''
-  }
-}
-
-// 任务处理函数
-function MissionHandler(m: missionList): void {
-  console.log(m)
-  const status = m.Status
-  m.Status = missionHandingStauts
-  switch (status) {
-    case missionStatus.Stop:
-      return
-    case missionStatus.Pending:
-      return
-    case missionStatus.Working:
-      routers.push({ name: 'shell', params: { id: m.ID } })
-      return
-    case missionStatus.Done:
-      return
-    default:
-      return
   }
 }
 </script>
