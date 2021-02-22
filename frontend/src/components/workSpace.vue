@@ -156,7 +156,8 @@ export default {
     // 从上下文中获取对象
     const ws: WebSocketConn = inject<WebSocketConn>('websocket')
 
-    const username = ref<string>('用户名')
+    // 用户资料
+    const profile = <Profile>store.getters.GetProfile
 
     // 顶部breadcrumb路径
     const breadcrumbPath = reactive([
@@ -237,7 +238,7 @@ export default {
     // 头像
     const avatar = new Avatars(AvatarsSprites, {
       dataUri: true,
-    }).create(username.value)
+    }).create(<string>store.getters.GetAvatarSeed)
 
     // 序号
     const numberCreator = new Avatars(sprites, {
@@ -270,11 +271,7 @@ export default {
       instructions.value = `🤪无实验文档数据，请联系刷新页面或实验教师`
     }
 
-    // 用户资料
-    const profile = <Profile>store.getters.GetProfile
-
     return {
-      username,
       routes: breadcrumbPath,
       isProjectDataLoading,
       headerTypeOption,
