@@ -66,8 +66,6 @@
           title="实验项目"
           :bordered="false"
           :loading="isProjectDataLoading"
-          :tab-list="tabList"
-          @tabChange="(key) => onTabChange(key)"
         >
           <a-list item-layout="horizontal" :data-source="dataList">
             <template #renderItem="{ item, index }">
@@ -89,6 +87,7 @@
                     :type="GetMissionButtonType(item.Status)"
                     :loading="GetMissionButtonLoadingStatus(item.Status)"
                     @click="MissionHandler(index, item)"
+                    :disabled="item.Status == missionStatus.Done"
                   >
                     {{ GetMissionButtonDesc(item.Status) }}
                   </a-button>
@@ -156,28 +155,12 @@ export default {
       },
       {
         path: '/dashboard',
-        breadcrumbName: '终端',
-      },
-      {
-        path: '/workspace',
         breadcrumbName: '学习空间',
       },
     ])
 
     // 头部类型选卡: 1-实验 2-考试
     const headerTypeOption = ref(1)
-
-    // 项目内的分类选卡
-    const tabList = reactive([
-      {
-        key: '1',
-        tab: '未完成',
-      },
-      {
-        key: '2',
-        tab: '已完成',
-      },
-    ])
 
     // 数据加载
     const isProjectDataLoading = ref(true)
@@ -216,7 +199,7 @@ export default {
 
     // 启动任务
     const startMission = (missionListIndex: number, missionID: string) => {
-      dataList.value[missionListIndex].Status = missionHandingStauts
+      dataList.value[missionListIndex].Status = missionStatus.Pending
       const msg: WebsocketMessage = {
         op: WebsocketOperation.MissionApply,
         data: {
@@ -280,7 +263,6 @@ export default {
       username,
       routes: breadcrumbPath,
       isProjectDataLoading,
-      tabList,
       headerTypeOption,
       dataList,
       GetMissionButtonType,
@@ -294,6 +276,7 @@ export default {
       instructions,
       openInstructions,
       instructionsTipAfterClose,
+      missionStatus,
     }
   },
   methods: {
@@ -302,9 +285,6 @@ export default {
     },
   },
 }
-
-// 任务处理中的Status
-const missionHandingStauts: number = -1
 
 // 获取任务按钮的类型
 function GetMissionButtonType(t: number): string {
@@ -317,8 +297,6 @@ function GetMissionButtonType(t: number): string {
       return 'primary'
     case missionStatus.Done:
       return 'default'
-    case missionHandingStauts:
-      return 'danger'
     default:
       return 'dashed'
   }
@@ -326,7 +304,7 @@ function GetMissionButtonType(t: number): string {
 
 // 获取任务按钮的状态
 function GetMissionButtonLoadingStatus(t: number): boolean {
-  return t == missionStatus.Pending || t == missionHandingStauts
+  return t == missionStatus.Pending
 }
 
 // 获取任务按钮的描述
@@ -337,11 +315,9 @@ function GetMissionButtonDesc(t: number): string {
     case missionStatus.Pending:
       return '正在加载'
     case missionStatus.Working:
-      return '进入'
+      return '进入终端'
     case missionStatus.Done:
-      return '已结束'
-    case missionHandingStauts:
-      return '任务正在处理'
+      return '已完成'
     default:
       return ''
   }
