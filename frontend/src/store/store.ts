@@ -1,13 +1,14 @@
 import { createStore, Store, useStore } from 'vuex'
 import { InjectionKey } from 'vue'
 import createPersistedState from 'vuex-persistedstate'
-import { JWT } from './interfaces'
+import { JWT, Profile } from './interfaces'
 import { IsTimeOutLine } from '@/utils/time'
 
 declare module '@vue/runtime-core' {
   // 定义类型
   interface State {
     JWT: JWT
+    Profile: Profile
   }
 
   interface ComponentCustomProperties {
@@ -18,26 +19,28 @@ declare module '@vue/runtime-core' {
 // 定义类型
 export interface State {
   JWT: JWT
+  Profile: Profile
 }
 
 // Vuex Store
 export const store = createStore({
   plugins: [createPersistedState({ key: 'kinux' })],
   state: {
-    JWT: {
-      Token: '',
-      TTL: 0,
-    },
+    JWT: <JWT>{},
+    Profile: <Profile>{},
   },
   mutations: {
     UpdateJWT(state, payload: JWT) {
       state.JWT = payload
     },
     ClearJWT(state) {
-      state.JWT = <JWT>{
-        Token: '',
-        TTL: 0,
-      }
+      state.JWT = <JWT>{}
+    },
+    UpdateProfile(state, payload: Profile) {
+      state.Profile = payload
+    },
+    ClearProfile(state) {
+      state.Profile = <Profile>{}
     },
   },
   getters: {
@@ -48,6 +51,11 @@ export const store = createStore({
         return ''
       }
       return state.JWT.Token
+    },
+
+    // 获取用户资料
+    GetProfile(state) {
+      return state.Profile
     },
   },
   actions: {},

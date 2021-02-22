@@ -1,6 +1,6 @@
 import { defaultClient, paths, BaseResponse } from './request'
 import { store } from '../store/store'
-import { JWT } from '../store/interfaces'
+import { JWT, Profile } from '../store/interfaces'
 
 export { Account }
 
@@ -18,7 +18,7 @@ class Account {
   }
 
   // 登陆
-  login(): Promise<any> {
+  login(): Promise<loginRespData> {
     return new Promise((resolve, reject) => {
       defaultClient
         .post(paths.ac.login, {
@@ -26,13 +26,20 @@ class Account {
           password: this.password,
         })
         .then((res) => {
-          const resp = new BaseResponse(res.data)
+          const resp: loginRespData = new BaseResponse(res.data).Data
 
           // Json Web Token
-          const token: Token = new Token(resp.Data['token'], resp.Data['ttl'])
-          token.UpdateToken()
+          new Token(resp.token, resp.ttl).UpdateToken()
 
-          resolve(res)
+          // 更新用户的资料
+          store.commit('UpdateProfile', <Profile>{
+            username: resp.username,
+            realName: resp.realName,
+            role: resp.role,
+            department: resp.department,
+          })
+
+          resolve(resp)
         })
         .catch((err) => {
           reject(err)
@@ -67,4 +74,15 @@ export class Token {
   ClearToken() {
     store.commit('ClearJWT')
   }
+}
+
+// 登陆响应结果
+interface loginRespData {
+  msg: string
+  token: string
+  ttl: string
+  username: string
+  realName: string
+  role: string
+  department: string
 }
