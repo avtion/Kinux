@@ -6,27 +6,27 @@
       <div class="logo">{{ logo }}</div>
       <!-- 导航栏 -->
       <a-menu theme="dark" mode="inline" v-model:selectedKeys="selectedKeys">
-        <a-menu-item key="1">
+        <a-menu-item key="workspace">
           <FundOutlined />
           <span>学习空间</span>
         </a-menu-item>
-
-        <a-menu-item key="2">
+        <a-menu-item key="profile">
           <UserOutlined />
           <span>个人资料</span>
         </a-menu-item>
-        <a-menu-item key="9">
+        <a-menu-item key="session">
           <AppstoreOutlined />
           <span>实验会话</span>
         </a-menu-item>
-        <a-sub-menu key="sub1">
+        <a-sub-menu>
           <template #title>
             <DatabaseOutlined />
             <span>后台管理</span>
           </template>
-          <a-menu-item key="5">班级管理</a-menu-item>
-          <a-menu-item key="6">用户管理</a-menu-item>
-          <a-menu-item key="7">实验管理</a-menu-item>
+          <a-menu-item key="departmentManager">班级管理</a-menu-item>
+          <a-menu-item key="AccountManager">用户管理</a-menu-item>
+          <a-menu-item key="missionManager">实验管理</a-menu-item>
+          <a-menu-item key="examManager">考试管理</a-menu-item>
         </a-sub-menu>
       </a-menu>
     </a-layout-sider>
@@ -108,13 +108,13 @@ export default defineComponent({
 
     // vue相关变量
     const store = GetStore()
-    const router = useRouter()
+    const routers = useRouter()
 
     // 获取JWT密钥
     const token = store.getters.GetJWTToken
     if ((token as string) && token == '') {
       console.log('JWT密钥失效')
-      router.push('/')
+      routers.push('/')
     }
 
     // 加载页面之后建立Websocket链接
@@ -135,12 +135,12 @@ export default defineComponent({
     const logout = () => {
       store.commit('ClearJWT')
       store.commit('ClearProfile')
-      router.push('/')
+      routers.push('/')
       notification.success({ message: '注销成功' })
     }
 
     return {
-      selectedKeys: ['1'],
+      selectedKeys: [routers.currentRoute.value.name],
       collapsed: collapsed,
       logo: logo,
       logout,
