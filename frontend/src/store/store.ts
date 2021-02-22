@@ -42,6 +42,9 @@ export const store = createStore({
     ClearProfile(state) {
       state.Profile = <Profile>{}
     },
+    updateAvatarSeed(state, payload: string) {
+      state.Profile.avatarSeed = payload
+    },
   },
   getters: {
     // 获取JWT密钥
@@ -56,6 +59,15 @@ export const store = createStore({
     // 获取用户资料
     GetProfile(state) {
       return state.Profile
+    },
+
+    // 头像种子
+    GetAvatarSeed(state) {
+      return state.Profile.avatarSeed == ''
+        ? state.Profile.realName == ''
+          ? state.Profile.username
+          : state.Profile.realName
+        : state.Profile.avatarSeed
     },
   },
   actions: {},

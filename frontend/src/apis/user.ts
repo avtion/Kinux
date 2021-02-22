@@ -37,9 +37,46 @@ class Account {
             realName: resp.realName,
             role: resp.role,
             department: resp.department,
+            avatarSeed: resp.avatarSeed,
           })
 
           resolve(resp)
+        })
+        .catch((err) => {
+          reject(err)
+        })
+    })
+  }
+
+  // 更新头像种子
+  updateAvatarSeed(): Promise<string> {
+    return new Promise((resolve, reject) => {
+      defaultClient
+        .put(paths.ac.updateAvatarSeed)
+        .then((res) => {
+          const resp: string = new BaseResponse(res.data).Data
+
+          // 更新用户的头像种子
+          store.commit('updateAvatarSeed', resp)
+
+          resolve(resp)
+        })
+        .catch((err) => {
+          reject(err)
+        })
+    })
+  }
+
+  // 修改密码
+  updatePassword(oldValue: string, newValue: string): Promise<void> {
+    return new Promise((resolve, reject) => {
+      defaultClient
+        .post(paths.ac.UpdatePassword, {
+          old: oldValue,
+          new: newValue,
+        })
+        .then((res) => {
+          resolve()
         })
         .catch((err) => {
           reject(err)
@@ -85,4 +122,5 @@ interface loginRespData {
   realName: string
   role: string
   department: string
+  avatarSeed: string
 }

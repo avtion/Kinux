@@ -77,11 +77,7 @@ defaultClient.interceptors.response.use(
 
       if (resp.IsJWTAuthFailed()) {
         // JWT密钥失效则清空密钥缓存并跳转至登陆界面
-        console.log(
-          'JWT鉴权失效',
-          resp.Code,
-          resp.Data,
-        )
+        console.log('JWT鉴权失效', resp.Code, resp.Data)
         store.commit('ClearJWT')
         routers.push('/')
         return
@@ -120,6 +116,8 @@ defaultClient.interceptors.request.use(
 export const paths: routePath = {
   ac: {
     login: 'v1/account/login',
+    updateAvatarSeed: 'v1/account/avatar',
+    UpdatePassword: 'v1/account/pw',
   },
   ms: {
     list: 'v1/mission/',
@@ -136,6 +134,8 @@ interface routePath {
 
 interface account {
   login: string
+  updateAvatarSeed: string
+  UpdatePassword: string
 }
 
 interface mission {

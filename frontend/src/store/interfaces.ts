@@ -9,4 +9,5 @@ export interface Profile {
   realName: string
   role: string
   department: string
+  avatarSeed: string
 }
