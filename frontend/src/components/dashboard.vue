@@ -5,7 +5,12 @@
       <!-- Logo -->
       <div class="logo">{{ logo }}</div>
       <!-- 导航栏 -->
-      <a-menu theme="dark" mode="inline" v-model:selectedKeys="selectedKeys">
+      <a-menu
+        theme="dark"
+        mode="inline"
+        v-model:selectedKeys="selectedKeys"
+        @click="menuClickFn"
+      >
         <a-menu-item key="workspace">
           <FundOutlined />
           <span>学习空间</span>
@@ -139,11 +144,20 @@ export default defineComponent({
       notification.success({ message: '注销成功' })
     }
 
+    // 导航栏触发函数
+    const menuClickFn = ({ item, key, keyPath }) => {
+      if (routers.currentRoute.value.name == key) {
+        return
+      }
+      routers.push({ name: key })
+    }
+
     return {
       selectedKeys: [routers.currentRoute.value.name],
       collapsed: collapsed,
       logo: logo,
       logout,
+      menuClickFn,
     }
   },
 })
