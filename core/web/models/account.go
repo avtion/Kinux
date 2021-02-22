@@ -286,3 +286,22 @@ func (a *Account) UpdateAvatarSeed(ctx context.Context, seed string) (err error)
 		},
 	}).Update("avatar_seed", seed).Error
 }
+
+// 更新用户密码
+func (a *Account) UpdatePassword(ctx context.Context, newPw string) (err error) {
+	if a.ID == 0 {
+		return errors.New("用户ID为空")
+	}
+	// 密码校验
+	pw := &Password{Raw: newPw}
+	if err = pw.Check(); err != nil {
+		return
+	}
+	// 密码加密
+	newPwEncode, err := pw.Encode()
+	if err != nil {
+		return
+	}
+	return GetGlobalDB().WithContext(ctx).Model(new(Account)).Where(
+		"id = ?", a.ID).Update("Password", newPwEncode).Error
+}

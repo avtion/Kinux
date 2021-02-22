@@ -82,3 +82,33 @@ func UpdateAccountAvatarSeed(c *gin.Context) {
 	}
 	c.JSON(http.StatusOK, msg.BuildSuccess(seed))
 }
+
+// 更新用户密码
+func UpdatePassword(c *gin.Context) {
+	passwordSetter := &struct {
+		Old string `json:"old"`
+		New string `json:"new"`
+	}{}
+	if err := c.ShouldBindJSON(passwordSetter); err != nil {
+		c.AbortWithStatusJSON(http.StatusOK, msg.BuildFailed(err))
+		return
+	}
+	ac, err := services.GetAccountFromCtx(c)
+	if err != nil {
+		c.AbortWithStatusJSON(http.StatusOK, msg.BuildFailed(err))
+		return
+	}
+
+	// 校验旧密码
+	if err = ac.Verify(c, passwordSetter.Old); err != nil {
+		c.AbortWithStatusJSON(http.StatusOK, msg.BuildFailed("旧密码错误"))
+		return
+	}
+	if err = ac.UpdatePassword(c, passwordSetter.New); err != nil {
+		c.AbortWithStatusJSON(http.StatusOK, msg.BuildFailed(err))
+		return
+	}
+
+	// 发送鉴权失败响应要求客户端重新登录
+	c.JSON(http.StatusOK, msg.Build(msg.CodeJWTAuthFailed, "密码修改成功，请重新登录"))
+}

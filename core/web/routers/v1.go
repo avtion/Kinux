@@ -40,6 +40,7 @@ func v1Routers() initFunc {
 		ac := v1.Group("/account")
 		{
 			ac.PUT("/avatar", controllers.UpdateAccountAvatarSeed) // 更新用户头像种子
+			ac.POST("/pw", controllers.UpdatePassword)             // 更新用户密码
 		}
 	}
 }
