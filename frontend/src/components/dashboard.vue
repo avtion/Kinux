@@ -49,7 +49,7 @@
           </a-col>
           <a-col flex="auto"> </a-col>
           <a-col flex="100px">
-            <a-button>
+            <a-button @click="logout">
               <template #icon><UnlockOutlined /></template>
               注销
             </a-button>
@@ -66,6 +66,9 @@
 // vue
 import { defineComponent, provide, ref, watch } from 'vue'
 
+// antd
+import { notification } from 'ant-design-vue'
+
 // store
 import { GetStore } from '@/store/store'
 
@@ -80,7 +83,7 @@ import {
   FundOutlined,
   UnlockOutlined,
   DatabaseOutlined,
-  AppstoreOutlined
+  AppstoreOutlined,
 } from '@ant-design/icons-vue'
 
 // websocket
@@ -97,11 +100,11 @@ export default defineComponent({
     FundOutlined,
     UnlockOutlined,
     DatabaseOutlined,
-    AppstoreOutlined
+    AppstoreOutlined,
   },
   setup() {
     // logo
-    const logo = ref<string>("Kinux 实验平台")
+    const logo = ref<string>('Kinux 实验平台')
 
     // vue相关变量
     const store = GetStore()
@@ -109,9 +112,9 @@ export default defineComponent({
 
     // 获取JWT密钥
     const token = store.getters.GetJWTToken
-    if ((token as string) && token == "") {
-      console.log("JWT密钥失效");
-      router.push("/");
+    if ((token as string) && token == '') {
+      console.log('JWT密钥失效')
+      router.push('/')
     }
 
     // 加载页面之后建立Websocket链接
@@ -122,16 +125,25 @@ export default defineComponent({
     const collapsed = ref(false)
     watch(collapsed, (newValue, oldValue) => {
       if (newValue) {
-        logo.value = "K"
+        logo.value = 'K'
       } else {
-        logo.value = "Kinux 实验平台"
+        logo.value = 'Kinux 实验平台'
       }
     })
+
+    // 登出
+    const logout = () => {
+      store.commit('ClearJWT')
+      store.commit('ClearProfile')
+      router.push('/')
+      notification.success({ message: '注销成功' })
+    }
 
     return {
       selectedKeys: ['1'],
       collapsed: collapsed,
-      logo: logo
+      logo: logo,
+      logout,
     }
   },
 })
