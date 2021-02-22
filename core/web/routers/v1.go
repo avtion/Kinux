@@ -35,5 +35,11 @@ func v1Routers() initFunc {
 			ms.GET("/guide/:id/", controllers.GetMissionGuide)                    // 获取任务的实验文档
 			ms.GET("/cnames/:id/", controllers.ListMissionAllowedContainersNames) // 获取任务允许的容器名列表
 		}
+
+		// 用户账号相关
+		ac := v1.Group("/account")
+		{
+			ac.PUT("/avatar", controllers.UpdateAccountAvatarSeed) // 更新用户头像种子
+		}
 	}
 }

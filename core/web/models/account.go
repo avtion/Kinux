@@ -37,6 +37,7 @@ type Profile struct {
 	gorm.Model
 	RealName   string // 真实姓名
 	Department uint   // 部门
+	AvatarSeed string // 头像种子
 }
 
 // 用户和个人资料
@@ -168,6 +169,9 @@ func (a *Account) newAccount(ctx context.Context, p Profile) (err error) {
 	// 使用事务创建用户
 	if err = GetGlobalDB().WithContext(ctx).Transaction(func(tx *gorm.DB) error {
 		// 先创建个人资料
+		if p.AvatarSeed == "" {
+			p.AvatarSeed = tools.GetRandomString(6)
+		}
 		if _err := tx.Create(&p).Error; _err != nil {
 			return _err
 		}
@@ -266,4 +270,19 @@ func GetAccountByUsername(ctx context.Context, username string) (ac *Account, er
 	ac = new(Account)
 	err = GetGlobalDB().WithContext(ctx).Where(&Account{Username: username}).First(ac).Error
 	return
+}
+
+// 更新用户的头像种子
+func (a *Account) UpdateAvatarSeed(ctx context.Context, seed string) (err error) {
+	if seed == "" {
+		seed = tools.GetRandomString(6)
+	}
+	if a.ID == 0 {
+		return errors.New("用户ID为空")
+	}
+	return GetGlobalDB().WithContext(ctx).Model(new(Profile)).Where(&Profile{
+		Model: gorm.Model{
+			ID: a.ID,
+		},
+	}).Update("avatar_seed", seed).Error
 }

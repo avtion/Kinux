@@ -5,6 +5,7 @@ import (
 	"Kinux/core/web/models"
 	"Kinux/core/web/msg"
 	"Kinux/core/web/services"
+	"Kinux/tools"
 	"github.com/gin-gonic/gin"
 	"net/http"
 	"strconv"
@@ -42,9 +43,10 @@ func LoginAccount(c *gin.Context) {
 	}
 
 	// 用户真实姓名
-	var realName string
+	var realName, avatarSeed string
 	if profile, _err := ac.GetProfile(c); _err == nil {
 		realName = profile.RealName
+		avatarSeed = profile.AvatarSeed
 	}
 
 	// 用户部门
@@ -61,6 +63,22 @@ func LoginAccount(c *gin.Context) {
 		"realName":   realName,
 		"role":       models.RoleTranslator(ac.Role),
 		"department": department,
+		"avatarSeed": avatarSeed,
 	}))
 	return
+}
+
+// 更新用户的头像种子
+func UpdateAccountAvatarSeed(c *gin.Context) {
+	ac, err := services.GetAccountFromCtx(c)
+	if err != nil {
+		c.AbortWithStatusJSON(http.StatusOK, msg.BuildFailed(err))
+		return
+	}
+	seed := tools.GetRandomString(6)
+	if err = ac.UpdateAvatarSeed(c, seed); err != nil {
+		c.AbortWithStatusJSON(http.StatusOK, msg.BuildFailed(err))
+		return
+	}
+	c.JSON(http.StatusOK, msg.BuildSuccess(seed))
 }
