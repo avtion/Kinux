@@ -26,10 +26,12 @@
             </div>
             <div class="content">
               <div class="content-title">
-                {{ username }} | 早上好，吃饭了吗
+                {{
+                  profile.realName == '' ? profile.username : profile.realName
+                }}
                 <span class="welcome-text">欢迎</span>
               </div>
-              <div>学生 ｜ 计算机科学系 - 17网络工程</div>
+              <div>{{ profile.role }} ｜ {{ profile.department }}</div>
             </div>
           </div>
         </a-col>
@@ -126,22 +128,31 @@ import { reactive, ref, inject, onMounted } from 'vue'
 // apis
 import { mission, missionList, missionStatus } from '@api/mission'
 
-// 路由
-import routers from '@/routers/routers'
-
 // 图标生成
 import Avatars from '@dicebear/avatars'
 import AvatarsSprites from '@dicebear/avatars-male-sprites'
 import sprites from '@dicebear/avatars-initials-sprites'
 
+// websocket
 import {
   WebSocketConn,
   WebsocketMessage,
   WebsocketOperation,
 } from '@/utils/websocketConn'
 
+// store
+import { GetStore } from '@/store/store'
+
+// vue-router
+import { useRouter } from 'vue-router'
+import { Profile } from '@/store/interfaces'
+
 export default {
   setup(props, ctx) {
+    // vue相关变量
+    const store = GetStore()
+    const routers = useRouter()
+
     // 从上下文中获取对象
     const ws: WebSocketConn = inject<WebSocketConn>('websocket')
 
@@ -259,6 +270,9 @@ export default {
       instructions.value = `🤪无实验文档数据，请联系刷新页面或实验教师`
     }
 
+    // 用户资料
+    const profile = <Profile>store.getters.GetProfile
+
     return {
       username,
       routes: breadcrumbPath,
@@ -277,6 +291,7 @@ export default {
       openInstructions,
       instructionsTipAfterClose,
       missionStatus,
+      profile,
     }
   },
   methods: {
