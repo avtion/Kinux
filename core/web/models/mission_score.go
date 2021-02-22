@@ -38,11 +38,14 @@ func NewMissionScoreCallback(ac, mission, checkpoint uint, container string) fun
 }
 
 // 获取用户所有已经完成的检查点
-func FindAllAccountFinishMissionScore(ctx context.Context, account, mission uint, container string) (cpIDs []uint, err error) {
-	err = GetGlobalDB().WithContext(ctx).Model(new(MissionScore)).Where(&MissionScore{
-		Account:   account,
-		Mission:   mission,
-		Container: container,
-	}).Pluck("checkpoint", &cpIDs).Error
+func FindAllAccountFinishMissionScore(ctx context.Context, account, mission uint, containers ...string) (cpIDs []uint, err error) {
+	db := GetGlobalDB().WithContext(ctx).Model(new(MissionScore)).Where(&MissionScore{
+		Account: account,
+		Mission: mission,
+	})
+	if len(containers) > 0 {
+		db = db.Where("container IN ?", containers)
+	}
+	err = db.Pluck("checkpoint", &cpIDs).Error
 	return
 }

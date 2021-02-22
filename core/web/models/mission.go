@@ -233,9 +233,12 @@ type MissionCheckpoints struct {
 }
 
 // 获取任务相关的全部检查点
-func FindAllMissionCheckpoints(ctx context.Context, mission uint, container string) (mcs []*MissionCheckpoints, err error) {
-	db := GetGlobalDB().WithContext(ctx)
-	err = db.Where(&MissionCheckpoints{Mission: mission, TargetContainer: container}).Find(&mcs).Error
+func FindAllMissionCheckpoints(ctx context.Context, mission uint, containers ...string) (mcs []*MissionCheckpoints, err error) {
+	db := GetGlobalDB().WithContext(ctx).Where(&MissionCheckpoints{Mission: mission})
+	if len(containers) > 0 {
+		db = db.Where("target_container IN ?", containers)
+	}
+	err = db.Find(&mcs).Error
 	return
 }
 
@@ -335,18 +338,18 @@ func EditMissionCheckpoints(ctx context.Context, missionID uint, checkpoints ...
 }
 
 // 获取用户需要完成的检查点
-func FindAllTodoCheckpoints(ctx context.Context, account, mission uint, container string) (cps []*Checkpoint, err error) {
-	if account == 0 || mission == 0 || container == "" {
+func FindAllTodoCheckpoints(ctx context.Context, account, mission uint, containers ...string) (cps []*Checkpoint, err error) {
+	if account == 0 || mission == 0 {
 		return nil, errors.New("缺乏参数，无法获取用户需要完成的检查点")
 	}
 	// 首先获取全部的检查点
-	mcs, err := FindAllMissionCheckpoints(ctx, mission, container)
+	mcs, err := FindAllMissionCheckpoints(ctx, mission, containers...)
 	if err != nil {
 		return
 	}
 
 	// 查找已经完成的检查点
-	finishedCheckpointsIDs, err := FindAllAccountFinishMissionScore(ctx, account, mission, container)
+	finishedCheckpointsIDs, err := FindAllAccountFinishMissionScore(ctx, account, mission, containers...)
 	if err != nil {
 		return
 	}

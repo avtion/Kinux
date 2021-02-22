@@ -81,7 +81,6 @@ func ListMissions(ctx context.Context, u *models.Account, name string, ns []stri
 		return
 	}
 
-	// TODO 获取已完成的任务
 	dpStatusMapper, err := getDeploymentStatusForMission(ctx, "", NewLabelMarker().WithAccount(u.ID))
 	if err != nil {
 		return
@@ -92,6 +91,11 @@ func ListMissions(ctx context.Context, u *models.Account, name string, ns []stri
 		status, isExist := dpStatusMapper[mission.ID]
 		if !isExist {
 			status = MissionStatusStop
+		}
+
+		// 查询任务是否已经完成
+		if cps, _ := models.FindAllTodoCheckpoints(ctx, u.ID, mission.ID); len(cps) == 0 {
+			status = MissionStatusDone
 		}
 		res = append(res, &Mission{
 			ID:     mission.ID,
