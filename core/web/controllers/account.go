@@ -2,6 +2,7 @@ package controllers
 
 import (
 	"Kinux/core/web/middlewares"
+	"Kinux/core/web/models"
 	"Kinux/core/web/msg"
 	"Kinux/core/web/services"
 	"github.com/gin-gonic/gin"
@@ -40,10 +41,26 @@ func LoginAccount(c *gin.Context) {
 		return
 	}
 
+	// 用户真实姓名
+	var realName string
+	if profile, _err := ac.GetProfile(c); _err == nil {
+		realName = profile.RealName
+	}
+
+	// 用户部门
+	var department string
+	if dp, _err := ac.GetDepartment(c); _err == nil {
+		department = dp.Name
+	}
+
 	c.JSON(http.StatusOK, msg.BuildSuccess(map[string]string{
-		"msg":   "🛫️登陆成功",
-		"token": token,
-		"ttl":   strconv.FormatInt(ttl.Unix(), 10),
+		"msg":        "🛫️登陆成功",
+		"token":      token,
+		"ttl":        strconv.FormatInt(ttl.Unix(), 10),
+		"username":   ac.Username,
+		"realName":   realName,
+		"role":       models.RoleTranslator(ac.Role),
+		"department": department,
 	}))
 	return
 }
