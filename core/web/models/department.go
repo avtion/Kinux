@@ -86,22 +86,28 @@ func ListDepartments(ctx context.Context, name string, page *PageBuilder, _ ...D
 func DepartmentNsOpt(ns ...string) DepartmentOpt {
 	return func(d *Department) error {
 		if len(ns) == 0 {
+			d.Namespace = defaultDepartmentNamespace
 			return nil
 		}
+
+		var mapper = make(map[string]struct{}, len(ns))
 		for k, v := range ns {
+			if _, isExist := mapper[v]; isExist {
+				return errors.New("命名空间重复")
+			}
 			if strings.EqualFold(v, defaultDepartmentNamespace) {
 				ns = append(ns[:k], ns[k+1:]...)
 			}
 			if strings.ContainsRune(v, ';') {
 				return errors.New("命名空间包括分号")
 			}
+			mapper[v] = struct{}{}
 		}
 
 		// 需要进行一次排序
-		_ns := append([]string{defaultDepartmentNamespace}, ns...)
-		sort.Strings(_ns)
+		sort.Strings(append(ns, defaultDepartmentNamespace))
 
-		d.Namespace = strings.Join(_ns, ";")
+		d.Namespace = strings.Join(ns, ";")
 		return nil
 	}
 }
@@ -127,4 +133,39 @@ func (d *Department) IsNamespaceAllowed(namespaces ...string) error {
 		return nil
 	}
 	return errors.New("越界访问命名空间")
+}
+
+// 查询班级的总量
+func CountDepartments(ctx context.Context, name string) (res int64, err error) {
+	db := GetGlobalDB().WithContext(ctx).Model(new(Department))
+	// 模糊搜索
+	if name != "" {
+		db = db.Where("name LIKE ?", "%"+name+"%")
+	}
+	err = db.Count(&res).Error
+	return
+}
+
+// 更新班级
+func UpdateDepartment(ctx context.Context, id int, opts ...DepartmentOpt) (err error) {
+	if id == 0 {
+		return errors.New("id为空")
+	}
+	var d = new(Department)
+	for _, fn := range opts {
+		if err = fn(d); err != nil {
+			return
+		}
+	}
+	return GetGlobalDB().WithContext(ctx).Model(&Department{
+		Model: gorm.Model{
+			ID: uint(id),
+		},
+	}).UpdateColumns(d).Error
+}
+
+// 删除班级
+func DeleteDepartment(ctx context.Context, id int) (err error) {
+	// TODO 级联删除
+	return GetGlobalDB().Unscoped().WithContext(ctx).Delete(new(Department), id).Error
 }
