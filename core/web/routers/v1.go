@@ -42,5 +42,15 @@ func v1Routers() initFunc {
 			ac.PUT("/avatar", controllers.UpdateAccountAvatarSeed) // 更新用户头像种子
 			ac.POST("/pw", controllers.UpdatePassword)             // 更新用户密码
 		}
+
+		// 部门（班级）相关
+		department := v1.Group("/department")
+		{
+			department.GET("/", controllers.ListDepartments)         // list
+			department.POST("/", controllers.AddDepartment)          // add
+			department.PUT("/", controllers.EditDepartment)          // edit
+			department.DELETE("/:id/", controllers.DeleteDepartment) // delete
+			department.GET("/count/", controllers.CountDepartments)  // count
+		}
 	}
 }
