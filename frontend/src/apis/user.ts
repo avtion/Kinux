@@ -1,6 +1,7 @@
 import { defaultClient, paths, BaseResponse } from './request'
 import { store } from '../store/store'
 import { JWT, Profile } from '../store/interfaces'
+import { AxiosResponse } from 'axios'
 
 export { Account }
 
@@ -25,8 +26,8 @@ class Account {
           username: this.username,
           password: this.password,
         })
-        .then((res) => {
-          const resp: loginRespData = new BaseResponse(res.data).Data
+        .then((res: AxiosResponse<BaseResponse>) => {
+          const resp: loginRespData = res.data.Data
 
           // Json Web Token
           new Token(resp.token, resp.ttl).UpdateToken()
@@ -53,8 +54,8 @@ class Account {
     return new Promise((resolve, reject) => {
       defaultClient
         .put(paths.ac.updateAvatarSeed)
-        .then((res) => {
-          const resp: string = new BaseResponse(res.data).Data
+        .then((res: AxiosResponse<BaseResponse>) => {
+          const resp: string = res.data.Data
 
           // 更新用户的头像种子
           store.commit('updateAvatarSeed', resp)
@@ -75,7 +76,7 @@ class Account {
           old: oldValue,
           new: newValue,
         })
-        .then((res) => {
+        .then((res: AxiosResponse<BaseResponse>) => {
           resolve()
         })
         .catch((err) => {
