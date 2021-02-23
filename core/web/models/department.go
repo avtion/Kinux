@@ -112,6 +112,18 @@ func DepartmentNsOpt(ns ...string) DepartmentOpt {
 	}
 }
 
+// 班级设置名称
+func DepartmentNameOpt(name string) DepartmentOpt {
+	return func(d *Department) error {
+		if name = strings.TrimSpace(name); strings.EqualFold(name, "") {
+			return errors.New("班级名不能为空")
+		}
+
+		d.Name = name
+		return nil
+	}
+}
+
 // 获取班级的命名空间
 func (d *Department) GetNS() []string {
 	return strings.Split(d.Namespace, ";")
