@@ -6,6 +6,7 @@ import dashboardComponents from '@/components/dashboard.vue' // 操作界面
 import workspaceComponents from '@/components/workSpace.vue' // 工作间统计
 import shellComponents from '@/components/shell.vue' // 终端
 import managerComponents from '@/components/manager.vue' // 管理界面
+import departmentManagerComponents from '@/components/departmentManager.vue' // 管理界面
 import profileComponents from '@/components/profile.vue' // 个人资料
 import sessionManagerComponents from '@/components/sessionManager.vue' // 实验会话
 
@@ -46,9 +47,8 @@ const routes = [
       {
         path: 'admin/dp',
         name: 'departmentManager',
-        component: managerComponents,
+        component: departmentManagerComponents,
         props: true,
-        meta: { managerType: 'dp' },
       },
       {
         path: 'admin/ac',
