@@ -11,13 +11,15 @@ export class mission {
         resolve: (value: missionList[]) => void,
         reject: (reason: string) => void
       ) => {
-        defaultClient.get(paths.ms.list).then((res: AxiosResponse) => {
-          const ml: missionList[] = new BaseResponse(res.data).Data
-          if (ml.length == 0) {
-            return reject('无可用数据')
-          }
-          return resolve(ml)
-        })
+        defaultClient
+          .get(paths.ms.list)
+          .then((res: AxiosResponse<BaseResponse>) => {
+            const ml: missionList[] = res.data.Data
+            if (ml.length == 0) {
+              return reject('无可用数据')
+            }
+            return resolve(ml)
+          })
         return
       }
     )
@@ -32,8 +34,8 @@ export class mission {
       ) => {
         defaultClient
           .get(paths.ms.listContainersNames + missionID + '/')
-          .then((res: AxiosResponse) => {
-            const ml: string[] = new BaseResponse(res.data).Data
+          .then((res: AxiosResponse<BaseResponse>) => {
+            const ml: string[] = res.data.Data
             if (ml.length == 0) {
               return reject('无可用数据')
             }
@@ -50,8 +52,8 @@ export class mission {
       (resolve: (value: string) => void, reject: (reason: string) => void) => {
         defaultClient
           .get(paths.ms.getGuide + missionID + '/')
-          .then((res: AxiosResponse) => {
-            const guide: string = new BaseResponse(res.data).Data
+          .then((res: AxiosResponse<BaseResponse>) => {
+            const guide: string = res.data.Data
             return resolve(guide)
           })
         return
@@ -65,12 +67,11 @@ export class mission {
       (resolve: (value: string) => void, reject: (reason: string) => void) => {
         defaultClient
           .delete(paths.ms.dpOperation + missionID + '/')
-          .then((res: AxiosResponse) => {
-            const resp: BaseResponse = new BaseResponse(res.data)
-            if (!resp.IsSuccess) {
-              return reject(resp.Data)
+          .then((res: AxiosResponse<BaseResponse>) => {
+            if (!res.data.IsSuccess()) {
+              return reject(res.data.Data)
             }
-            return resolve(resp.Data)
+            return resolve(res.data.Data)
           })
         return
       }
