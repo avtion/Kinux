@@ -14,8 +14,6 @@ export const DefaultAxiosConfig: AxiosRequestConfig = {
   timeoutErrorMessage: '无法与服务器建立链接',
 }
 
-interface headers {}
-
 // 默认客户端
 export const defaultClient = axios.create(DefaultAxiosConfig)
 
@@ -60,7 +58,7 @@ enum respCode {
 
 // 响应拦截器
 defaultClient.interceptors.response.use(
-  (response: AxiosResponse) => {
+  (response: AxiosResponse<BaseResponse>) => {
     // 判断结果是否存在
     if (response.data == undefined) {
       return
@@ -87,6 +85,8 @@ defaultClient.interceptors.response.use(
       console.log('axios拦截服务端错误信息:', resp.Data)
       return Promise.reject(resp)
     }
+
+    response.data = resp
 
     // 成功则返回正确响应
     return response
@@ -125,11 +125,19 @@ export const paths: routePath = {
     getGuide: 'v1/mission/guide/',
     dpOperation: 'v1/mission/op/',
   },
+  department: {
+    list: 'v1/department/',
+    count: 'v1/department/count/',
+    add: 'v1/department/',
+    edit: 'v1/department/',
+    delete: 'v1/department/',
+  },
 }
 
 interface routePath {
   ac: account
   ms: mission
+  department: department
 }
 
 interface account {
@@ -143,4 +151,12 @@ interface mission {
   listContainersNames: string
   getGuide: string
   dpOperation: string
+}
+
+interface department {
+  list: string
+  count: string
+  add: string
+  edit: string
+  delete: string
 }
