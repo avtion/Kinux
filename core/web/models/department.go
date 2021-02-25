@@ -64,7 +64,7 @@ func NewDepartment(ctx context.Context, name string, opts ...DepartmentOpt) (d *
 }
 
 // 批量获取班级
-func ListDepartments(ctx context.Context, name string, page *PageBuilder, _ ...DepartmentOpt) (
+func ListDepartments(ctx context.Context, name string, page *PageBuilder) (
 	ds []*Department, err error) {
 	db := GetGlobalDB().WithContext(ctx)
 
@@ -180,4 +180,16 @@ func UpdateDepartment(ctx context.Context, id int, opts ...DepartmentOpt) (err e
 func DeleteDepartment(ctx context.Context, id int) (err error) {
 	// TODO 级联删除
 	return GetGlobalDB().Unscoped().WithContext(ctx).Delete(new(Department), id).Error
+}
+
+// 快速返回选项数据结果
+type QuickListDepartmentRes struct {
+	ID   int    `json:"id"`
+	Name string `json:"name"`
+}
+
+// 用于快速返回班级相关的选项数据
+func QuickListDepartment(ctx context.Context) (res []*QuickListDepartmentRes, err error) {
+	err = GetGlobalDB().Model(new(Department)).WithContext(ctx).Select("id, name").Find(&res).Error
+	return
 }

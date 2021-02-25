@@ -112,3 +112,13 @@ func EditDepartment(c *gin.Context) {
 	}
 	c.JSON(http.StatusOK, msg.BuildSuccess("班级更新成功"))
 }
+
+// 快速返回班级数据
+func QuickListDepartments(c *gin.Context) {
+	res, err := models.QuickListDepartment(c)
+	if err != nil {
+		c.AbortWithStatusJSON(http.StatusOK, msg.BuildFailed(err))
+		return
+	}
+	c.JSON(http.StatusOK, msg.BuildSuccess(res))
+}
