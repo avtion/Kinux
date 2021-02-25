@@ -7,6 +7,7 @@ import (
 	"Kinux/core/web/services"
 	"Kinux/tools"
 	"github.com/gin-gonic/gin"
+	"github.com/spf13/cast"
 	"net/http"
 	"strconv"
 )
@@ -111,4 +112,126 @@ func UpdatePassword(c *gin.Context) {
 
 	// 发送鉴权失败响应要求客户端重新登录
 	c.JSON(http.StatusOK, msg.Build(msg.CodeJWTAuthFailed, "密码修改成功，请重新登录"))
+}
+
+// 获取用户资料
+func ListAccounts(c *gin.Context) {
+	params := &struct {
+		Name       string
+		Department uint
+		Role       uint
+		Page, Size uint
+	}{
+		Name:       c.DefaultQuery("name", ""),
+		Department: cast.ToUint(c.DefaultQuery("department", "")),
+		Role:       cast.ToUint(c.DefaultQuery("role", "0")),
+		Page:       cast.ToUint(c.DefaultQuery("page", "1")),
+		Size:       cast.ToUint(c.DefaultQuery("size", "10")),
+	}
+	data, err := models.ListAccountsWithProfiles(c,
+		models.NewPageBuilder(int(params.Page), int(params.Size)),
+		models.AccountNameFilter(params.Name),
+		models.AccountDepartmentFilter(int(params.Department)),
+		models.AccountRoleFilter(params.Role),
+	)
+	if err != nil {
+		c.AbortWithStatusJSON(http.StatusOK, msg.BuildFailed(err))
+		return
+	}
+
+	// 转译结果
+	type resStruct struct {
+		ID         uint   `json:"id"`
+		Profile    uint   `json:"profile"`
+		Role       string `json:"role"`
+		Username   string `json:"username"`
+		RealName   string `json:"real_name"`
+		Department string `json:"department"`
+		CreatedAt  string `json:"created_at"`
+	}
+	var res = make([]*resStruct, 0, len(data))
+	for _, v := range data {
+		res = append(res, &resStruct{
+			ID:         v.ID,
+			Profile:    v.Profile,
+			Role:       models.RoleTranslator(v.Role),
+			Username:   v.Username,
+			RealName:   v.RealName,
+			Department: v.Department,
+			CreatedAt:  v.CreatedAt.Format("2006-01-02 15-04-05"),
+		})
+	}
+
+	c.JSON(http.StatusOK, msg.BuildSuccess(res))
+}
+
+// TODO 统计用户资料
+func CountAccounts(c *gin.Context) {
+	params := &struct {
+		Name       string
+		Department uint
+		Role       uint
+	}{
+		Name:       c.DefaultQuery("name", ""),
+		Department: cast.ToUint(c.DefaultQuery("department", "")),
+		Role:       cast.ToUint(c.DefaultQuery("role", "0")),
+	}
+	res, err := models.CountAccountsWithProfiles(c,
+		models.AccountNameFilter(params.Name),
+		models.AccountDepartmentFilter(int(params.Department)),
+		models.AccountRoleFilter(params.Role),
+	)
+	if err != nil {
+		c.AbortWithStatusJSON(http.StatusOK, msg.BuildFailed(err))
+		return
+	}
+	c.JSON(http.StatusOK, msg.BuildSuccess(res))
+}
+
+// TODO 修改用户资料
+func UpdateAccount(c *gin.Context) {
+
+}
+
+// TODO 删除用户
+func DeleteAccount(c *gin.Context) {
+
+}
+
+// 新增用户
+func AddAccount(c *gin.Context) {
+	params := &struct {
+		Department int    `json:"department" binding:"required"`
+		Role       int    `json:"role" binding:"required"`
+		Username   string `json:"username" binding:"required"`
+		Password   string `json:"password" binding:"required"`
+		AvatarSeed string `json:"avatar_seed"`
+		RealName   string `json:"real_name"`
+	}{}
+	if err := c.ShouldBindJSON(params); err != nil {
+		c.AbortWithStatusJSON(http.StatusOK, msg.BuildFailed(err))
+		return
+	}
+
+	if params.AvatarSeed == "" {
+		params.AvatarSeed = tools.GetRandomString(6)
+	}
+
+	err := models.NewAccounts(c, &models.AccountWithProfile{
+		Account: models.Account{
+			Username: params.Username,
+			Password: params.Password,
+			Role:     uint(params.Role),
+		},
+		Profile: models.Profile{
+			RealName:   params.RealName,
+			Department: uint(params.Department),
+			AvatarSeed: params.AvatarSeed,
+		},
+	})
+	if err != nil {
+		c.AbortWithStatusJSON(http.StatusOK, msg.BuildFailed(err))
+		return
+	}
+	c.JSON(http.StatusOK, msg.BuildSuccess("账号创建成功"))
 }
