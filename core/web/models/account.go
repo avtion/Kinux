@@ -13,6 +13,7 @@ import (
 	"gorm.io/gorm"
 	"strconv"
 	"strings"
+	"time"
 )
 
 func init() {
@@ -255,16 +256,6 @@ func ListAccounts(ctx context.Context, builder *PageBuilder) (acs []*Account, er
 	return
 }
 
-// TODO 根据班级批量查询账号
-func ListAccountsByDepartment(ctx context.Context, d uint, builder *PageBuilder) (acs []*Account, err error) {
-	return
-}
-
-// TODO 根据角色批量查询账号
-func ListAccountsByRole(ctx context.Context, r RoleIdentify, builder *PageBuilder) (acs []*Account, err error) {
-	return
-}
-
 // 根据用户名获取对应的用户
 func GetAccountByUsername(ctx context.Context, username string) (ac *Account, err error) {
 	ac = new(Account)
@@ -304,4 +295,92 @@ func (a *Account) UpdatePassword(ctx context.Context, newPw string) (err error) 
 	}
 	return GetGlobalDB().WithContext(ctx).Model(new(Account)).Where(
 		"id = ?", a.ID).Update("Password", newPwEncode).Error
+}
+
+// 用户查询过滤器
+type AccountFilterFn func(db *gorm.DB) *gorm.DB
+
+// 用户名过滤器
+func AccountNameFilter(name string) AccountFilterFn {
+	return func(db *gorm.DB) *gorm.DB {
+		if name == "" {
+			return db
+		}
+		likeParams := fmt.Sprintf("%%%s%%", name)
+		return db.Where("accounts.username LIKE ? OR profiles.real_name LIKE ?", likeParams, likeParams)
+	}
+}
+
+// 用户班级过滤器
+func AccountDepartmentFilter(id int) AccountFilterFn {
+	return func(db *gorm.DB) *gorm.DB {
+		if id == 0 {
+			return db
+		}
+		return db.Where("profiles.department = ?", id)
+	}
+}
+
+// 用户角色过滤器
+func AccountRoleFilter(level RoleIdentify) AccountFilterFn {
+	return func(db *gorm.DB) *gorm.DB {
+		if level == 0 {
+			return db
+		}
+		return db.Where("accounts.role = ?", level)
+	}
+}
+
+// 用户列表结果
+type AccountsListResult struct {
+	ID         uint
+	Role       uint
+	Profile    uint
+	Username   string
+	RealName   string
+	Department string
+	CreatedAt  time.Time
+}
+
+// 获取用户列表包括个人资料（内部实现）
+func listAccountsWithProfiles(ctx context.Context, builder *PageBuilder, filters ...AccountFilterFn) (
+	db *gorm.DB) {
+	const selectQuery = `accounts.id, accounts.username, accounts.role, profiles.real_name, 
+							departments.name AS department, accounts.created_at, accounts.profile`
+	const JoinQuery = `accounts
+         JOIN profiles ON accounts.profile = profiles.id
+         JOIN departments ON profiles.department = departments.id`
+	db = GetGlobalDB().WithContext(ctx).Table("accounts").Select(selectQuery).Joins(JoinQuery)
+	if builder != nil {
+		db = builder.build(db)
+	}
+	for _, fn := range filters {
+		db = fn(db)
+	}
+	return
+}
+
+// 获取用户列表包括个人资料
+func ListAccountsWithProfiles(ctx context.Context, builder *PageBuilder, filters ...AccountFilterFn) (
+	res []*AccountsListResult, err error) {
+	err = listAccountsWithProfiles(ctx, builder, filters...).Scan(&res).Error
+	return
+}
+
+// 统计用户列表包括个人资料
+func CountAccountsWithProfiles(ctx context.Context, filters ...AccountFilterFn) (res int64, err error) {
+	err = listAccountsWithProfiles(ctx, nil, filters...).Count(&res).Error
+	return
+}
+
+// 删除用户 TODO 删除用户正在执行的容器
+func DeleteAccount(ctx context.Context, id int) (err error) {
+	if id == 0 {
+		return errors.New("id为空")
+	}
+	err = GetGlobalDB().Transaction(func(tx *gorm.DB) error {
+		// TODO
+		return nil
+	})
+	return
 }

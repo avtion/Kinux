@@ -85,3 +85,42 @@ func TestNewAccounts(t *testing.T) {
 		})
 	}
 }
+
+func TestListAccountsWithProfiles(t *testing.T) {
+	type args struct {
+		ctx     context.Context
+		builder *PageBuilder
+		filters []AccountFilterFn
+	}
+	tests := []struct {
+		name    string
+		args    args
+		wantErr bool
+	}{
+		{
+			name: "test",
+			args: args{
+				ctx:     context.Background(),
+				builder: NewPageBuilder(1, 10),
+				filters: []AccountFilterFn{
+					AccountDepartmentFilter(1),
+					AccountNameFilter("t"),
+					AccountRoleFilter(RoleNormalAccount),
+				},
+			},
+			wantErr: false,
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			gotRes, err := ListAccountsWithProfiles(tt.args.ctx, tt.args.builder, tt.args.filters...)
+			if (err != nil) != tt.wantErr {
+				t.Errorf("ListAccountsWithProfiles() error = %v, wantErr %v", err, tt.wantErr)
+				return
+			}
+			for _, v := range gotRes {
+				t.Log(v)
+			}
+		})
+	}
+}
