@@ -110,10 +110,10 @@ func (m *MissionScore) ListScores(ctx context.Context, builder *PageBuilder,
 	return
 }
 
-func (m *MissionScore) DeleteScore(ctx context.Context) (err error) {
+func (m *MissionScore) DeleteScore(ctx context.Context, id uint) (err error) {
 	if m.ID == 0 {
 		return errors.New("id为空")
 	}
-	err = GetGlobalDB().WithContext(ctx).Unscoped().Delete(new(MissionScore), m.ID).Error
+	err = GetGlobalDB().WithContext(ctx).Unscoped().Delete(new(MissionScore), id).Error
 	return
 }

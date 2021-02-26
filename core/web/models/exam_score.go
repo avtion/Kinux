@@ -100,10 +100,10 @@ func (m *ExamScore) ListScores(ctx context.Context, builder *PageBuilder,
 	return
 }
 
-func (m *ExamScore) DeleteScore(ctx context.Context) (err error) {
+func (m *ExamScore) DeleteScore(ctx context.Context, id uint) (err error) {
 	if m.ID == 0 {
 		return errors.New("id为空")
 	}
-	err = GetGlobalDB().WithContext(ctx).Unscoped().Delete(new(ExamScore), m.ID).Error
+	err = GetGlobalDB().WithContext(ctx).Unscoped().Delete(new(ExamScore), id).Error
 	return
 }
