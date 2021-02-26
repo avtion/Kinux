@@ -9,6 +9,7 @@ import (
 	"encoding/base64"
 	"errors"
 	"fmt"
+	"github.com/spf13/cast"
 	"golang.org/x/crypto/pbkdf2"
 	"gorm.io/gorm"
 	"strconv"
@@ -420,5 +421,30 @@ func (p *Profile) Update(ctx context.Context) (err error) {
 	}
 	err = GetGlobalDB().WithContext(ctx).Model(new(Profile)).Select(
 		"real_name, department").Updates(p).Error
+	return
+}
+
+// 获取账号用户名和ID映射
+func GetAccountsUsernameMapper(ctx context.Context, id ...uint) (res map[uint]string, err error) {
+	type api struct {
+		ID       uint
+		Username string
+	}
+	if len(id) == 0 {
+		return nil, errors.New("没有用户ID参数")
+	}
+
+	var data = make([]*api, 0)
+	GetGlobalDB().WithContext(ctx).Model(new(Account)).Where("id IN ?", id).Find(&data)
+
+	res = make(map[uint]string, len(data))
+	for _, v := range data {
+		if v.Username == "" {
+			res[v.ID] = cast.ToString(v.ID)
+		} else {
+			res[v.ID] = v.Username
+		}
+	}
+
 	return
 }
