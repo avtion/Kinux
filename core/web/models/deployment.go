@@ -60,7 +60,7 @@ func CrateOrUpdateDeployment(ctx context.Context, name string, raw []byte) (id u
 	return dp.ID, nil
 }
 
-// 批量获取
+// 批量获取Deployment
 func ListDeployment(ctx context.Context, name string, page *PageBuilder) (res []*Deployment, err error) {
 	db := GetGlobalDB().WithContext(ctx).Model(new(Deployment))
 	if name != "" {
@@ -77,5 +77,46 @@ func ListDeployment(ctx context.Context, name string, page *PageBuilder) (res []
 func GetDeployment(ctx context.Context, id uint) (res *Deployment, err error) {
 	res = new(Deployment)
 	err = GetGlobalDB().WithContext(ctx).First(res, id).Error
+	return
+}
+
+// 修改Deployment
+func EditDeployment(ctx context.Context, id uint, raw []byte) (err error) {
+	if id == 0 {
+		return errors.New("id为空")
+	}
+	err = GetGlobalDB().WithContext(ctx).Model(new(Deployment)).Where(
+		"id = ?", id).Update("raw", raw).Error
+	return
+}
+
+// 删除Deployment
+func DeleteDeployment(ctx context.Context, id uint) (err error) {
+	if id == 0 {
+		return errors.New("id为空")
+	}
+	err = GetGlobalDB().WithContext(ctx).Unscoped().Delete(new(Deployment), id).Error
+	return
+}
+
+// 新增Deployment
+func AddDeployment(ctx context.Context, name string, raw []byte) (err error) {
+	err = GetGlobalDB().WithContext(ctx).Create(&Deployment{
+		Name: name,
+		Raw:  raw,
+	}).Error
+	return
+}
+
+// 快速获取Deployment
+func QuickListDeployment(ctx context.Context, name string) (res []*struct {
+	ID   uint   `json:"id"`
+	Name string `json:"name"`
+}, err error) {
+	db := GetGlobalDB().WithContext(ctx).Model(new(Deployment)).Select("id, name")
+	if name != "" {
+		db = db.Where("name LIKE ?", "%"+name+"%")
+	}
+	err = db.Find(&res).Error
 	return
 }

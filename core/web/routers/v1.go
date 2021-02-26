@@ -58,5 +58,15 @@ func v1Routers() initFunc {
 			department.GET("/count/", controllers.CountDepartments)     // count
 			department.GET("/quick/", controllers.QuickListDepartments) // options quick
 		}
+
+		// 配置相关
+		deployment := v1.Group("/deployment")
+		{
+			deployment.GET("/", controllers.ListDeployment)            // list
+			deployment.GET("/quick/", controllers.QuickListDeployment) // option quick
+			deployment.PUT("/", controllers.EditDeployment)            // edit
+			deployment.POST("/", controllers.AddDeployment)            // add
+			deployment.DELETE("/:id/", controllers.DeleteDeployment)   // delete
+		}
 	}
 }
