@@ -68,5 +68,12 @@ func v1Routers() initFunc {
 			deployment.POST("/", controllers.AddDeployment)            // add
 			deployment.DELETE("/:id/", controllers.DeleteDeployment)   // delete
 		}
+
+		// 成绩相关
+		score := v1.Group("/score")
+		{
+			score.GET("/:type/", controllers.ListScores)         // list
+			score.DELETE("/:type/:id/", controllers.DeleteScore) // delete
+		}
 	}
 }
