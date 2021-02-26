@@ -368,3 +368,26 @@ func FindAllTodoCheckpoints(ctx context.Context, account, mission uint, containe
 
 	return FindCheckpoints(ctx, todoCheckpointIDs...)
 }
+
+// 获取任务名字的映射
+func GetMissionsNameMapper(ctx context.Context, id ...uint) (res map[uint]string, err error) {
+	type api struct {
+		ID   uint
+		Name string
+	}
+	if len(id) == 0 {
+		return nil, errors.New("没有任务ID参数")
+	}
+
+	var data = make([]*api, 0)
+	if err = GetGlobalDB().WithContext(ctx).Model(new(Mission)).Where(
+		"id IN ?", id).Find(&data).Error; err != nil {
+		return
+	}
+
+	res = make(map[uint]string, len(data))
+	for _, v := range data {
+		res[v.ID] = v.Name
+	}
+	return
+}
