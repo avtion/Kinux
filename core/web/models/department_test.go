@@ -45,7 +45,6 @@ func TestListDepartments(t *testing.T) {
 		ctx  context.Context
 		name string
 		page *PageBuilder
-		in3  []DepartmentOpt
 	}
 	tests := []struct {
 		name    string
@@ -58,14 +57,13 @@ func TestListDepartments(t *testing.T) {
 				ctx:  context.Background(),
 				name: "t",
 				page: NewPageBuilder(1, 10),
-				in3:  nil,
 			},
 			wantErr: false,
 		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			gotDs, err := ListDepartments(tt.args.ctx, tt.args.name, tt.args.page, tt.args.in3...)
+			gotDs, err := ListDepartments(tt.args.ctx, tt.args.name, tt.args.page)
 			if (err != nil) != tt.wantErr {
 				t.Errorf("ListDepartments() error = %v, wantErr %v", err, tt.wantErr)
 				return
