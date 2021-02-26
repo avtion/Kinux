@@ -373,14 +373,52 @@ func CountAccountsWithProfiles(ctx context.Context, filters ...AccountFilterFn) 
 	return
 }
 
-// 删除用户 TODO 删除用户正在执行的容器
+// 删除用户
 func DeleteAccount(ctx context.Context, id int) (err error) {
 	if id == 0 {
 		return errors.New("id为空")
 	}
-	err = GetGlobalDB().Transaction(func(tx *gorm.DB) error {
-		// TODO
+	// TODO 删除用户正在执行的容器
+	return GetGlobalDB().WithContext(ctx).Transaction(func(tx *gorm.DB) error {
+		var ac = new(Account)
+		if _err := tx.First(ac, id).Error; _err != nil {
+			return _err
+		}
+		if _err := tx.Unscoped().Delete(new(Profile), ac.Profile).Error; _err != nil {
+			return _err
+		}
+		if _err := tx.Unscoped().Delete(ac).Error; _err != nil {
+			return _err
+		}
 		return nil
 	})
+}
+
+// 根据ID获取账号
+func GetAccountByID(ctx context.Context, id int) (ac *Account, err error) {
+	if id == 0 {
+		return nil, errors.New("id为空")
+	}
+	err = GetGlobalDB().WithContext(ctx).First(ac, id).Error
+	return
+}
+
+// 更新用户数据 - 仅支持更新用户名和角色
+func (a *Account) Update(ctx context.Context) (err error) {
+	if a.ID == 0 {
+		return errors.New("id为空")
+	}
+	err = GetGlobalDB().WithContext(ctx).Model(new(Account)).Select(
+		"username", "role").Where("id = ?", a.ID).Updates(a).Error
+	return
+}
+
+// 更新用户资料 - 仅支持真实姓名和班级
+func (p *Profile) Update(ctx context.Context) (err error) {
+	if p.ID == 0 {
+		return errors.New("id为空")
+	}
+	err = GetGlobalDB().WithContext(ctx).Model(new(Profile)).Select(
+		"real_name, department").Updates(p).Error
 	return
 }
