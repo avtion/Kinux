@@ -1,6 +1,8 @@
 package models
 
 import (
+	"context"
+	"errors"
 	"gorm.io/gorm"
 	"time"
 )
@@ -28,4 +30,28 @@ type ExamMissions struct {
 	Mission  uint `gorm:"uniqueIndex:ex_missions"`
 	Percent  uint // 任务占考试成绩比例
 	Priority int  // 自定义排序
+}
+
+// 获取考试名字的映射
+func GetExamsNameMapper(ctx context.Context, id ...uint) (res map[uint]string, err error) {
+	type api struct {
+		ID   uint
+		Name string
+	}
+	if len(id) == 0 {
+		return nil, errors.New("没有考试ID参数")
+	}
+
+	var data = make([]*api, 0)
+
+	if err = GetGlobalDB().WithContext(ctx).Model(new(Exam)).Where(
+		"id IN ?", id).Find(&data).Error; err != nil {
+		return
+	}
+
+	res = make(map[uint]string, len(data))
+	for _, v := range data {
+		res[v.ID] = v.Name
+	}
+	return
 }
