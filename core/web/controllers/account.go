@@ -8,6 +8,7 @@ import (
 	"Kinux/tools"
 	"github.com/gin-gonic/gin"
 	"github.com/spf13/cast"
+	"gorm.io/gorm"
 	"net/http"
 	"strconv"
 )
@@ -165,7 +166,7 @@ func ListAccounts(c *gin.Context) {
 	c.JSON(http.StatusOK, msg.BuildSuccess(res))
 }
 
-// TODO 统计用户资料
+// 统计用户资料
 func CountAccounts(c *gin.Context) {
 	params := &struct {
 		Name       string
@@ -188,14 +189,70 @@ func CountAccounts(c *gin.Context) {
 	c.JSON(http.StatusOK, msg.BuildSuccess(res))
 }
 
-// TODO 修改用户资料
-func UpdateAccount(c *gin.Context) {
+// 修改用户资料
+func EditAccount(c *gin.Context) {
+	params := &struct {
+		ID         int    `json:"id"`
+		Role       int    `json:"role"`
+		Department int    `json:"department"`
+		Username   string `json:"username"`
+		RealName   string `json:"real_name"`
+		Password   string `json:"password"`
+	}{}
+	if err := c.ShouldBindJSON(params); err != nil {
+		c.AbortWithStatusJSON(http.StatusOK, msg.BuildFailed(err))
+		return
+	}
+	ac, err := models.GetAccountByID(c, params.ID)
+	if err != nil {
+		c.AbortWithStatusJSON(http.StatusOK, msg.BuildFailed(err))
+		return
+	}
 
+	// 更新用户信息
+	err = (&models.Account{
+		Model: gorm.Model{
+			ID: ac.ID,
+		},
+		Username: params.Username,
+		Role:     models.RoleIdentify(params.Role),
+	}).Update(c)
+	if err != nil {
+		c.AbortWithStatusJSON(http.StatusOK, msg.BuildFailed(err))
+		return
+	}
+
+	// 更新密码
+	if params.Password != "" {
+		err = ac.UpdatePassword(c, params.Password)
+		if err != nil {
+			c.AbortWithStatusJSON(http.StatusOK, msg.BuildFailed(err))
+			return
+		}
+	}
+
+	// 更新用户资料
+	err = (&models.Profile{
+		Model: gorm.Model{
+			ID: ac.Profile,
+		},
+		RealName:   params.RealName,
+		Department: uint(params.Department),
+	}).Update(c)
+	if err != nil {
+		c.AbortWithStatusJSON(http.StatusOK, msg.BuildFailed(err))
+		return
+	}
 }
 
-// TODO 删除用户
+// 删除用户
 func DeleteAccount(c *gin.Context) {
-
+	id := cast.ToInt(c.Param("id"))
+	if err := models.DeleteAccount(c, id); err != nil {
+		c.AbortWithStatusJSON(http.StatusOK, msg.BuildFailed(err))
+		return
+	}
+	c.JSON(http.StatusOK, msg.BuildSuccess("账号删除成功"))
 }
 
 // 新增用户
