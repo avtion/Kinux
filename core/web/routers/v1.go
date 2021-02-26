@@ -42,7 +42,10 @@ func v1Routers() initFunc {
 			ac.PUT("/avatar", controllers.UpdateAccountAvatarSeed) // 更新用户头像种子
 			ac.POST("/pw", controllers.UpdatePassword)             // 更新用户密码
 			ac.GET("/", controllers.ListAccounts)                  // list
+			ac.GET("/count/", controllers.CountAccounts)           // quick
 			ac.POST("/", controllers.AddAccount)                   // add
+			ac.PUT("/", controllers.EditAccount)                   // edit
+			ac.DELETE("/:id/", controllers.DeleteAccount)          // delete
 		}
 
 		// 部门（班级）相关
