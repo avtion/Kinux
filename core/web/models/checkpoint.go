@@ -58,3 +58,27 @@ func FindCheckpoints(ctx context.Context, ids ...uint) (cps []*Checkpoint, err e
 	err = GetGlobalDB().WithContext(ctx).Model(new(Checkpoint)).Find(&cps, ids).Error
 	return
 }
+
+// 获取检查点名字的映射
+func GetCheckpointsNameMapper(ctx context.Context, id ...uint) (res map[uint]string, err error) {
+	type api struct {
+		ID   uint
+		Name string
+	}
+	if len(id) == 0 {
+		return nil, errors.New("没有检查点ID参数")
+	}
+
+	var data = make([]*api, 0)
+
+	if err = GetGlobalDB().WithContext(ctx).Model(new(Checkpoint)).Where(
+		"id IN ?", id).Find(&data).Error; err != nil {
+		return
+	}
+
+	res = make(map[uint]string, len(data))
+	for _, v := range data {
+		res[v.ID] = v.Name
+	}
+	return
+}
