@@ -138,6 +138,14 @@ export const paths: routePath = {
     delete: 'v1/department/',
     quick: 'v1/department/quick/',
   },
+  deployment: {
+    list: 'v1/deployment/',
+    count: 'v1/deployment/count/',
+    add: 'v1/deployment/',
+    edit: 'v1/deployment/',
+    delete: 'v1/deployment/',
+    quick: 'v1/deployment/quick/',
+  },
   role: {
     quick: 'v1/role/quick/',
   },
@@ -148,6 +156,7 @@ interface routePath {
   ms: mission
   department: department
   role: role
+  deployment: deployment
 }
 
 interface account {
@@ -178,5 +187,14 @@ interface department {
 }
 
 interface role {
+  quick: string
+}
+
+interface deployment {
+  list: string
+  count: string
+  add: string
+  edit: string
+  delete: string
   quick: string
 }
