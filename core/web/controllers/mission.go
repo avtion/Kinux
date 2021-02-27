@@ -152,3 +152,45 @@ func ListMissions(c *gin.Context) {
 	}
 	c.JSON(http.StatusOK, msg.BuildSuccess(res))
 }
+
+// 统计任务数量
+func CountMissions(c *gin.Context) {
+	params := &struct {
+		Name      string
+		Namespace []string
+	}{
+		Name:      c.DefaultQuery("name", ""),
+		Namespace: c.QueryArray("ns"),
+	}
+	res, err := models.CountMissions(c, params.Name, params.Namespace)
+	if err != nil {
+		c.AbortWithStatusJSON(http.StatusOK, msg.BuildFailed(err))
+		return
+	}
+	c.JSON(http.StatusOK, msg.BuildSuccess(res))
+}
+
+// 删除任务
+func DeleteMission(c *gin.Context) {
+	id := cast.ToUint(c.Param("id"))
+	if err := models.DeleteMission(c, id); err != nil {
+		c.AbortWithStatusJSON(http.StatusOK, msg.BuildFailed(err))
+		return
+	}
+	c.JSON(http.StatusOK, msg.BuildSuccess("删除实验成功"))
+}
+
+// 获取所有任务的命名空间
+func ListMissionNamespaces(c *gin.Context) {
+	res, err := models.ListMissionNamespaces(c)
+	if err != nil {
+		c.AbortWithStatusJSON(http.StatusOK, msg.BuildFailed(err))
+		return
+	}
+	c.JSON(http.StatusOK, msg.BuildSuccess(res))
+}
+
+// 编辑任务
+func EditMission(c *gin.Context) {
+
+}
