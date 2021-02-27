@@ -159,7 +159,7 @@ func ListAccounts(c *gin.Context) {
 			Username:   v.Username,
 			RealName:   v.RealName,
 			Department: v.Department,
-			CreatedAt:  v.CreatedAt.Format("2006-01-02 15-04-05"),
+			CreatedAt:  v.CreatedAt.Format("2006-01-02 15:04:05"),
 		})
 	}
 
