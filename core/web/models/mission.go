@@ -241,6 +241,28 @@ func GetMissionsNameMapper(ctx context.Context, id ...uint) (res map[uint]string
 	return
 }
 
+// 统计实验数量
+func CountMissions(ctx context.Context, name string, ns []string) (res int64, err error) {
+	db := GetGlobalDB().WithContext(ctx).Model(new(Mission))
+	if name != "" {
+		db = db.Where("name LIKE ?", "%"+name+"%")
+	}
+	if len(ns) > 0 {
+		db = db.Where("namespace IN ?", ns)
+	}
+	err = db.Count(&res).Error
+	return
+}
+
+// 删除任务 TODO 删除正在运行的Deployment
+func DeleteMission(ctx context.Context, id uint) (err error) {
+	if id == 0 {
+		return errors.New("id为空")
+	}
+	err = GetGlobalDB().WithContext(ctx).Unscoped().Delete(new(Mission), id).Error
+	return
+}
+
 /*
 	任务和检查点
 */
@@ -390,4 +412,10 @@ func FindAllTodoCheckpoints(ctx context.Context, account, mission uint, containe
 	}
 
 	return FindCheckpoints(ctx, todoCheckpointIDs...)
+}
+
+// 获取所有任务的命名空间
+func ListMissionNamespaces(ctx context.Context) (res []string, err error) {
+	err = GetGlobalDB().WithContext(ctx).Model(new(Mission)).Pluck("namespace", &res).Error
+	return
 }
