@@ -124,6 +124,10 @@ func EditCheckpoint(c *gin.Context) {
 		In     string `json:"in"`
 		Out    string `json:"out"`
 	}{}
+	if err := c.ShouldBindJSON(&params); err != nil {
+		c.AbortWithStatusJSON(http.StatusOK, msg.BuildFailed(err))
+		return
+	}
 	if err := (&models.Checkpoint{
 		Model: gorm.Model{
 			ID: params.ID,
