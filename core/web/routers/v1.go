@@ -76,5 +76,11 @@ func v1Routers() initFunc {
 			score.GET("/:type/", controllers.ListScores)         // list
 			score.DELETE("/:type/:id/", controllers.DeleteScore) // delete
 		}
+
+		// 角色相关
+		role := v1.Group("/role")
+		{
+			role.GET("/quick/", controllers.QuickListRoles) // quick
+		}
 	}
 }
