@@ -334,20 +334,22 @@ func AccountRoleFilter(level RoleIdentify) AccountFilterFn {
 
 // 用户列表结果
 type AccountsListResult struct {
-	ID         uint
-	Role       uint
-	Profile    uint
-	Username   string
-	RealName   string
-	Department string
-	CreatedAt  time.Time
+	ID           uint
+	Role         uint
+	Profile      uint
+	Username     string
+	RealName     string
+	Department   string
+	DepartmentId uint
+	CreatedAt    time.Time
 }
 
 // 获取用户列表包括个人资料（内部实现）
 func listAccountsWithProfiles(ctx context.Context, builder *PageBuilder, filters ...AccountFilterFn) (
 	db *gorm.DB) {
 	const selectQuery = `accounts.id, accounts.username, accounts.role, profiles.real_name, 
-							departments.name AS department, accounts.created_at, accounts.profile`
+							departments.name AS department, departments.id AS department_id, 
+							accounts.created_at, accounts.profile`
 	const JoinQuery = `accounts
          JOIN profiles ON accounts.profile = profiles.id
          JOIN departments ON profiles.department = departments.id`
