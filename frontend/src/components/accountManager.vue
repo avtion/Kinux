@@ -138,13 +138,10 @@
 
 <script lang="ts" type="module">
 // vue
-import { defineComponent, ref, watch, UnwrapRef, reactive } from 'vue'
+import { defineComponent, ref, UnwrapRef, reactive } from 'vue'
 
 // antd
-import {
-  TableState,
-  TableStateFilters,
-} from 'ant-design-vue/es/table/interface'
+import { TableState } from 'ant-design-vue/es/table/interface'
 import { SmileOutlined, DownOutlined } from '@ant-design/icons-vue'
 
 // store
