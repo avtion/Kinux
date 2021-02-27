@@ -129,6 +129,7 @@ export const paths: routePath = {
     listContainersNames: 'v1/mission/cnames/',
     getGuide: 'v1/mission/guide/',
     dpOperation: 'v1/mission/op/',
+    manageList: 'v1/mission/list/',
   },
   department: {
     list: 'v1/department/',
@@ -184,6 +185,7 @@ interface mission {
   listContainersNames: string
   getGuide: string
   dpOperation: string
+  manageList: string
 }
 
 interface department {
