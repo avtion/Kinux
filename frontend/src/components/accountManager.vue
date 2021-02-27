@@ -444,6 +444,8 @@ export default defineComponent({
           page: currentPage.value,
           size: currentSize.value,
           name: currentNameFilter.value,
+          role: currentRoleFilter.value,
+          department: currentDepartmentFilter.value,
         })
       })
     }
@@ -464,6 +466,8 @@ export default defineComponent({
               page: currentPage.value,
               size: currentSize.value,
               name: currentNameFilter.value,
+              role: currentRoleFilter.value,
+              department: currentDepartmentFilter.value,
             })
             modalVisible.value = false
           })
@@ -481,6 +485,8 @@ export default defineComponent({
               page: currentPage.value,
               size: currentSize.value,
               name: currentNameFilter.value,
+              role: currentRoleFilter.value,
+              department: currentDepartmentFilter.value,
             })
             modalVisible.value = false
           })
