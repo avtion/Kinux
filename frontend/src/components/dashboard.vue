@@ -30,9 +30,10 @@
           </template>
           <a-menu-item key="departmentManager">班级管理</a-menu-item>
           <a-menu-item key="AccountManager">用户管理</a-menu-item>
+          <a-menu-item key="deploymentManager">配置管理</a-menu-item>
           <a-menu-item key="missionManager">实验管理</a-menu-item>
           <a-menu-item key="examManager">考试管理</a-menu-item>
-          <a-menu-item key="configManager">配置管理</a-menu-item>
+          <a-menu-item key="checkpointManager">检查点管理</a-menu-item>
         </a-sub-menu>
       </a-menu>
     </a-layout-sider>
