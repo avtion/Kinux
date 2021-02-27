@@ -83,5 +83,16 @@ func v1Routers() initFunc {
 		{
 			role.GET("/quick/", controllers.QuickListRoles) // quick
 		}
+
+		// 检查点相关
+		checkpoint := v1.Group("/cp")
+		{
+			checkpoint.GET("/", controllers.ListCheckpoints)            // list
+			checkpoint.POST("/", controllers.AddCheckpoint)             // add
+			checkpoint.PUT("/", controllers.EditCheckpoint)             // edit
+			checkpoint.DELETE("/:id/", controllers.DeleteCheckpoint)    // delete
+			checkpoint.GET("/count/", controllers.CountCheckpoints)     // count
+			checkpoint.GET("/quick/", controllers.QuickListCheckpoints) // options quick
+		}
 	}
 }

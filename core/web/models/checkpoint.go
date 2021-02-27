@@ -3,6 +3,7 @@ package models
 import (
 	"context"
 	"errors"
+	"fmt"
 	"gorm.io/gorm"
 )
 
@@ -81,4 +82,75 @@ func GetCheckpointsNameMapper(ctx context.Context, id ...uint) (res map[uint]str
 		res[v.ID] = v.Name
 	}
 	return
+}
+
+// 获取检查点
+func ListCheckpoints(ctx context.Context, name string, method CheckpointMethod, builder *PageBuilder) (
+	res []*Checkpoint, err error) {
+	db := GetGlobalDB().WithContext(ctx).Model(new(Checkpoint))
+	if builder != nil {
+		db = builder.build(db)
+	}
+	if name != "" {
+		db = db.Where("name LIKE ?", fmt.Sprintf("%%%s%%", name))
+	}
+	if method != 0 {
+		db = db.Where("method = ?", method)
+	}
+	err = db.Find(&res).Error
+	return
+}
+
+// 统计检查点
+func CountCheckpoints(ctx context.Context, name string, method CheckpointMethod) (res int64, err error) {
+	db := GetGlobalDB().WithContext(ctx).Model(new(Checkpoint))
+	if name != "" {
+		db = db.Where("name LIKE ?", fmt.Sprintf("%%%s%%", name))
+	}
+	if method != 0 {
+		db = db.Where("method = ?", method)
+	}
+	err = db.Count(&res).Error
+	return
+}
+
+// 删除检查点
+func DeleteCheckpoint(ctx context.Context, id uint) (err error) {
+	if id == 0 {
+		return errors.New("id为空")
+	}
+	return GetGlobalDB().Unscoped().WithContext(ctx).Delete(new(Checkpoint), id).Error
+}
+
+// 检查点选项结果
+type checkpointQuickResult struct {
+	ID   uint   `json:"id"`
+	Name string `json:"name"`
+}
+
+// 快速获取检查点选项
+func QuickListCheckpoint(ctx context.Context, name string, method CheckpointMethod) (
+	res []*checkpointQuickResult, err error) {
+	db := GetGlobalDB().WithContext(ctx).Model(new(Checkpoint))
+	if name != "" {
+		db = db.Where("name LIKE ?", fmt.Sprintf("%%%s%%", name))
+	}
+	if method != 0 {
+		db = db.Where("method = ?", method)
+	}
+	err = db.Find(&res).Error
+	return
+}
+
+// 更新检查点
+func (c *Checkpoint) Edit(ctx context.Context) (err error) {
+	if c.ID == 0 {
+		return errors.New("id为空")
+	}
+	switch c.Method {
+	case MethodTargetPort, MethodStdout, MethodExec:
+	default:
+		return errors.New("检查点方式为空")
+	}
+	return GetGlobalDB().WithContext(ctx).Save(c).Error
 }
