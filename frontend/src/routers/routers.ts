@@ -10,6 +10,7 @@ import departmentManagerComponents from '@/components/departmentManager.vue' // 
 import AccountManagerComponents from '@/components/accountManager.vue' // 用户管理
 import deploymentManagerComponents from '@/components/deploymentManager.vue' // 配置管理
 import checkpointManagerComponents from '@/components/checkpointManager.vue' // 检查点管理
+import missionManagerComponents from '@/components/missionManager.vue' // 实验管理
 
 import profileComponents from '@/components/profile.vue' // 个人资料
 import sessionManagerComponents from '@/components/sessionManager.vue' // 实验会话
@@ -63,9 +64,8 @@ const routes = [
       {
         path: 'admin/mc',
         name: 'missionManager',
-        component: managerComponents,
+        component: missionManagerComponents,
         props: true,
-        meta: { managerType: 'mc' },
       },
       {
         path: 'admin/ex',
