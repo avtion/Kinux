@@ -64,6 +64,7 @@ func v1Routers() initFunc {
 		deployment := v1.Group("/deployment")
 		{
 			deployment.GET("/", controllers.ListDeployment)            // list
+			deployment.GET("/count/", controllers.CountDeployment)     // count
 			deployment.GET("/quick/", controllers.QuickListDeployment) // option quick
 			deployment.PUT("/", controllers.EditDeployment)            // edit
 			deployment.POST("/", controllers.AddDeployment)            // add
