@@ -402,6 +402,7 @@ func GetAccountByID(ctx context.Context, id int) (ac *Account, err error) {
 	if id == 0 {
 		return nil, errors.New("id为空")
 	}
+	ac = new(Account)
 	err = GetGlobalDB().WithContext(ctx).First(ac, id).Error
 	return
 }
