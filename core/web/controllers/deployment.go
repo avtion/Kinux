@@ -104,3 +104,18 @@ func QuickListDeployment(c *gin.Context) {
 	}
 	c.JSON(http.StatusOK, msg.BuildSuccess(res))
 }
+
+// 统计Deployment
+func CountDeployment(c *gin.Context) {
+	params := &struct {
+		Name string
+	}{
+		Name: c.DefaultQuery("name", ""),
+	}
+	res, err := models.CountDeployment(c, params.Name)
+	if err != nil {
+		c.AbortWithStatusJSON(http.StatusOK, msg.BuildFailed(err))
+		return
+	}
+	c.JSON(http.StatusOK, msg.BuildSuccess(res))
+}
