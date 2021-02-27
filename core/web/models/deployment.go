@@ -120,3 +120,13 @@ func QuickListDeployment(ctx context.Context, name string) (res []*struct {
 	err = db.Find(&res).Error
 	return
 }
+
+// 统计Deployment
+func CountDeployment(ctx context.Context, name string) (res int64, err error) {
+	db := GetGlobalDB().WithContext(ctx).Model(new(Deployment))
+	if name != "" {
+		db = db.Where("name LIKE ?", "%"+name+"%")
+	}
+	err = db.Count(&res).Error
+	return
+}
