@@ -39,8 +39,8 @@ func ListDeployment(c *gin.Context) {
 			ID:        v.ID,
 			Name:      v.Name,
 			Raw:       bytesconv.BytesToString(v.Raw),
-			CreatedAt: v.CreatedAt.Format("2006-01-02 15-04-05"),
-			UpdatedAt: v.UpdatedAt.Format("2006-01-02 15-04-05"),
+			CreatedAt: v.CreatedAt.Format("2006-01-02 15:04:05"),
+			UpdatedAt: v.UpdatedAt.Format("2006-01-02 15:04:05"),
 		})
 	}
 	c.JSON(http.StatusOK, msg.BuildSuccess(res))
