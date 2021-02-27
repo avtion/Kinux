@@ -118,6 +118,11 @@ export const paths: routePath = {
     login: 'v1/account/login',
     updateAvatarSeed: 'v1/account/avatar',
     UpdatePassword: 'v1/account/pw',
+    list: 'v1/account/',
+    count: 'v1/account/count/',
+    add: 'v1/account/',
+    edit: 'v1/account/',
+    delete: 'v1/account/',
   },
   ms: {
     list: 'v1/mission/',
@@ -131,6 +136,10 @@ export const paths: routePath = {
     add: 'v1/department/',
     edit: 'v1/department/',
     delete: 'v1/department/',
+    quick: 'v1/department/quick/',
+  },
+  role: {
+    quick: 'v1/role/quick/',
   },
 }
 
@@ -138,12 +147,18 @@ interface routePath {
   ac: account
   ms: mission
   department: department
+  role: role
 }
 
 interface account {
   login: string
   updateAvatarSeed: string
   UpdatePassword: string
+  list: string
+  count: string
+  add: string
+  edit: string
+  delete: string
 }
 
 interface mission {
@@ -159,4 +174,9 @@ interface department {
   add: string
   edit: string
   delete: string
+  quick: string
+}
+
+interface role {
+  quick: string
 }
