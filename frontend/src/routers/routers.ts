@@ -8,7 +8,8 @@ import shellComponents from '@/components/shell.vue' // 终端
 import managerComponents from '@/components/manager.vue' // 管理界面
 import departmentManagerComponents from '@/components/departmentManager.vue' // 班级管理
 import AccountManagerComponents from '@/components/accountManager.vue' // 用户管理
-import deploymentManagerComponents from '@/components/deploymentManager.vue' // 用户管理
+import deploymentManagerComponents from '@/components/deploymentManager.vue' // 配置管理
+import checkpointManagerComponents from '@/components/checkpointManager.vue' // 检查点管理
 
 import profileComponents from '@/components/profile.vue' // 个人资料
 import sessionManagerComponents from '@/components/sessionManager.vue' // 实验会话
@@ -77,6 +78,12 @@ const routes = [
         path: 'admin/deployment',
         name: 'deploymentManager',
         component: deploymentManagerComponents,
+        props: true,
+      },
+      {
+        path: 'admin/cp',
+        name: 'checkpointManager',
+        component: checkpointManagerComponents,
         props: true,
       },
     ],
