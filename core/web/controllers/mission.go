@@ -7,6 +7,7 @@ import (
 	"github.com/gin-gonic/gin"
 	"github.com/spf13/cast"
 	"net/http"
+	"strings"
 )
 
 // 任务查询
@@ -40,7 +41,7 @@ func QueryMissions(c *gin.Context) {
 
 // 创建新的任务
 // TODO 前端测试
-func NewMission(c *gin.Context) {
+func NewMissionDeployment(c *gin.Context) {
 	id := cast.ToUint(c.Param("id"))
 	if id == 0 {
 		c.AbortWithStatusJSON(http.StatusOK, msg.BuildFailed("任务id为空"))
@@ -60,7 +61,7 @@ func NewMission(c *gin.Context) {
 
 // 删除正在进行的任务
 // TODO 前端测试
-func DeleteMission(c *gin.Context) {
+func DeleteMissionDeployment(c *gin.Context) {
 	id := cast.ToUint(c.Param("id"))
 	if id == 0 {
 		c.AbortWithStatusJSON(http.StatusOK, msg.BuildFailed("任务id为空"))
@@ -131,20 +132,22 @@ func ListMissions(c *gin.Context) {
 
 	// 转译
 	type resType struct {
-		ID        uint   `json:"id"`
-		Total     uint   `json:"total"`
-		Name      string `json:"name"`
-		Desc      string `json:"desc"`
-		Namespace string `json:"namespace"`
+		ID         uint     `json:"id"`
+		Total      uint     `json:"total"`
+		Name       string   `json:"name"`
+		Desc       string   `json:"desc"`
+		Namespace  string   `json:"namespace"`
+		Containers []string `json:"containers"`
 	}
 	var res = make([]*resType, 0, len(data))
 	for _, v := range data {
 		res = append(res, &resType{
-			ID:        v.ID,
-			Total:     v.Total,
-			Name:      v.Name,
-			Desc:      v.Desc,
-			Namespace: v.Namespace,
+			ID:         v.ID,
+			Total:      v.Total,
+			Name:       v.Name,
+			Desc:       v.Desc,
+			Namespace:  v.Namespace,
+			Containers: strings.Split(v.WhiteListContainer, ";"),
 		})
 	}
 	c.JSON(http.StatusOK, msg.BuildSuccess(res))
