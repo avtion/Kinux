@@ -1,6 +1,7 @@
 package controllers
 
 import (
+	"Kinux/core/web/models"
 	"Kinux/core/web/msg"
 	"Kinux/core/web/services"
 	"github.com/gin-gonic/gin"
@@ -106,6 +107,45 @@ func GetMissionGuide(c *gin.Context) {
 	if err != nil {
 		c.AbortWithStatusJSON(http.StatusOK, msg.BuildFailed(err))
 		return
+	}
+	c.JSON(http.StatusOK, msg.BuildSuccess(res))
+}
+
+// 获取任务数据
+func ListMissions(c *gin.Context) {
+	params := &struct {
+		Page, Size int
+		Name       string
+		Namespace  []string
+	}{
+		Page:      cast.ToInt(c.DefaultQuery("page", "1")),
+		Size:      cast.ToInt(c.DefaultQuery("size", "10")),
+		Name:      c.DefaultQuery("name", ""),
+		Namespace: c.QueryArray("ns"),
+	}
+	data, err := models.ListMissions(c, params.Name, params.Namespace, models.NewPageBuilder(params.Page, params.Size))
+	if err != nil {
+		c.AbortWithStatusJSON(http.StatusOK, msg.BuildFailed(err))
+		return
+	}
+
+	// 转译
+	type resType struct {
+		ID        uint   `json:"id"`
+		Total     uint   `json:"total"`
+		Name      string `json:"name"`
+		Desc      string `json:"desc"`
+		Namespace string `json:"namespace"`
+	}
+	var res = make([]*resType, 0, len(data))
+	for _, v := range data {
+		res = append(res, &resType{
+			ID:        v.ID,
+			Total:     v.Total,
+			Name:      v.Name,
+			Desc:      v.Desc,
+			Namespace: v.Namespace,
+		})
 	}
 	c.JSON(http.StatusOK, msg.BuildSuccess(res))
 }
