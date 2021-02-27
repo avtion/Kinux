@@ -142,24 +142,28 @@ func ListAccounts(c *gin.Context) {
 
 	// 转译结果
 	type resStruct struct {
-		ID         uint   `json:"id"`
-		Profile    uint   `json:"profile"`
-		Role       string `json:"role"`
-		Username   string `json:"username"`
-		RealName   string `json:"real_name"`
-		Department string `json:"department"`
-		CreatedAt  string `json:"created_at"`
+		ID           uint   `json:"id"`
+		Profile      uint   `json:"profile"`
+		Role         string `json:"role"`
+		Username     string `json:"username"`
+		RealName     string `json:"real_name"`
+		Department   string `json:"department"`
+		CreatedAt    string `json:"created_at"`
+		RoleID       uint   `json:"role_id"`
+		DepartmentID uint   `json:"department_id"`
 	}
 	var res = make([]*resStruct, 0, len(data))
 	for _, v := range data {
 		res = append(res, &resStruct{
-			ID:         v.ID,
-			Profile:    v.Profile,
-			Role:       models.RoleTranslator(v.Role),
-			Username:   v.Username,
-			RealName:   v.RealName,
-			Department: v.Department,
-			CreatedAt:  v.CreatedAt.Format("2006-01-02 15:04:05"),
+			ID:           v.ID,
+			Profile:      v.Profile,
+			Role:         models.RoleTranslator(v.Role),
+			Username:     v.Username,
+			RealName:     v.RealName,
+			Department:   v.Department,
+			CreatedAt:    v.CreatedAt.Format("2006-01-02 15:04:05"),
+			RoleID:       v.Role,
+			DepartmentID: v.DepartmentId,
 		})
 	}
 
