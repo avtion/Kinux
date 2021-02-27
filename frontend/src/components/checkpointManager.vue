@@ -17,6 +17,19 @@
             @search="onSearch"
           />
           <a-divider type="vertical" />
+          <a-select
+            v-model:value="currentCheckpointFilter"
+            style="width: 200px"
+            @change="onSearch"
+          >
+            <a-select-option :key="0">不筛选检测方式</a-select-option>
+            <a-select-option
+              v-for="item in CheckpointMethodMapper"
+              :key="item[0]"
+              >{{ item[1] }}</a-select-option
+            >
+          </a-select>
+          <a-divider type="vertical" />
           <a-button @click="addFn">新增</a-button>
         </div>
 
@@ -91,11 +104,7 @@
           <a-input v-model:value="formRef.Desc" style="width: 300px" />
         </a-form-item>
         <a-form-item label="检测方式">
-          <a-select
-            v-model:value="formRef.Method"
-            style="width: 300px"
-            placeholder="输入命名空间并摁下回车添加"
-          >
+          <a-select v-model:value="formRef.Method" style="width: 300px">
             <a-select-option
               v-for="item in CheckpointMethodMapper"
               :key="item[0]"
@@ -265,6 +274,8 @@ export default defineComponent({
     const store = GetStore()
     const routers = useRouter()
 
+    const currentCheckpointFilter = ref<CheckpointMethod>(0)
+
     // 表格
     const currentPage = ref<number>(1)
     const currentSize = ref<number>(10)
@@ -279,6 +290,7 @@ export default defineComponent({
           page: currentPage.value,
           size: currentSize.value,
           name: currentNameFilter.value,
+          method: currentCheckpointFilter.value,
         },
       ],
       formatResult: (res): ListResults => {
@@ -314,6 +326,7 @@ export default defineComponent({
         page: currentPage.value,
         size: currentSize.value,
         name: currentNameFilter.value,
+        method: currentCheckpointFilter.value,
       })
     }
 
@@ -325,6 +338,7 @@ export default defineComponent({
         page: currentPage.value,
         size: currentSize.value,
         name: currentNameFilter.value,
+        method: currentCheckpointFilter.value,
       })
     }
 
@@ -408,6 +422,7 @@ export default defineComponent({
           page: currentPage.value,
           size: currentSize.value,
           name: currentNameFilter.value,
+          method: currentCheckpointFilter.value,
         })
       })
     }
@@ -428,6 +443,7 @@ export default defineComponent({
               page: currentPage.value,
               size: currentSize.value,
               name: currentNameFilter.value,
+              method: currentCheckpointFilter.value,
             })
             modalVisible.value = false
           })
@@ -445,6 +461,7 @@ export default defineComponent({
               page: currentPage.value,
               size: currentSize.value,
               name: currentNameFilter.value,
+              method: currentCheckpointFilter.value,
             })
             modalVisible.value = false
           })
@@ -473,6 +490,7 @@ export default defineComponent({
       clearForm,
       CheckpointMethod,
       CheckpointMethodMapper,
+      currentCheckpointFilter,
     }
   },
 })
