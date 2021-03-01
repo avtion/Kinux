@@ -130,6 +130,12 @@ export const paths: routePath = {
     getGuide: 'v1/mission/guide/',
     dpOperation: 'v1/mission/op/',
     manageList: 'v1/mission/list/',
+    count: 'v1/mission/count/',
+    delete: 'v1/mission/delete/',
+    ns: 'v1/mission/ns/',
+    updateGuide: 'v1/mission/guide/',
+    add: 'v1/mission/model/',
+    edit: 'v1/mission/model/',
   },
   department: {
     list: 'v1/department/',
@@ -186,6 +192,12 @@ interface mission {
   getGuide: string
   dpOperation: string
   manageList: string
+  count: string
+  delete: string
+  ns: string
+  updateGuide: string
+  add: string
+  edit: string
 }
 
 interface department {
