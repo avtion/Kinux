@@ -233,3 +233,49 @@ func EditMission(c *gin.Context) {
 	}
 	c.JSON(http.StatusOK, msg.BuildSuccess("实验修改成功"))
 }
+
+// 创建实验
+func AddMission(c *gin.Context) {
+	params := &struct {
+		Name       string   `json:"name"`
+		Desc       string   `json:"desc"`
+		Namespace  string   `json:"namespace"`
+		Total      uint     `json:"total"`
+		Containers []string `json:"containers"`
+
+		Deployment    uint   `json:"deployment"`
+		ExecContainer string `json:"exec_container"`
+		Command       string `json:"command"`
+	}{}
+	if err := c.ShouldBindJSON(params); err != nil {
+		c.AbortWithStatusJSON(http.StatusOK, msg.BuildFailed(err))
+		return
+	}
+	if err := models.AddMission(c, params.Name, params.Deployment,
+		models.MissionOptDesc(params.Desc),
+		models.MissionOptNs(params.Namespace),
+		models.MissionOptTotal(params.Total),
+		models.MissionOptDeployment(params.Command, params.ExecContainer, params.Containers),
+	); err != nil {
+		c.AbortWithStatusJSON(http.StatusOK, msg.BuildFailed(err))
+		return
+	}
+	c.JSON(http.StatusOK, msg.BuildSuccess("实验创建成功"))
+}
+
+// 更新任务实验文档
+func UpdateMissionGuide(c *gin.Context) {
+	params := &struct {
+		ID   uint   `json:"id"`
+		Text string `json:"text"`
+	}{}
+	if err := c.ShouldBindJSON(params); err != nil {
+		c.AbortWithStatusJSON(http.StatusOK, msg.BuildFailed(err))
+		return
+	}
+	if err := models.UpdateMissionGuide(c, params.ID, params.Text); err != nil {
+		c.AbortWithStatusJSON(http.StatusOK, msg.BuildFailed(err))
+		return
+	}
+	c.JSON(http.StatusOK, msg.BuildSuccess("文档保存成功"))
+}
