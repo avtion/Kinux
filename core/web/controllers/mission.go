@@ -138,16 +138,30 @@ func ListMissions(c *gin.Context) {
 		Desc       string   `json:"desc"`
 		Namespace  string   `json:"namespace"`
 		Containers []string `json:"containers"`
+
+		Deployment    uint   `json:"deployment"`
+		ExecContainer string `json:"exec_container"`
+		Command       string `json:"command"`
 	}
 	var res = make([]*resType, 0, len(data))
 	for _, v := range data {
 		res = append(res, &resType{
-			ID:         v.ID,
-			Total:      v.Total,
-			Name:       v.Name,
-			Desc:       v.Desc,
-			Namespace:  v.Namespace,
-			Containers: strings.Split(v.WhiteListContainer, ";"),
+			ID:        v.ID,
+			Total:     v.Total,
+			Name:      v.Name,
+			Desc:      v.Desc,
+			Namespace: v.Namespace,
+			// 修复参数为空的情况下会返回[""]的情况
+			Containers: func(cs string) []string {
+				if cs != "" {
+					return strings.Split(v.WhiteListContainer, ";")
+				} else {
+					return []string{}
+				}
+			}(v.WhiteListContainer),
+			Deployment:    v.Deployment,
+			ExecContainer: v.ExecContainer,
+			Command:       v.Command,
 		})
 	}
 	c.JSON(http.StatusOK, msg.BuildSuccess(res))
