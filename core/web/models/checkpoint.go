@@ -124,8 +124,10 @@ func DeleteCheckpoint(ctx context.Context, id uint) (err error) {
 
 // 检查点选项结果
 type checkpointQuickResult struct {
-	ID   uint   `json:"id"`
-	Name string `json:"name"`
+	ID     uint   `json:"id"`
+	Method uint   `json:"method"`
+	Name   string `json:"name"`
+	Tag    string `json:"tag" gorm:"-"`
 }
 
 // 快速获取检查点选项
@@ -139,6 +141,16 @@ func QuickListCheckpoint(ctx context.Context, name string, method CheckpointMeth
 		db = db.Where("method = ?", method)
 	}
 	err = db.Find(&res).Error
+	for _, v := range res {
+		switch v.Method {
+		case MethodExec:
+			v.Tag = "输入监测"
+		case MethodStdout:
+			v.Tag = "输出监测"
+		case MethodTargetPort:
+			v.Tag = "端口监测"
+		}
+	}
 	return
 }
 

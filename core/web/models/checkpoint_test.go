@@ -55,3 +55,39 @@ func TestCheckpoint_CreateOrUpdate(t *testing.T) {
 		})
 	}
 }
+
+func TestQuickListCheckpoint(t *testing.T) {
+	type args struct {
+		ctx    context.Context
+		name   string
+		method CheckpointMethod
+	}
+	tests := []struct {
+		name    string
+		args    args
+		wantRes []*checkpointQuickResult
+		wantErr bool
+	}{
+		{
+			name: "test",
+			args: args{
+				ctx:    context.Background(),
+				name:   "",
+				method: 0,
+			},
+			wantErr: false,
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			gotRes, err := QuickListCheckpoint(tt.args.ctx, tt.args.name, tt.args.method)
+			if (err != nil) != tt.wantErr {
+				t.Errorf("QuickListCheckpoint() error = %v, wantErr %v", err, tt.wantErr)
+				return
+			}
+			for _, v := range gotRes {
+				t.Log(v)
+			}
+		})
+	}
+}
