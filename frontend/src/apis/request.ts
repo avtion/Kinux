@@ -152,6 +152,7 @@ export const paths: routePath = {
     edit: 'v1/deployment/',
     delete: 'v1/deployment/',
     quick: 'v1/deployment/quick/',
+    listContainers: 'v1/deployment/containers/',
   },
   role: {
     quick: 'v1/role/quick/',
@@ -220,6 +221,7 @@ interface deployment {
   edit: string
   delete: string
   quick: string
+  listContainers: string
 }
 
 interface checkpoint {
