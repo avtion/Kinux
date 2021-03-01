@@ -122,7 +122,7 @@ func ListMissions(c *gin.Context) {
 		Page:      cast.ToInt(c.DefaultQuery("page", "1")),
 		Size:      cast.ToInt(c.DefaultQuery("size", "10")),
 		Name:      c.DefaultQuery("name", ""),
-		Namespace: c.QueryArray("ns"),
+		Namespace: c.QueryArray("ns[]"),
 	}
 	data, err := models.ListMissions(c, params.Name, params.Namespace, models.NewPageBuilder(params.Page, params.Size))
 	if err != nil {
