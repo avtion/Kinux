@@ -277,6 +277,44 @@ func DeleteMission(ctx context.Context, id uint) (err error) {
 	return
 }
 
+// 创建任务
+func AddMission(ctx context.Context, name string, dp uint, opts ...MissionBuildOpt) (err error) {
+	deployment, err := GetDeployment(ctx, dp)
+	if err != nil {
+		return
+	}
+	m, err := MissionBuilder(ctx, name, deployment, opts...)
+	if err != nil {
+		return
+	}
+	return GetGlobalDB().WithContext(ctx).Create(m).Error
+}
+
+// 修改任务
+func EditMission(ctx context.Context, id uint, name string, dp uint, opts ...MissionBuildOpt) (err error) {
+	if id == 0 {
+		return errors.New("id为空")
+	}
+	deployment, err := GetDeployment(ctx, dp)
+	if err != nil {
+		return
+	}
+	m, err := MissionBuilder(ctx, name, deployment, opts...)
+	if err != nil {
+		return
+	}
+	return GetGlobalDB().WithContext(ctx).Model(&Mission{
+		Model: gorm.Model{
+			ID: id,
+		},
+	}).Updates(m).Error
+}
+
+// 修改任务的文档
+func UpdateMissionGuide(ctx context.Context, id uint, text string) (err error) {
+	return GetGlobalDB().WithContext(ctx).Model(new(Mission)).Where("id = ?", id).Update("guide", text).Error
+}
+
 /*
 	任务和检查点
 */
