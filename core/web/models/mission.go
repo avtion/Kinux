@@ -314,3 +314,9 @@ func EditMission(ctx context.Context, id uint, name string, dp uint, opts ...Mis
 func UpdateMissionGuide(ctx context.Context, id uint, text string) (err error) {
 	return GetGlobalDB().WithContext(ctx).Model(new(Mission)).Where("id = ?", id).Update("guide", text).Error
 }
+
+// 获取所有任务的命名空间
+func ListMissionNamespaces(ctx context.Context) (res []string, err error) {
+	err = GetGlobalDB().WithContext(ctx).Model(new(Mission)).Pluck("namespace", &res).Error
+	return
+}

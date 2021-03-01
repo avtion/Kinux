@@ -153,9 +153,3 @@ func FindAllTodoCheckpoints(ctx context.Context, account, mission uint, containe
 
 	return FindCheckpoints(ctx, todoCheckpointIDs...)
 }
-
-// 获取所有任务的命名空间
-func ListMissionNamespaces(ctx context.Context) (res []string, err error) {
-	err = GetGlobalDB().WithContext(ctx).Model(new(Mission)).Pluck("namespace", &res).Error
-	return
-}
