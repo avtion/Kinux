@@ -101,5 +101,16 @@ func v1Routers() initFunc {
 			checkpoint.GET("/count/", controllers.CountCheckpoints)     // count
 			checkpoint.GET("/quick/", controllers.QuickListCheckpoints) // options quick
 		}
+
+		// 实验监测点相关
+		missionCheckpoint := v1.Group("/mcp")
+		{
+			missionCheckpoint.GET("/", controllers.ListMissionCheckpoints)               // list
+			missionCheckpoint.GET("/count/", controllers.CountMissionCheckpoints)        // count
+			missionCheckpoint.GET("/percent/", controllers.GetMissionCheckpointsPercent) // option percent
+			missionCheckpoint.POST("/", controllers.AddMissionCheckpoint)                // add
+			missionCheckpoint.PUT("/:id/", controllers.EditMissionCheckpoint)            // edit
+			missionCheckpoint.DELETE("/:id/", controllers.DeleteMissionCheckpoint)       // delete
+		}
 	}
 }
