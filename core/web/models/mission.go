@@ -88,6 +88,9 @@ func MissionOptDesc(desc string) MissionBuildOpt {
 // 任务命名空间
 func MissionOptNs(ns string) MissionBuildOpt {
 	return func(m *Mission) (err error) {
+		if ns == "" {
+			ns = defaultDepartmentNamespace
+		}
 		m.Namespace = ns
 		return
 	}
@@ -102,6 +105,9 @@ func MissionOptDeployment(cmd, execC string, whiteListC []string) MissionBuildOp
 					return fmt.Errorf("设置白名单容器不允许包含';'字符: %s", v)
 				}
 			}
+		}
+		if cmd == "" {
+			cmd = "bash"
 		}
 		m.ExecContainer = execC
 		m.Command = cmd
