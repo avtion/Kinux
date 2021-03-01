@@ -116,6 +116,14 @@ func MissionOptDeployment(cmd, execC string, whiteListC []string) MissionBuildOp
 	}
 }
 
+// 任务分数
+func MissionOptTotal(total uint) MissionBuildOpt {
+	return func(m *Mission) (err error) {
+		m.Total = total
+		return
+	}
+}
+
 // 任务创建或更新内部实现
 func (m *Mission) CreateOrUpdate(ctx context.Context) (err error) {
 	db := GetGlobalDB().WithContext(ctx)
