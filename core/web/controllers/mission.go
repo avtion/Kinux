@@ -206,5 +206,30 @@ func ListMissionNamespaces(c *gin.Context) {
 
 // 编辑任务
 func EditMission(c *gin.Context) {
+	params := &struct {
+		ID         uint     `json:"id"`
+		Name       string   `json:"name"`
+		Desc       string   `json:"desc"`
+		Namespace  string   `json:"namespace"`
+		Total      uint     `json:"total"`
+		Containers []string `json:"containers"`
 
+		Deployment    uint   `json:"deployment"`
+		ExecContainer string `json:"exec_container"`
+		Command       string `json:"command"`
+	}{}
+	if err := c.ShouldBindJSON(params); err != nil {
+		c.AbortWithStatusJSON(http.StatusOK, msg.BuildFailed(err))
+		return
+	}
+	if err := models.EditMission(c, params.ID, params.Name, params.Deployment,
+		models.MissionOptDesc(params.Desc),
+		models.MissionOptNs(params.Namespace),
+		models.MissionOptTotal(params.Total),
+		models.MissionOptDeployment(params.Command, params.ExecContainer, params.Containers),
+	); err != nil {
+		c.AbortWithStatusJSON(http.StatusOK, msg.BuildFailed(err))
+		return
+	}
+	c.JSON(http.StatusOK, msg.BuildSuccess("实验修改成功"))
 }
