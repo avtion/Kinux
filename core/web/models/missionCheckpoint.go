@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"gorm.io/gorm"
+	"gorm.io/gorm/callbacks"
 	"strings"
 )
 
@@ -14,8 +15,37 @@ type MissionCheckpoints struct {
 	CheckPoint      uint   `gorm:"uniqueIndex:mission_checkpoint"`
 	Percent         uint   // 该检查点占任务总分的百分比
 	Priority        int    // 自定义排序
-	TargetContainer string // 目标容器
+	TargetContainer string `gorm:"uniqueIndex:mission_checkpoint"` // 目标容器
 }
+
+func (mc *MissionCheckpoints) Validate() (err error) {
+	if mc.Mission == 0 {
+		return errors.New("实验为空")
+	}
+	if mc.CheckPoint == 0 {
+		return errors.New("检查点为空")
+	}
+	if mc.TargetContainer == "" {
+		return errors.New("容器为空")
+	}
+	if mc.Percent == 0 {
+		return errors.New("所占成绩比例为空")
+	}
+	return nil
+}
+
+func (mc *MissionCheckpoints) BeforeSave(tx *gorm.DB) (err error) {
+	rest, err := countMissionCheckpointPercent(tx, mc.Mission)
+	if err != nil {
+		return
+	}
+	if mc.Percent > rest {
+		return errors.New("所占成绩比例超过100%")
+	}
+	return
+}
+
+var _ callbacks.BeforeSaveInterface = (*MissionCheckpoints)(nil)
 
 // 获取任务相关的全部检查点
 func FindAllMissionCheckpoints(ctx context.Context, mission uint, containers ...string) (mcs []*MissionCheckpoints, err error) {
@@ -27,7 +57,7 @@ func FindAllMissionCheckpoints(ctx context.Context, mission uint, containers ...
 	return
 }
 
-// 编辑任务的检查点
+// 编辑任务的检查点（用于任务全部检查点更新）
 func EditMissionCheckpoints(ctx context.Context, missionID uint, checkpoints ...struct {
 	CheckpointID    uint
 	Percent         uint
@@ -152,4 +182,89 @@ func FindAllTodoCheckpoints(ctx context.Context, account, mission uint, containe
 	}
 
 	return FindCheckpoints(ctx, todoCheckpointIDs...)
+}
+
+// 获取任务相关的检查点（内部实现）
+func listMissionCheckpoints(missionID uint, containers []string, builder *PageBuilder) (fn func(db *gorm.DB) *gorm.DB, err error) {
+	if missionID == 0 {
+		err = errors.New("实验ID为空")
+		return
+	}
+	return func(db *gorm.DB) *gorm.DB {
+		db = db.Model(new(MissionCheckpoints)).Where(&MissionCheckpoints{Mission: missionID})
+		if builder != nil {
+			db = db.Scopes(builder.build)
+		}
+		if len(containers) > 0 {
+			db = db.Where("target_container IN ?", containers)
+		}
+		return db
+	}, nil
+}
+
+// 获取任务相关的检查点
+func ListMissionCheckpoints(ctx context.Context, missionID uint, containers []string, builder *PageBuilder) (
+	mcs []*MissionCheckpoints, err error) {
+	fn, err := listMissionCheckpoints(missionID, containers, builder)
+	if err != nil {
+		return
+	}
+	err = GetGlobalDB().WithContext(ctx).Scopes(fn).Find(&mcs).Error
+	return
+}
+
+// 统计任务相关的检查点
+func CountMissionCheckpoints(ctx context.Context, missionID uint, containers []string) (res int64, err error) {
+	fn, err := listMissionCheckpoints(missionID, containers, nil)
+	if err != nil {
+		return
+	}
+	err = GetGlobalDB().WithContext(ctx).Scopes(fn).Count(&res).Error
+	return
+}
+
+// 统计任务现有的检查点已经占用的比例
+func CountMissionCheckpointPercent(ctx context.Context, missionID uint) (res uint, err error) {
+	return countMissionCheckpointPercent(GetGlobalDB().WithContext(ctx), missionID)
+}
+
+// 统计任务现有的检查点已经占用的比例（内部实现）
+func countMissionCheckpointPercent(db *gorm.DB, missionID uint) (res uint, err error) {
+	if db == nil {
+		db = GetGlobalDB().WithContext(context.Background())
+	}
+	var data = make([]uint, 0)
+	err = db.Model(new(MissionCheckpoints)).Where(
+		"mission = ?", missionID).Pluck("percent", &data).Error
+	if err != nil {
+		return
+	}
+	for _, v := range data {
+		res += v
+	}
+	return
+}
+
+// 新增任务检查点
+func AddMissionCheckpoint(ctx context.Context, mc *MissionCheckpoints) (err error) {
+	if err = mc.Validate(); err != nil {
+		return
+	}
+	return GetGlobalDB().WithContext(ctx).Create(mc).Error
+}
+
+// 更新任务检查点
+func EditMissionCheckpoint(ctx context.Context, mc *MissionCheckpoints) (err error) {
+	if mc.ID == 0 {
+		return errors.New("ID为空")
+	}
+	return GetGlobalDB().WithContext(ctx).Save(mc).Error
+}
+
+// 删除任务检查点
+func DeleteMissionCheckpoint(ctx context.Context, id uint) (err error) {
+	if id == 0 {
+		return errors.New("id为空")
+	}
+	return GetGlobalDB().WithContext(ctx).Unscoped().Delete(new(MissionCheckpoints), id).Error
 }
