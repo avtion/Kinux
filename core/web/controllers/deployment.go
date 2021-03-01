@@ -119,3 +119,19 @@ func CountDeployment(c *gin.Context) {
 	}
 	c.JSON(http.StatusOK, msg.BuildSuccess(res))
 }
+
+// 获取配置的所有的容器名
+func ListDeploymentContainers(c *gin.Context) {
+	id := cast.ToUint(c.Param("id"))
+	d, err := models.GetDeployment(c, id)
+	if err != nil {
+		c.AbortWithStatusJSON(http.StatusOK, msg.BuildFailed(err))
+		return
+	}
+	res, err := d.ParseDeploymentContainerNames()
+	if err != nil {
+		c.AbortWithStatusJSON(http.StatusOK, msg.BuildFailed(err))
+		return
+	}
+	c.JSON(http.StatusOK, msg.BuildSuccess(res))
+}

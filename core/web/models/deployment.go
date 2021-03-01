@@ -1,6 +1,7 @@
 package models
 
 import (
+	"Kinux/core/k8s"
 	"Kinux/tools"
 	"bytes"
 	"context"
@@ -75,6 +76,10 @@ func ListDeployment(ctx context.Context, name string, page *PageBuilder) (res []
 
 // 指定ID获取
 func GetDeployment(ctx context.Context, id uint) (res *Deployment, err error) {
+	if id == 0 {
+		err = errors.New("id为重")
+		return
+	}
 	res = new(Deployment)
 	err = GetGlobalDB().WithContext(ctx).First(res, id).Error
 	return
@@ -128,5 +133,22 @@ func CountDeployment(ctx context.Context, name string) (res int64, err error) {
 		db = db.Where("name LIKE ?", "%"+name+"%")
 	}
 	err = db.Count(&res).Error
+	return
+}
+
+// 解析Deployment配置文获取其中的容器名
+func (d *Deployment) ParseDeploymentContainerNames() (res []string, err error) {
+	if len(d.Raw) == 0 {
+		err = errors.New("配置文件无内容")
+		return
+	}
+	cfg, err := k8s.ParseDeploymentConfig(d.Raw, false)
+	if err != nil {
+		return
+	}
+	res = make([]string, 0, len(cfg.Spec.Template.Spec.Containers))
+	for _, c := range cfg.Spec.Template.Spec.Containers {
+		res = append(res, c.Name)
+	}
 	return
 }

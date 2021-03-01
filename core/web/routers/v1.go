@@ -69,12 +69,13 @@ func v1Routers() initFunc {
 		// 配置相关
 		deployment := v1.Group("/deployment")
 		{
-			deployment.GET("/", controllers.ListDeployment)            // list
-			deployment.GET("/count/", controllers.CountDeployment)     // count
-			deployment.GET("/quick/", controllers.QuickListDeployment) // option quick
-			deployment.PUT("/", controllers.EditDeployment)            // edit
-			deployment.POST("/", controllers.AddDeployment)            // add
-			deployment.DELETE("/:id/", controllers.DeleteDeployment)   // delete
+			deployment.GET("/", controllers.ListDeployment)                          // list
+			deployment.GET("/count/", controllers.CountDeployment)                   // count
+			deployment.GET("/quick/", controllers.QuickListDeployment)               // option quick
+			deployment.PUT("/", controllers.EditDeployment)                          // edit
+			deployment.POST("/", controllers.AddDeployment)                          // add
+			deployment.DELETE("/:id/", controllers.DeleteDeployment)                 // delete
+			deployment.GET("/containers/:id/", controllers.ListDeploymentContainers) // 获取配置的所有容器名
 		}
 
 		// 成绩相关
