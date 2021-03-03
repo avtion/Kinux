@@ -184,6 +184,7 @@
       title="实验检查点编辑"
       :footer="null"
       width="920px"
+      :destroyOnClose="true"
     >
       <missionScoreManager :missionID="targetMissionID"></missionScoreManager>
     </a-modal>
@@ -194,6 +195,7 @@
       title="实验检查点编辑"
       :footer="null"
       width="920px"
+      :destroyOnClose="true"
     >
       <missionCheckpointManager
         :missionID="targetMissionID"
