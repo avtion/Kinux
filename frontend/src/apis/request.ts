@@ -165,6 +165,14 @@ export const paths: routePath = {
     delete: 'v1/cp/',
     quick: 'v1/cp/quick/',
   },
+  mcp: {
+    list: 'v1/mcp/',
+    count: 'v1/mcp/count/',
+    add: 'v1/mcp/',
+    edit: 'v1/mcp/',
+    delete: 'v1/mcp/',
+    percent: 'v1/mcp/percent/',
+  },
 }
 
 interface routePath {
@@ -174,6 +182,7 @@ interface routePath {
   role: role
   deployment: deployment
   cp: checkpoint
+  mcp: missionCheckpoint
 }
 
 interface account {
@@ -231,4 +240,13 @@ interface checkpoint {
   edit: string
   delete: string
   quick: string
+}
+
+interface missionCheckpoint {
+  list: string
+  count: string
+  add: string
+  edit: string
+  delete: string
+  percent: string
 }
