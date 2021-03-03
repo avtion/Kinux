@@ -109,7 +109,7 @@ func v1Routers() initFunc {
 			missionCheckpoint.GET("/count/", controllers.CountMissionCheckpoints)            // count
 			missionCheckpoint.GET("/percent/:id/", controllers.GetMissionCheckpointsPercent) // option percent
 			missionCheckpoint.POST("/", controllers.AddMissionCheckpoint)                    // add
-			missionCheckpoint.PUT("/:id/", controllers.EditMissionCheckpoint)                // edit
+			missionCheckpoint.PUT("/", controllers.EditMissionCheckpoint)                    // edit
 			missionCheckpoint.DELETE("/:id/", controllers.DeleteMissionCheckpoint)           // delete
 		}
 	}
