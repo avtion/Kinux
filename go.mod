@@ -1,6 +1,6 @@
 module Kinux
 
-go 1.15
+go 1.16
 
 require (
 	github.com/Nerdmaster/terminal v0.12.1
