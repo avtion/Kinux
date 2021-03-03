@@ -35,11 +35,11 @@ func (mc *MissionCheckpoints) Validate() (err error) {
 }
 
 func (mc *MissionCheckpoints) BeforeSave(tx *gorm.DB) (err error) {
-	rest, err := countMissionCheckpointPercent(tx, mc.Mission)
+	used, err := countMissionCheckpointPercent(tx, mc.Mission)
 	if err != nil {
 		return
 	}
-	if mc.Percent > rest {
+	if mc.Percent > (100 - used) {
 		return errors.New("所占成绩比例超过100%")
 	}
 	return
