@@ -28,6 +28,22 @@ func ListMissionCheckpoints(c *gin.Context) {
 		return
 	}
 
+	type resStruct struct {
+		ID              uint   `json:"id"`
+		Percent         uint   `json:"percent"`
+		MissionID       uint   `json:"mission_id"`
+		CheckpointID    uint   `json:"checkpoint_id"`
+		Priority        int    `json:"priority"`
+		Mission         string `json:"mission"`
+		Checkpoint      string `json:"checkpoint"`
+		TargetContainer string `json:"target_container"`
+	}
+
+	if len(data) == 0 {
+		c.JSON(http.StatusOK, msg.BuildSuccess([]*resStruct{}))
+		return
+	}
+
 	missionIDs := make([]uint, 0, len(data))
 	cpIDs := make([]uint, 0, len(data))
 	for _, v := range data {
@@ -43,17 +59,6 @@ func ListMissionCheckpoints(c *gin.Context) {
 	if err != nil {
 		c.AbortWithStatusJSON(http.StatusOK, msg.BuildFailed(err))
 		return
-	}
-
-	type resStruct struct {
-		ID              uint   `json:"id"`
-		Percent         uint   `json:"percent"`
-		MissionID       uint   `json:"mission_id"`
-		CheckpointID    uint   `json:"checkpoint_id"`
-		Priority        int    `json:"priority"`
-		Mission         string `json:"mission"`
-		Checkpoint      string `json:"checkpoint"`
-		TargetContainer string `json:"target_container"`
 	}
 
 	var res = make([]*resStruct, 0, len(data))
