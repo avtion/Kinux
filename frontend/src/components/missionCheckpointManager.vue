@@ -94,10 +94,13 @@
           <template #percent="{ record }">
             <div style="width: 60px">
               <a-input-number
-                :defaultValue="editableData[record.id].percent"
                 v-model:value="editableData[record.id].percent"
                 :min="0"
-                :max="restPercent"
+                :max="
+                  restPercent >= editableData[record.id].percent
+                    ? restPercent
+                    : editableData[record.id].percent
+                "
                 style="width: 60px"
                 v-if="editableData[record.id]"
               />
@@ -112,11 +115,10 @@
             </div>
           </template>
 
-          <!-- 徽章 -->
+          <!-- 权重 -->
           <template #priority="{ record }">
             <div style="width: 60px">
               <a-input-number
-                :defaultValue="0"
                 v-model:value="editableData[record.id].priority"
                 v-if="editableData[record.id]"
                 style="width: 60px"
@@ -158,15 +160,7 @@
 
 <script lang="ts" type="module">
 // vue
-import {
-  defineComponent,
-  ref,
-  onMounted,
-  UnwrapRef,
-  reactive,
-  watch,
-  computed,
-} from 'vue'
+import { defineComponent, ref, UnwrapRef, reactive, watch, computed } from 'vue'
 
 // antd
 import { TableState } from 'ant-design-vue/es/table/interface'
