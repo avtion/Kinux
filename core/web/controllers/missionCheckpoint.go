@@ -3,10 +3,12 @@ package controllers
 import (
 	"Kinux/core/web/models"
 	"Kinux/core/web/msg"
+	"fmt"
 	"github.com/gin-gonic/gin"
 	"github.com/spf13/cast"
 	"gorm.io/gorm"
 	"net/http"
+	"strings"
 )
 
 // 获取实验相关的检查点
@@ -125,6 +127,9 @@ func AddMissionCheckpoint(c *gin.Context) {
 		Priority:        params.Priority,
 		TargetContainer: params.TargetContainer,
 	}); err != nil {
+		if strings.Contains(err.Error(), "mission_checkpoint") {
+			err = fmt.Errorf("检查点(id: %d)已经挂载容器(id: %s)", params.CheckPoint, params.TargetContainer)
+		}
 		c.AbortWithStatusJSON(http.StatusOK, msg.BuildFailed(err))
 		return
 	}
