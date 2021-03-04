@@ -115,7 +115,12 @@ func EditDepartment(c *gin.Context) {
 
 // 快速返回班级数据
 func QuickListDepartments(c *gin.Context) {
-	res, err := models.QuickListDepartment(c)
+	params := &struct {
+		Ns string
+	}{
+		Ns: c.DefaultQuery("ns", ""),
+	}
+	res, err := models.QuickListDepartment(c, models.NamespaceFilter(params.Ns))
 	if err != nil {
 		c.AbortWithStatusJSON(http.StatusOK, msg.BuildFailed(err))
 		return
