@@ -51,6 +51,13 @@ func FindAllAccountFinishMissionScore(ctx context.Context, account, mission uint
 	return
 }
 
+// 获取用户所有已经完成的检查点
+func FindAccountsFinishScore(ctx context.Context, accounts []uint, mission uint) (res []*MissionScore, err error) {
+	err = GetGlobalDB().WithContext(ctx).Where(
+		"mission = ? AND account IN ?", mission, accounts).Find(&res).Error
+	return
+}
+
 /*
 	实现 Score 接口
 */
