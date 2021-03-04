@@ -92,6 +92,7 @@ import {
   UnwrapRef,
   reactive,
   computed,
+  watch,
 } from 'vue'
 
 // antd
@@ -208,6 +209,14 @@ export default defineComponent({
     const currentDepartmentFilter = ref<number>()
     const { data: departmentOptions } = useRequest(departmentOptionsAPI, {
       formatResult: (res): departmentOptionsResult => {
+        if (
+          currentDepartmentFilter.value == undefined &&
+          (<departmentOptionsResult>res.data.Data).length > 0
+        ) {
+          currentDepartmentFilter.value = (<departmentOptionsResult>(
+            res.data.Data
+          ))[0].id
+        }
         return <departmentOptionsResult>res.data.Data
       },
       defaultParams: [
@@ -216,6 +225,12 @@ export default defineComponent({
         },
       ],
     })
+    watch(
+      () => currentDepartmentFilter.value,
+      () => {
+        onSearch()
+      }
+    )
 
     const getListParams = (): ListParams => {
       return <ListParams>{
@@ -256,7 +271,7 @@ export default defineComponent({
     })
 
     // 搜索按钮
-    const onSearch = (value: string) => {
+    const onSearch = (value?: string) => {
       getListData(getListParams())
     }
 
