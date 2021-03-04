@@ -81,8 +81,9 @@ func v1Routers() initFunc {
 		// 成绩相关
 		score := v1.Group("/score")
 		{
-			score.GET("/:type/", controllers.ListScores)         // list
-			score.DELETE("/:type/:id/", controllers.DeleteScore) // delete
+			//score.GET("/:type/", controllers.ListScores)         // list
+			//score.DELETE("/:type/:id/", controllers.DeleteScore) // delete
+			score.GET("/ms/", controllers.ListMissionScore) // list
 		}
 
 		// 角色相关
