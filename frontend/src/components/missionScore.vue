@@ -9,7 +9,7 @@
         }"
       >
         <!-- 筛选栏 -->
-        <div>
+        <a-row>
           <a-select
             style="width: 140px"
             v-model:value="currentDepartmentFilter"
@@ -20,17 +20,25 @@
               v.name
             }}</a-select-option>
           </a-select>
-          <template v-if="listData != undefined">
+        </a-row>
+        <a-divider />
+        <template v-if="listData != undefined">
+          <a-row>
+            <a-statistic title="满分" :value="listData.total" />
             <a-divider type="vertical" />
-            满分：{{ listData.total }}
+            <a-statistic title="总人数" :value="totalAccount" />
             <a-divider type="vertical" />
-            总人数: {{ totalAccount }}
+            <a-statistic title="完成人数" :value="listData.finish_count" />
             <a-divider type="vertical" />
-            完成人数: {{ listData.finish_count }}
-            <a-divider type="vertical" />
-            未完成人数: {{ totalAccount - listData.finish_count }}
-          </template>
-        </div>
+            <a-statistic
+              title="未完成人数"
+              :value="totalAccount - listData.finish_count"
+            />
+          </a-row>
+        </template>
+        <template v-else>
+          <a-skeleton active :paragraph="{ rows: 2 }" />
+        </template>
 
         <!-- 表格 -->
         <a-divider />
@@ -192,9 +200,6 @@ export default defineComponent({
     },
   },
   setup(props, ctx) {
-    onMounted(() => {
-      console.log(props.missionID)
-    })
     // vue相关变量
     const store = GetStore()
     const routers = useRouter()
