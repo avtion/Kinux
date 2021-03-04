@@ -299,7 +299,7 @@ func (a *Account) UpdatePassword(ctx context.Context, newPw string) (err error) 
 }
 
 // 用户查询过滤器
-type AccountFilterFn func(db *gorm.DB) *gorm.DB
+type AccountFilterFn = func(db *gorm.DB) *gorm.DB
 
 // 用户名过滤器
 func AccountNameFilter(name string) AccountFilterFn {
@@ -353,12 +353,9 @@ func listAccountsWithProfiles(ctx context.Context, builder *PageBuilder, filters
 	const JoinQuery = `accounts
          JOIN profiles ON accounts.profile = profiles.id
          JOIN departments ON profiles.department = departments.id`
-	db = GetGlobalDB().WithContext(ctx).Table("accounts").Select(selectQuery).Joins(JoinQuery)
+	db = GetGlobalDB().WithContext(ctx).Table("accounts").Select(selectQuery).Joins(JoinQuery).Scopes(filters...)
 	if builder != nil {
 		db = builder.build(db)
-	}
-	for _, fn := range filters {
-		db = fn(db)
 	}
 	return
 }
