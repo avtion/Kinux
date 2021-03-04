@@ -188,8 +188,18 @@ type QuickListDepartmentRes struct {
 	Name string `json:"name"`
 }
 
+func NamespaceFilter(ns string) func(db *gorm.DB) *gorm.DB {
+	return func(db *gorm.DB) *gorm.DB {
+		if len(ns) == 0 {
+			return db
+		}
+		return db.Where("namespace LIKE ?", "%"+ns+"%")
+	}
+}
+
 // 用于快速返回班级相关的选项数据
-func QuickListDepartment(ctx context.Context) (res []*QuickListDepartmentRes, err error) {
-	err = GetGlobalDB().Model(new(Department)).WithContext(ctx).Select("id, name").Find(&res).Error
+func QuickListDepartment(ctx context.Context, filters ...func(db *gorm.DB) *gorm.DB) (res []*QuickListDepartmentRes, err error) {
+	err = GetGlobalDB().Model(new(Department)).WithContext(ctx).Select(
+		"id, name").Scopes(filters...).Find(&res).Error
 	return
 }
