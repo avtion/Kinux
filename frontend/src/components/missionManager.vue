@@ -59,9 +59,7 @@
           <!-- 编辑框 -->
           <template #operation="{ record }">
             <a-button-group size="small">
-              <a-button
-                type="primary"
-                @click="openMissionScoreManager(record.id)"
+              <a-button type="primary" @click="openMissionScoreManager(record)"
                 >成绩查询</a-button
               >
               <a-button type="primary" @click="editFn(record)"
@@ -181,12 +179,15 @@
     <!-- 成绩查询 -->
     <a-modal
       v-model:visible="missionScoreVisiable"
-      title="实验检查点编辑"
+      title="成绩查询"
       :footer="null"
       width="920px"
       :destroyOnClose="true"
     >
-      <missionScoreManager :missionID="targetMissionID"></missionScoreManager>
+      <missionScoreManager
+        :missionID="targetMissionID"
+        :namespace="targetNamepsce"
+      ></missionScoreManager>
     </a-modal>
 
     <!-- 实验检查点编辑 -->
@@ -561,14 +562,16 @@ export default defineComponent({
 
     // 检查点编辑和成绩查询
     const targetMissionID = ref<number>(0)
+    const targetNamepsce = ref<string>('')
     const missionCheckpointVisiable = ref<boolean>(false)
     const missionScoreVisiable = ref<boolean>(false)
     const openMissionCheckpointManager = (id: number) => {
       targetMissionID.value = id
       missionCheckpointVisiable.value = true
     }
-    const openMissionScoreManager = (id: number) => {
-      targetMissionID.value = id
+    const openMissionScoreManager = (record: ListResult) => {
+      targetMissionID.value = record.id
+      targetNamepsce.value = record.namespace
       missionScoreVisiable.value = true
     }
 
@@ -605,6 +608,7 @@ export default defineComponent({
       openMissionCheckpointManager,
       missionScoreVisiable,
       openMissionScoreManager,
+      targetNamepsce,
     }
   },
 })
