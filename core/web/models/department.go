@@ -203,3 +203,10 @@ func QuickListDepartment(ctx context.Context, filters ...func(db *gorm.DB) *gorm
 		"id, name").Scopes(filters...).Find(&res).Error
 	return
 }
+
+// 根据ID获取班级
+func GetDepartmentByID(ctx context.Context, id uint) (d *Department, err error) {
+	d = new(Department)
+	err = GetGlobalDB().WithContext(ctx).First(d, id).Error
+	return
+}
