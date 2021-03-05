@@ -40,11 +40,7 @@ func NewPtyWrapperListenerOpt(way listenWay) (opt WsPtyWrapperOption, listener *
 	return func(w *WsPtyWrapper) {
 		switch way {
 		case ListenStdin:
-			if w.ws.PtyStdin == nil {
-				w.ws.PtyStdin = writer
-			} else {
-				w.ws.PtyStdin = io.MultiWriter(w.ws.PtyStdin, writer)
-			}
+			w.writer = io.MultiWriter(w.writer, writer)
 		case ListenStdout:
 			if w.stdoutListener == nil {
 				w.stdoutListener = writer
