@@ -210,7 +210,7 @@ func (mc *MissionController) generateAndApplyDpName() *MissionController {
 		nameBuilder := strings.Builder{}
 		nameBuilder.WriteString(mc.dpCfg.GetObjectMeta().GetName() + "-")
 		nameBuilder.WriteString(mc.Ac.Username + "-")
-		nameBuilder.WriteString(tools.GetRandomString(6))
+		nameBuilder.WriteString(strings.ToLower(tools.GetRandomString(6)))
 		mc.dpCfg.GetObjectMeta().SetName(nameBuilder.String())
 		return nil
 	})
