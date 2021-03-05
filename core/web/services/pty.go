@@ -125,9 +125,13 @@ func missionPtyResizeRegister(ws *WebsocketSchedule, any jsoniter.Any) (err erro
 	}{}
 	any.Get("data").ToVal(size)
 
+	if ws.pty == nil {
+		return
+	}
+
 	// 防止 Read 接口发生阻塞
 	select {
-	case ws.sizeChan <- remotecommand.TerminalSize{Width: size.Cols, Height: size.Rows}:
+	case ws.pty.sizeChan <- remotecommand.TerminalSize{Width: size.Cols, Height: size.Rows}:
 	default:
 	}
 
@@ -136,10 +140,10 @@ func missionPtyResizeRegister(ws *WebsocketSchedule, any jsoniter.Any) (err erro
 
 // 终端写入处理函数
 func missionPtyStdinRegister(ws *WebsocketSchedule, any jsoniter.Any) (err error) {
-	if ws.PtyStdin == nil {
+	if ws.pty == nil {
 		return errors.New("没有可用的终端")
 	}
-	_, err = ws.PtyStdin.Write(bytesconv.StringToBytes(any.Get("data").ToString()))
+	_, err = ws.pty.writer.Write(bytesconv.StringToBytes(any.Get("data").ToString()))
 	return nil
 }
 
