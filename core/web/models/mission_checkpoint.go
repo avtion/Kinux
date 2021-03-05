@@ -34,7 +34,7 @@ func (mc *MissionCheckpoints) Validate() (err error) {
 	return nil
 }
 
-func (mc *MissionCheckpoints) BeforeSave(tx *gorm.DB) (err error) {
+func (mc *MissionCheckpoints) BeforeCreate(tx *gorm.DB) (err error) {
 	used, err := countMissionCheckpointPercent(tx, mc.Mission)
 	if err != nil {
 		return
@@ -45,7 +45,9 @@ func (mc *MissionCheckpoints) BeforeSave(tx *gorm.DB) (err error) {
 	return
 }
 
-var _ callbacks.BeforeSaveInterface = (*MissionCheckpoints)(nil)
+// TODO BeforeUpdate 校验
+
+var _ callbacks.BeforeCreateInterface = (*MissionCheckpoints)(nil)
 
 // 获取任务相关的全部检查点
 func FindAllMissionCheckpoints(ctx context.Context, mission uint, containers ...string) (mcs []*MissionCheckpoints, err error) {
