@@ -49,9 +49,10 @@ type WebsocketSchedule struct {
 	Account   *models.Account
 
 	// SSH终端相关
-	sizeChan    chan remotecommand.TerminalSize
-	PtyStdin    io.Writer
-	PtyCancelFn context.CancelFunc
+	pty *WsPtyWrapper
+
+	// 时间标记
+	CreatedAt time.Time
 }
 
 type WsFn func(ws *WebsocketSchedule) (err error)
@@ -69,9 +70,9 @@ func NewWebsocketSchedule(c *gin.Context, fns ...WsFn) (ws *WebsocketSchedule, e
 		Conn:                 wsConn,
 		Context:              ctx,
 		daemonStopCh:         make(chan struct{}),
-		sizeChan:             make(chan remotecommand.TerminalSize),
 		operationMiddlewares: []WsOperationHandler{authMiddleware},
 		dataSenderCh:         make(chan []byte, 1<<5),
+		CreatedAt:            time.Now(),
 	}
 	if err = ws.Apply(fns...); err != nil {
 		cancel()
@@ -207,12 +208,11 @@ func (ws *WebsocketSchedule) SendData(p []byte) {
 
 // 发送终止信号给Pty
 func (ws *WebsocketSchedule) SayGoodbyeToPty() {
-	if ws.PtyStdin != nil {
-		_, _ = ws.PtyStdin.Write([]byte(EndOfTransmission))
-		ws.PtyStdin = nil
-		ws.PtyCancelFn()
-		ws.PtyCancelFn = nil
+	if ws.pty == nil {
+		return
 	}
+	_, _ = ws.pty.writer.Write([]byte(EndOfTransmission))
+	ws.pty = nil
 }
 
 /*
@@ -247,11 +247,15 @@ type WsPtyWrapper struct {
 	ws     *WebsocketSchedule
 	reader io.Reader
 
+	writer   io.Writer
+	sizeChan chan remotecommand.TerminalSize
+
 	// 输出监听者 - 输入监听者需要在调度器中进行注入
 	stdoutListener io.Writer
 
 	// 并发控制
 	ChildCtx context.Context
+	cancelFn context.CancelFunc
 }
 
 type WsPtyWrapperOption = func(w *WsPtyWrapper)
@@ -266,22 +270,20 @@ func (ws *WebsocketSchedule) InitPtyWrapper(opts ...WsPtyWrapperOption) *WsPtyWr
 	// 使用io管道对输入的数据进行拷贝
 	r, w := io.Pipe()
 
-	// 兼容多输入监听者
-	if ws.PtyStdin != nil {
-		ws.PtyStdin = io.MultiWriter(ws.PtyStdin, w)
-	} else {
-		ws.PtyStdin = w
-	}
-
 	// FIX 初始化并发控制
 	childCtx, cancel := context.WithCancel(ws.Context)
-	ws.PtyCancelFn = cancel
-
 	wrapper := &WsPtyWrapper{
 		ws:       ws,
 		reader:   r,
+		writer:   w,
+		sizeChan: make(chan remotecommand.TerminalSize),
 		ChildCtx: childCtx,
+		cancelFn: cancel,
 	}
+	defer func() {
+		ws.pty = wrapper
+	}()
+
 	for _, opt := range opts {
 		if opt != nil {
 			opt(wrapper)
@@ -326,18 +328,17 @@ func (pw *WsPtyWrapper) Write(p []byte) (n int, err error) {
 // 实现 remotecommand.TerminalSizeQueue 接口
 func (pw *WsPtyWrapper) Next() *remotecommand.TerminalSize {
 	select {
-	case size := <-pw.ws.sizeChan:
+	case size := <-pw.sizeChan:
 		return &size
-	case <-pw.ws.Done():
+	case <-pw.ChildCtx.Done():
 		return nil
 	}
 }
 
-// 实现 k8s.PtyHandler 接口
-func (pw *WsPtyWrapper) Done() {
-	// 当POD的Stream终止时，触发
+func (pw *WsPtyWrapper) Close() (err error) {
+	pw.cancelFn()
 	pw.ws.SayGoodbyeToPty()
-	return
+	return nil
 }
 
 // 组合多个Pty装饰器
