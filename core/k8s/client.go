@@ -17,18 +17,17 @@ type clientReqOption func(r *rest.Request)
 
 // PtyHandler 定义remoteCommand所需要的方法集
 type PtyHandler interface {
-	io.ReadWriter
+	io.ReadWriteCloser
 	remotecommand.TerminalSizeQueue // 调整终端大小
-	Done()                          // 终止
 }
 
 // Pod建立连接
-func ConnectToPod(ctx context.Context, p *coreV1.Pod, container string, pty PtyHandler, cmd []string,
+func ConnectToPod(_ context.Context, p *coreV1.Pod, container string, pty PtyHandler, cmd []string,
 	options ...clientReqOption) (err error) {
 	// 关闭pty连接
 	defer func() {
 		logrus.Debug("pty被释放")
-		pty.Done()
+		_ = pty.Close()
 	}()
 
 	// 设置默认容器
