@@ -75,6 +75,9 @@ type PageBuilder struct {
 }
 
 func (p *PageBuilder) build(db *gorm.DB) *gorm.DB {
+	if p.Page == 0 || p.Size == 0 {
+		return db
+	}
 	return db.Limit(p.Size).Offset((p.Page - 1) * p.Size)
 }
 
