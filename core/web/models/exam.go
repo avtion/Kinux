@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"gorm.io/gorm"
+	"gorm.io/gorm/callbacks"
 	"strings"
 	"time"
 )
@@ -85,7 +86,7 @@ func CountExams(ctx context.Context, namespace string) (res int64, err error) {
 }
 
 // 获取考试的实验
-func ListExamMissions(ctx context.Context, examsIDs ...uint) (res []*ExamMissions, err error) {
+func GetExamMissions(ctx context.Context, examsIDs ...uint) (res []*ExamMissions, err error) {
 	err = GetGlobalDB().WithContext(ctx).Where("exam IN ?", examsIDs).Find(&res).Error
 	return
 }
@@ -121,5 +122,94 @@ func DeleteExam(ctx context.Context, id uint) (err error) {
 // 获取已有考试的命名空间列表
 func GetExamsNamespaces(ctx context.Context) (res []string, err error) {
 	err = GetGlobalDB().WithContext(ctx).Model(new(Exam)).Distinct().Pluck("namespace", &res).Error
+	return
+}
+
+// 获取考试已经使用的实验占比
+func GetExamMissionsUsedPercent(ctx context.Context, id uint) (res uint, err error) {
+	return getExamMissionsUsedPercent(GetGlobalDB().WithContext(ctx), id)
+}
+
+// 获取考试已经使用的实验占比（内部实现）
+func getExamMissionsUsedPercent(db *gorm.DB, id uint) (res uint, err error) {
+	var data []uint
+	err = db.Model(new(ExamMissions)).Where(
+		"exam = ?", id).Pluck("percent", &data).Error
+	for _, v := range data {
+		res += v
+	}
+	return
+}
+
+// 钩子函数
+func (em *ExamMissions) BeforeCreate(tx *gorm.DB) (err error) {
+	used, err := getExamMissionsUsedPercent(tx, em.Exam)
+	if err != nil {
+		return
+	}
+	if em.Percent > (100 - used) {
+		return errors.New("所占成绩比例超过100%")
+	}
+	return
+}
+
+var _ callbacks.BeforeCreateInterface = (*ExamMissions)(nil)
+
+// 创建
+func (em *ExamMissions) Create(ctx context.Context) (err error) {
+	if em.Exam == 0 || em.Mission == 0 {
+		return errors.New("必须指定考试和实验")
+	}
+	if em.Percent == 0 {
+		return errors.New("成绩比例不能为空")
+	}
+	return GetGlobalDB().WithContext(ctx).Create(em).Error
+}
+
+// 保存
+func (em *ExamMissions) Save(ctx context.Context) (err error) {
+	if em.Exam == 0 || em.Mission == 0 {
+		return errors.New("必须指定考试和实验")
+	}
+	if em.Percent == 0 {
+		return errors.New("成绩比例不能为空")
+	}
+	return GetGlobalDB().WithContext(ctx).Save(em).Error
+}
+
+// 删除
+func DeleteExamMission(ctx context.Context, id uint) (err error) {
+	if id == 0 {
+		return errors.New("id不能为空")
+	}
+	return GetGlobalDB().WithContext(ctx).Delete(new(ExamMissions), id).Error
+}
+
+func listExamMission(exam, mission uint, builder *PageBuilder) func(db *gorm.DB) *gorm.DB {
+	return func(db *gorm.DB) *gorm.DB {
+		if exam != 0 {
+			db = db.Where("exam = ?", exam)
+		}
+		if mission != 0 {
+			db = db.Where("mission = ?", mission)
+		}
+		if builder != nil {
+			db = db.Scopes(builder.build)
+		}
+		return db
+	}
+}
+
+// 获取考试的实验数据
+func ListExamMissions(ctx context.Context, exam, mission uint, builder *PageBuilder) (
+	res []*ExamMissions, err error) {
+	err = GetGlobalDB().WithContext(ctx).Scopes(listExamMission(exam, mission, builder)).Find(&res).Error
+	return
+}
+
+// 统计考试的实验数据
+func CountExamMissions(ctx context.Context, exam, mission uint) (
+	res int64, err error) {
+	err = GetGlobalDB().WithContext(ctx).Scopes(listExamMission(exam, mission, nil)).Count(&res).Error
 	return
 }
