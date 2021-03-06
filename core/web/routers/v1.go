@@ -124,5 +124,15 @@ func v1Routers() initFunc {
 			exam.PUT("/", controllers.EditExam)              // edit
 			exam.GET("/ns/", controllers.GetExamsNamespaces) // options namespce
 		}
+
+		// 考试实验相关
+		examMission := v1.Group("/em")
+		{
+			examMission.GET("/", controllers.ListExamMissions)         // list
+			examMission.GET("/count/", controllers.CountExamMissions)  // count
+			examMission.DELETE("/:id/", controllers.DeleteExamMission) // delete
+			examMission.POST("/", controllers.AddExamMission)          // add
+			examMission.PUT("/", controllers.EditExamMission)          // edit
+		}
 	}
 }
