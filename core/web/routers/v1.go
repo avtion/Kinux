@@ -128,11 +128,12 @@ func v1Routers() initFunc {
 		// 考试实验相关
 		examMission := v1.Group("/em")
 		{
-			examMission.GET("/", controllers.ListExamMissions)         // list
-			examMission.GET("/count/", controllers.CountExamMissions)  // count
-			examMission.DELETE("/:id/", controllers.DeleteExamMission) // delete
-			examMission.POST("/", controllers.AddExamMission)          // add
-			examMission.PUT("/", controllers.EditExamMission)          // edit
+			examMission.GET("/", controllers.ListExamMissions)                      // list
+			examMission.GET("/count/", controllers.CountExamMissions)               // count
+			examMission.DELETE("/:id/", controllers.DeleteExamMission)              // delete
+			examMission.POST("/", controllers.AddExamMission)                       // add
+			examMission.PUT("/", controllers.EditExamMission)                       // edit
+			examMission.GET("/percent/:id/", controllers.GetExamMissionUsedPercent) // option percent
 		}
 	}
 }
