@@ -33,11 +33,11 @@ var _ = [...]MissionStatus{MissionStatusStop, MissionStatusPending, MissionStatu
 
 // 业务层的任务结构体, 用于响应
 type Mission struct {
-	ID     uint
-	Name   string
-	Desc   string
-	Guide  string
-	Status MissionStatus
+	ID     uint          `json:"id"`
+	Name   string        `json:"name"`
+	Desc   string        `json:"desc"`
+	Guide  string        `json:"guide"`
+	Status MissionStatus `json:"status"`
 }
 
 // 批量获取任务信息
