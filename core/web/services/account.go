@@ -82,6 +82,11 @@ func JWTRegister(ws *WebsocketSchedule, any jsoniter.Any) (err error) {
 		return
 	}
 
+	// 挂载调度中心
+	if err = RegisterWsConn(int(ws.Account.ID), ws); err != nil {
+		return
+	}
+
 	// 向用户发送通知
 	if err = ws.SendMsg(msg.BuildSuccess(fmt.Sprintf("%s您好，websocket通信建立成功！", userPayload.Username))); err != nil {
 		return
