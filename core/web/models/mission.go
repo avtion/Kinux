@@ -320,3 +320,9 @@ func ListMissionNamespaces(ctx context.Context) (res []string, err error) {
 	err = GetGlobalDB().WithContext(ctx).Model(new(Mission)).Pluck("namespace", &res).Error
 	return
 }
+
+// 批量获取实验
+func GetMissions(ctx context.Context, fns ...func(db *gorm.DB) *gorm.DB) (res []*Mission, err error) {
+	err = GetGlobalDB().WithContext(ctx).Scopes(fns...).Find(&res).Error
+	return
+}
