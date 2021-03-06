@@ -5,6 +5,7 @@ import (
 	"Kinux/core/web/models"
 	"Kinux/tools/bytesconv"
 	"errors"
+	"fmt"
 	jsoniter "github.com/json-iterator/go"
 	"github.com/sirupsen/logrus"
 	"github.com/spf13/cast"
@@ -103,7 +104,12 @@ func missionPtyRegister(ws *WebsocketSchedule, any jsoniter.Any) (err error) {
 	checkpointListenerOpt := NewWrapperForCheckpointCallback(ws.Account, nil, mission, c.Name, cps...)
 
 	// 初始化pty
-	ptyWrapper := ws.InitPtyWrapper(stdinListenerOpt, stdoutListenerOpt, checkpointListenerOpt)
+	ptyWrapper := ws.InitPtyWrapper(
+		stdinListenerOpt,
+		stdoutListenerOpt,
+		checkpointListenerOpt,
+		SetWsPtyMetaDataOption(fmt.Sprintf("实验: %s(%d)", mission.Name, mission.ID)),
+	)
 	stdinListener.DebugPrint()
 	stdoutListener.DebugPrint()
 
