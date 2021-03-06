@@ -37,7 +37,7 @@ type ScheduleCenterListResult struct {
 	PtyMetaData string `json:"pty_meta_data"`
 }
 
-func listScheduleCenterInfo(_ context.Context) (res []*ScheduleCenterListResult) {
+func ListScheduleCenterInfo(_ context.Context) (res []*ScheduleCenterListResult) {
 	res = make([]*ScheduleCenterListResult, 0)
 	scheduleCenter.Range(func(key, value interface{}) bool {
 		ws := value.(*WebsocketSchedule)
