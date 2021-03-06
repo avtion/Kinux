@@ -49,7 +49,7 @@ func ListExams(ctx context.Context, namespace string, page, size int) (res []*Ex
 	}
 
 	// 查询考试关联的实验
-	eMissions, err := models.ListExamMissions(ctx, examIDs...)
+	eMissions, err := models.GetExamMissions(ctx, examIDs...)
 	if err != nil {
 		return
 	}
