@@ -55,3 +55,16 @@ func GetExamsNameMapper(ctx context.Context, id ...uint) (res map[uint]string, e
 	}
 	return
 }
+
+// 获取考试列表
+func ListExams(ctx context.Context, namespace string, builder *PageBuilder) (res []*Exam, err error) {
+	err = GetGlobalDB().WithContext(ctx).Where(
+		"namespace = ?", namespace).Scopes(builder.build).Find(&res).Error
+	return
+}
+
+// 获取考试的实验
+func ListExamMissions(ctx context.Context, examsIDs ...uint) (res []*ExamMissions, err error) {
+	err = GetGlobalDB().WithContext(ctx).Where("exam IN ?", examsIDs).Find(&res).Error
+	return
+}
