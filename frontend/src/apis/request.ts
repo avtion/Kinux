@@ -176,6 +176,14 @@ export const paths: routePath = {
   score: {
     msList: 'v1/score/ms/',
   },
+  exam: {
+    list: 'v1/exam/list/',
+    count: 'v1/exam/count/',
+    add: 'v1/exam/',
+    edit: 'v1/exam/',
+    delete: 'v1/exam/',
+    ns: 'v1/exam/ns/',
+  },
 }
 
 interface routePath {
@@ -187,6 +195,7 @@ interface routePath {
   cp: checkpoint
   mcp: missionCheckpoint
   score: score
+  exam: examCheckpoint
 }
 
 interface account {
@@ -257,4 +266,13 @@ interface missionCheckpoint {
 
 interface score {
   msList: string
+}
+
+interface examCheckpoint {
+  list: string
+  count: string
+  add: string
+  edit: string
+  delete: string
+  ns: string
 }
