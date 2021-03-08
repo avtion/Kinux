@@ -81,7 +81,7 @@ func ListExams(ctx context.Context, namespace string, builder *PageBuilder) (res
 
 // 获取考试列表
 func CountExams(ctx context.Context, namespace string) (res int64, err error) {
-	err = GetGlobalDB().WithContext(ctx).Scopes(listExams(namespace, nil)).Count(&res).Error
+	err = GetGlobalDB().WithContext(ctx).Model(new(Exam)).Scopes(listExams(namespace, nil)).Count(&res).Error
 	return
 }
 
