@@ -1,9 +1,12 @@
 package services
 
 import (
+	"Kinux/core/k8s"
 	"Kinux/core/web/models"
 	"context"
+	"github.com/spf13/cast"
 	"gorm.io/gorm"
+	"k8s.io/apimachinery/pkg/labels"
 )
 
 // 考试列表查询结果
@@ -19,7 +22,7 @@ type ExamListResult struct {
 }
 
 // 查询考试列表
-func ListExams(ctx context.Context, namespace string, page, size int) (res []*ExamListResult, err error) {
+func ListExams(ctx context.Context, ac *models.Account, namespace string, page, size int) (res []*ExamListResult, err error) {
 	exams, err := models.ListExams(ctx, namespace, models.NewPageBuilder(page, size))
 	if err != nil {
 		return
@@ -73,6 +76,12 @@ func ListExams(ctx context.Context, namespace string, page, size int) (res []*Ex
 		missionsMapper[v.ID] = missions[k]
 	}
 
+	// 查询当前Deployment的状态
+	dpStatusMapper, err := getDeploymentStatusForExam(ctx, "", NewLabelMarker().WithAccount(ac.ID))
+	if err != nil {
+		return
+	}
+
 	// 追加结果
 	for _, v := range eMissions {
 		_res, isExist := resMapper[v.Exam]
@@ -86,13 +95,56 @@ func ListExams(ctx context.Context, namespace string, page, size int) (res []*Ex
 		if !isExist {
 			continue
 		}
+
+		status, isExist := dpStatusMapper[v.Exam]
+		if !isExist {
+			status = MissionStatusStop
+		}
+
 		_res.Missions = append(_res.Missions, &Mission{
 			ID:     ms.ID,
 			Name:   ms.Name,
 			Desc:   ms.Desc,
 			Guide:  ms.Guide,
-			Status: 0, // TODO 完成状态监测
+			Status: status, // TODO 完成状态监测
 		})
+	}
+
+	return
+}
+
+// 根据Deployment的状态获取对应考试的状态
+func getDeploymentStatusForExam(ctx context.Context, namespace string, l *labelMaker) (
+	res map[uint]MissionStatus, err error) {
+	if l == nil {
+		l = NewLabelMarker()
+	}
+
+	// 从K8S调度模块查询Deployment的情况
+	dps, err := k8s.ListDeployments(ctx, namespace, l.Do())
+	if err != nil {
+		return
+	}
+
+	// 遍历
+	res = make(map[uint]MissionStatus, len(dps.Items))
+	if len(dps.Items) > 0 {
+		for _, item := range dps.Items {
+			// 如果可用的副本等于要求的副本数量
+			examID := cast.ToUint(labels.Set(item.GetLabels()).Get(examLabel))
+
+			// FIX 修复mission标签为空的情况
+			if examID == 0 {
+				continue
+			}
+
+			// 检查可用副本数量
+			if item.Status.AvailableReplicas == *item.Spec.Replicas {
+				res[examID] = MissionStatusWorking
+			} else {
+				res[examID] = MissionStatusPending
+			}
+		}
 	}
 
 	return
