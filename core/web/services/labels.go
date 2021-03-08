@@ -10,6 +10,7 @@ const (
 	accountLabel    = "account-id"
 	missionLabel    = "mission-id"
 	deploymentLabel = "deployment-id"
+	examLabel       = "exam-id"
 )
 
 // labels标签生成器
@@ -60,4 +61,8 @@ func (l *labelMaker) WithMission(id interface{}) *labelMaker {
 
 func (l *labelMaker) WithDeployment(id interface{}) *labelMaker {
 	return l.WithString(deploymentLabel, cast.ToString(id))
+}
+
+func (l *labelMaker) WithExam(id interface{}) *labelMaker {
+	return l.WithString(examLabel, cast.ToString(id))
 }
