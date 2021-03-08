@@ -73,10 +73,10 @@
             <template #renderItem="{ item, index }">
               <a-list-item>
                 <!-- 元数据 -->
-                <a-list-item-meta :description="item.Desc">
+                <a-list-item-meta :description="item.desc">
                   <!-- 标题 -->
                   <template #title>
-                    <a @click="openInstructions(item.ID)">{{ item.Name }}</a>
+                    <a @click="openInstructions(item.id)">{{ item.name }}</a>
                   </template>
                   <!-- 头像 -->
                   <template #avatar>
@@ -86,12 +86,12 @@
                 <!-- 操作 -->
                 <template #actions>
                   <a-button
-                    :type="GetMissionButtonType(item.Status)"
-                    :loading="GetMissionButtonLoadingStatus(item.Status)"
+                    :type="GetMissionButtonType(item.status)"
+                    :loading="GetMissionButtonLoadingStatus(item.status)"
                     @click="MissionHandler(index, item)"
-                    :disabled="item.Status == missionStatus.Done"
+                    :disabled="item.status == missionStatus.Done"
                   >
-                    {{ GetMissionButtonDesc(item.Status) }}
+                    {{ GetMissionButtonDesc(item.status) }}
                   </a-button>
                 </template>
               </a-list-item>
