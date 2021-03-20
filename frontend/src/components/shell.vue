@@ -350,6 +350,7 @@ function shutdownPtyConn(ws: WebSocketConn): void {
 
 // 离开终端
 function leaveShell() {
+  console.log('离开终端')
   routers.push({ name: 'workspace' })
 }
 </script>

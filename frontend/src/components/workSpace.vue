@@ -192,15 +192,15 @@ export default {
 
     // 任务处理函数
     const MissionHandler = (index: number, m: missionList) => {
-      const status = m.Status
+      const status = m.status
       switch (status) {
         case missionStatus.Stop:
-          startMission(index, m.ID + '')
+          startMission(index, m.id + '')
           return
         case missionStatus.Pending:
           return
         case missionStatus.Working:
-          routers.push({ name: 'shell', params: { id: m.ID } })
+          routers.push({ name: 'shell', params: { id: m.id } })
           return
         case missionStatus.Done:
           return
@@ -211,7 +211,7 @@ export default {
 
     // 启动任务
     const startMission = (missionListIndex: number, missionID: string) => {
-      dataList.value[missionListIndex].Status = missionStatus.Pending
+      dataList.value[missionListIndex].status = missionStatus.Pending
       const msg: WebsocketMessage = {
         op: WebsocketOperation.MissionApply,
         data: {
@@ -223,7 +223,7 @@ export default {
           JSON.stringify(msg),
           WebsocketOperation.ContainersDone,
           (_ws: WebSocketConn): void => {
-            dataList.value[missionListIndex].Status = missionStatus.Working
+            dataList.value[missionListIndex].status = missionStatus.Working
           },
           true
         )
