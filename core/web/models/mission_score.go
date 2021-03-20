@@ -68,7 +68,7 @@ func (m *MissionScore) ListScores(ctx context.Context, builder *PageBuilder,
 	// 获取成绩的数据
 	db := GetGlobalDB().WithContext(ctx)
 	if builder != nil {
-		db = builder.build(db)
+		db = builder.Build(db)
 	}
 	for _, filter := range filters {
 		db = filter(db)

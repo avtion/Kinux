@@ -251,7 +251,7 @@ func (a *Account) GetDepartment(ctx context.Context) (d *Department, err error) 
 func ListAccounts(ctx context.Context, builder *PageBuilder) (acs []*Account, err error) {
 	db := GetGlobalDB().WithContext(ctx)
 	if builder != nil {
-		db = builder.build(db)
+		db = builder.Build(db)
 	}
 	err = db.Find(&acs).Error
 	return
@@ -355,7 +355,7 @@ func listAccountsWithProfiles(ctx context.Context, builder *PageBuilder, filters
          JOIN departments ON profiles.department = departments.id`
 	db = GetGlobalDB().WithContext(ctx).Table("accounts").Select(selectQuery).Joins(JoinQuery).Scopes(filters...)
 	if builder != nil {
-		db = builder.build(db)
+		db = builder.Build(db)
 	}
 	return
 }

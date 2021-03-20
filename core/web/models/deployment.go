@@ -68,7 +68,7 @@ func ListDeployment(ctx context.Context, name string, page *PageBuilder) (res []
 		db = db.Where("name LIKE ?", "%"+name+"%")
 	}
 	if page != nil {
-		db = page.build(db)
+		db = page.Build(db)
 	}
 	err = db.Find(&res).Error
 	return

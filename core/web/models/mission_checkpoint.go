@@ -195,7 +195,7 @@ func listMissionCheckpoints(missionID uint, containers []string, builder *PageBu
 	return func(db *gorm.DB) *gorm.DB {
 		db = db.Model(new(MissionCheckpoints)).Where(&MissionCheckpoints{Mission: missionID})
 		if builder != nil {
-			db = db.Scopes(builder.build)
+			db = db.Scopes(builder.Build)
 		}
 		if len(containers) > 0 {
 			db = db.Where("target_container IN ?", containers)

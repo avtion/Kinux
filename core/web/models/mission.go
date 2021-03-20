@@ -173,7 +173,7 @@ func ListMissions(ctx context.Context, name string, ns []string, builder *PageBu
 		db = db.Where("namespace IN ?", ns)
 	}
 	if builder != nil {
-		db = builder.build(db)
+		db = builder.Build(db)
 	}
 	err = db.Find(&ms).Error
 	return

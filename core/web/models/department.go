@@ -70,7 +70,7 @@ func ListDepartments(ctx context.Context, name string, page *PageBuilder) (
 
 	// 分页
 	if page != nil {
-		db = page.build(db)
+		db = page.Build(db)
 	}
 
 	// 模糊搜索

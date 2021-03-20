@@ -67,7 +67,7 @@ func listExams(namespace string, builder *PageBuilder) func(db *gorm.DB) *gorm.D
 			db = db.Where("namespace = ?", namespace)
 		}
 		if builder != nil {
-			db = db.Scopes(builder.build)
+			db = db.Scopes(builder.Build)
 		}
 		return db
 	}
@@ -194,7 +194,7 @@ func listExamMission(exam, mission uint, builder *PageBuilder) func(db *gorm.DB)
 			db = db.Where("mission = ?", mission)
 		}
 		if builder != nil {
-			db = db.Scopes(builder.build)
+			db = db.Scopes(builder.Build)
 		}
 		return db
 	}

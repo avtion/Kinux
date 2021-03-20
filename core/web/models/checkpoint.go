@@ -89,7 +89,7 @@ func ListCheckpoints(ctx context.Context, name string, method CheckpointMethod, 
 	res []*Checkpoint, err error) {
 	db := GetGlobalDB().WithContext(ctx).Model(new(Checkpoint))
 	if builder != nil {
-		db = builder.build(db)
+		db = builder.Build(db)
 	}
 	if name != "" {
 		db = db.Where("name LIKE ?", fmt.Sprintf("%%%s%%", name))
