@@ -89,9 +89,9 @@ export enum missionStatus {
 
 // 任务列表
 export interface missionList {
-  ID: number
-  Name: string
-  Desc: string
-  Guide: string
-  Status: missionStatus
+  id: number
+  name: string
+  desc: string
+  guide: string
+  status: missionStatus
 }
