@@ -24,11 +24,10 @@ type Mission struct {
 	gorm.Model
 
 	// 任务本身相关
-	Name      string `gorm:"uniqueIndex:mission_name_ns"` // 名称
-	Desc      string // 描述
-	Namespace string `gorm:"uniqueIndex:mission_name_ns"` // 命名空间(默认为default)
-	Total     uint   // 任务总分（默认值为100）
-	Guide     string `gorm:"type:text"` // 以markdown为格式的说明文档
+	Name  string `gorm:"unique"` // 名称
+	Desc  string // 描述
+	Total uint   // 任务总分（默认值为100）
+	Guide string `gorm:"type:text"` // 以markdown为格式的说明文档
 
 	// K8S Deployment相关
 	Deployment         uint   // k8s部署文件
@@ -52,7 +51,6 @@ func MissionBuilder(_ context.Context, name string, dp *Deployment, opts ...Miss
 	}
 	m = &Mission{
 		Name:       name,
-		Namespace:  "default",
 		Total:      100,
 		Deployment: dp.ID,
 	}
@@ -81,17 +79,6 @@ func MissionOptVnc(container, port string) MissionBuildOpt {
 func MissionOptDesc(desc string) MissionBuildOpt {
 	return func(m *Mission) (err error) {
 		m.Desc = desc
-		return
-	}
-}
-
-// 任务命名空间
-func MissionOptNs(ns string) MissionBuildOpt {
-	return func(m *Mission) (err error) {
-		if ns == "" {
-			ns = defaultDepartmentNamespace
-		}
-		m.Namespace = ns
 		return
 	}
 }
@@ -164,13 +151,10 @@ func CrateOrUpdateMission(ctx context.Context, name string, dp *Deployment, opts
 }
 
 // 批量查询任务
-func ListMissions(ctx context.Context, name string, ns []string, builder *PageBuilder) (ms []*Mission, err error) {
+func ListMissions(ctx context.Context, name string, builder *PageBuilder) (ms []*Mission, err error) {
 	db := GetGlobalDB().WithContext(ctx)
 	if name != "" {
 		db = db.Where("name LIKE ?", "%"+name+"%")
-	}
-	if len(ns) > 0 {
-		db = db.Where("namespace IN ?", ns)
 	}
 	if builder != nil {
 		db = builder.Build(db)
@@ -256,13 +240,10 @@ func GetMissionsNameMapper(ctx context.Context, id ...uint) (res map[uint]string
 }
 
 // 统计实验数量
-func CountMissions(ctx context.Context, name string, ns []string) (res int64, err error) {
+func CountMissions(ctx context.Context, name string) (res int64, err error) {
 	db := GetGlobalDB().WithContext(ctx).Model(new(Mission))
 	if name != "" {
 		db = db.Where("name LIKE ?", "%"+name+"%")
-	}
-	if len(ns) > 0 {
-		db = db.Where("namespace IN ?", ns)
 	}
 	err = db.Count(&res).Error
 	return
@@ -313,12 +294,6 @@ func EditMission(ctx context.Context, id uint, name string, dp uint, opts ...Mis
 // 修改任务的文档
 func UpdateMissionGuide(ctx context.Context, id uint, text string) (err error) {
 	return GetGlobalDB().WithContext(ctx).Model(new(Mission)).Where("id = ?", id).Update("guide", text).Error
-}
-
-// 获取所有任务的命名空间
-func ListMissionNamespaces(ctx context.Context) (res []string, err error) {
-	err = GetGlobalDB().WithContext(ctx).Model(new(Mission)).Pluck("namespace", &res).Error
-	return
 }
 
 // 批量获取实验

@@ -22,8 +22,8 @@ type ExamListResult struct {
 }
 
 // 查询考试列表
-func ListExams(ctx context.Context, ac *models.Account, namespace string, page, size int) (res []*ExamListResult, err error) {
-	exams, err := models.ListExams(ctx, namespace, models.NewPageBuilder(page, size))
+func ListExams(ctx context.Context, ac *models.Account, page, size int) (res []*ExamListResult, err error) {
+	exams, err := models.ListExams(ctx, models.NewPageBuilder(page, size))
 	if err != nil {
 		return
 	}

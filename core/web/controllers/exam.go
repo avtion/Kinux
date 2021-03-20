@@ -18,9 +18,8 @@ func ListExams(c *gin.Context) {
 	}{
 		Page: cast.ToInt(c.DefaultQuery("page", "1")),
 		Size: cast.ToInt(c.DefaultQuery("size", "10")),
-		Ns:   c.DefaultQuery("ns", ""),
 	}
-	data, err := models.ListExams(c, params.Ns, models.NewPageBuilder(params.Page, params.Size))
+	data, err := models.ListExams(c, models.NewPageBuilder(params.Page, params.Size))
 	if err != nil {
 		c.AbortWithStatusJSON(http.StatusOK, msg.BuildFailed(err))
 		return
@@ -31,7 +30,6 @@ func ListExams(c *gin.Context) {
 		ID         uint          `json:"id"`
 		Name       string        `json:"name"`
 		Desc       string        `json:"desc"`
-		Namespace  string        `json:"namespace"`
 		Total      uint          `json:"total"`
 		ForceOrder bool          `json:"force_order"`
 		BeginAt    string        `json:"begin_at"`
@@ -46,7 +44,6 @@ func ListExams(c *gin.Context) {
 			ID:         v.ID,
 			Name:       v.Name,
 			Desc:       v.Desc,
-			Namespace:  v.Name,
 			Total:      v.Total,
 			ForceOrder: v.ForceOrder,
 			BeginAt:    v.BeginAt.Format("2006-01-02 15:04:05"),
@@ -61,12 +58,7 @@ func ListExams(c *gin.Context) {
 
 // count
 func CountExams(c *gin.Context) {
-	params := &struct {
-		Ns string
-	}{
-		Ns: c.DefaultQuery("ns", ""),
-	}
-	res, err := models.CountExams(c, params.Ns)
+	res, err := models.CountExams(c)
 	if err != nil {
 		c.AbortWithStatusJSON(http.StatusOK, msg.BuildFailed(err))
 		return
@@ -89,7 +81,6 @@ func AddExam(c *gin.Context) {
 	params := &struct {
 		Name       string `json:"name" binding:"required"`
 		Desc       string `json:"desc"`
-		Namespace  string `json:"namespace" binding:"required"`
 		Total      uint   `json:"total" binding:"required"`
 		BeginAt    int64  `json:"begin_at" binding:"required"`
 		EndAt      int64  `json:"end_at" binding:"required"`
@@ -103,7 +94,6 @@ func AddExam(c *gin.Context) {
 	if err := (&models.Exam{
 		Name:       params.Name,
 		Desc:       params.Desc,
-		Namespace:  params.Namespace,
 		Total:      params.Total,
 		BeginAt:    time.Unix(params.BeginAt, 0),
 		EndAt:      time.Unix(params.EndAt, 0),
@@ -121,7 +111,6 @@ func EditExam(c *gin.Context) {
 		ID         uint   `json:"id" binding:"required"`
 		Name       string `json:"name" binding:"required"`
 		Desc       string `json:"desc"`
-		Namespace  string `json:"namespace" binding:"required"`
 		Total      uint   `json:"total" binding:"required"`
 		BeginAt    int64  `json:"begin_at" binding:"required"`
 		EndAt      int64  `json:"end_at" binding:"required"`
@@ -136,7 +125,6 @@ func EditExam(c *gin.Context) {
 		Model:      gorm.Model{ID: params.ID},
 		Name:       params.Name,
 		Desc:       params.Desc,
-		Namespace:  params.Namespace,
 		Total:      params.Total,
 		BeginAt:    time.Unix(params.BeginAt, 0),
 		EndAt:      time.Unix(params.EndAt, 0),
@@ -149,13 +137,9 @@ func EditExam(c *gin.Context) {
 }
 
 // 获取已有考试的命名空间列表
+// Deprecated: 删除命名空间
 func GetExamsNamespaces(c *gin.Context) {
-	res, err := models.GetExamsNamespaces(c)
-	if err != nil {
-		c.AbortWithStatusJSON(http.StatusOK, msg.BuildFailed(err))
-		return
-	}
-	c.JSON(http.StatusOK, msg.BuildSuccess(res))
+	c.JSON(http.StatusOK, msg.BuildFailed("// Deprecated: 删除命名空间"))
 }
 
 // list

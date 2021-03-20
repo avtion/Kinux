@@ -119,14 +119,12 @@ func ListMissions(c *gin.Context) {
 	params := &struct {
 		Page, Size int
 		Name       string
-		Namespace  []string
 	}{
-		Page:      cast.ToInt(c.DefaultQuery("page", "1")),
-		Size:      cast.ToInt(c.DefaultQuery("size", "10")),
-		Name:      c.DefaultQuery("name", ""),
-		Namespace: c.QueryArray("ns[]"),
+		Page: cast.ToInt(c.DefaultQuery("page", "1")),
+		Size: cast.ToInt(c.DefaultQuery("size", "10")),
+		Name: c.DefaultQuery("name", ""),
 	}
-	data, err := models.ListMissions(c, params.Name, params.Namespace, models.NewPageBuilder(params.Page, params.Size))
+	data, err := models.ListMissions(c, params.Name, models.NewPageBuilder(params.Page, params.Size))
 	if err != nil {
 		c.AbortWithStatusJSON(http.StatusOK, msg.BuildFailed(err))
 		return
@@ -138,7 +136,6 @@ func ListMissions(c *gin.Context) {
 		Total      uint     `json:"total"`
 		Name       string   `json:"name"`
 		Desc       string   `json:"desc"`
-		Namespace  string   `json:"namespace"`
 		Containers []string `json:"containers"`
 
 		Deployment    uint   `json:"deployment"`
@@ -148,11 +145,10 @@ func ListMissions(c *gin.Context) {
 	var res = make([]*resType, 0, len(data))
 	for _, v := range data {
 		res = append(res, &resType{
-			ID:        v.ID,
-			Total:     v.Total,
-			Name:      v.Name,
-			Desc:      v.Desc,
-			Namespace: v.Namespace,
+			ID:    v.ID,
+			Total: v.Total,
+			Name:  v.Name,
+			Desc:  v.Desc,
 			// 修复参数为空的情况下会返回[""]的情况
 			Containers: func(cs string) []string {
 				if cs != "" {
@@ -172,13 +168,11 @@ func ListMissions(c *gin.Context) {
 // 统计任务数量
 func CountMissions(c *gin.Context) {
 	params := &struct {
-		Name      string
-		Namespace []string
+		Name string
 	}{
-		Name:      c.DefaultQuery("name", ""),
-		Namespace: c.QueryArray("ns"),
+		Name: c.DefaultQuery("name", ""),
 	}
-	res, err := models.CountMissions(c, params.Name, params.Namespace)
+	res, err := models.CountMissions(c, params.Name)
 	if err != nil {
 		c.AbortWithStatusJSON(http.StatusOK, msg.BuildFailed(err))
 		return
@@ -197,13 +191,9 @@ func DeleteMission(c *gin.Context) {
 }
 
 // 获取所有任务的命名空间
+// Deprecated: 删除命名空间
 func ListMissionNamespaces(c *gin.Context) {
-	res, err := models.ListMissionNamespaces(c)
-	if err != nil {
-		c.AbortWithStatusJSON(http.StatusOK, msg.BuildFailed(err))
-		return
-	}
-	c.JSON(http.StatusOK, msg.BuildSuccess(res))
+	c.AbortWithStatusJSON(http.StatusOK, msg.BuildFailed("Deprecated: 删除命名空间"))
 }
 
 // 编辑任务
@@ -212,7 +202,6 @@ func EditMission(c *gin.Context) {
 		ID         uint     `json:"id"`
 		Name       string   `json:"name"`
 		Desc       string   `json:"desc"`
-		Namespace  string   `json:"namespace"`
 		Total      uint     `json:"total"`
 		Containers []string `json:"containers"`
 
@@ -226,7 +215,6 @@ func EditMission(c *gin.Context) {
 	}
 	if err := models.EditMission(c, params.ID, params.Name, params.Deployment,
 		models.MissionOptDesc(params.Desc),
-		models.MissionOptNs(params.Namespace),
 		models.MissionOptTotal(params.Total),
 		models.MissionOptDeployment(params.Command, params.ExecContainer, params.Containers),
 	); err != nil {
@@ -241,7 +229,6 @@ func AddMission(c *gin.Context) {
 	params := &struct {
 		Name       string   `json:"name"`
 		Desc       string   `json:"desc"`
-		Namespace  string   `json:"namespace"`
 		Total      uint     `json:"total"`
 		Containers []string `json:"containers"`
 
@@ -255,7 +242,6 @@ func AddMission(c *gin.Context) {
 	}
 	if err := models.AddMission(c, params.Name, params.Deployment,
 		models.MissionOptDesc(params.Desc),
-		models.MissionOptNs(params.Namespace),
 		models.MissionOptTotal(params.Total),
 		models.MissionOptDeployment(params.Command, params.ExecContainer, params.Containers),
 	); err != nil {

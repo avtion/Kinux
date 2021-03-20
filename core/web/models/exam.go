@@ -13,14 +13,11 @@ func init() {
 	migrateQueue = append(migrateQueue, new(Exam), new(ExamMissions))
 }
 
-const defaultExamNamespace = "default"
-
 // 考试 - 对 Mission 的封装
 type Exam struct {
 	gorm.Model
 	Name       string        // 名称
 	Desc       string        // 描述
-	Namespace  string        // 命名空间
 	Total      uint          // 任务总分（默认值为100）
 	BeginAt    time.Time     // 开始时间
 	EndAt      time.Time     // 结束时间
@@ -61,27 +58,15 @@ func GetExamsNameMapper(ctx context.Context, id ...uint) (res map[uint]string, e
 	return
 }
 
-func listExams(namespace string, builder *PageBuilder) func(db *gorm.DB) *gorm.DB {
-	return func(db *gorm.DB) *gorm.DB {
-		if namespace != "" {
-			db = db.Where("namespace = ?", namespace)
-		}
-		if builder != nil {
-			db = db.Scopes(builder.Build)
-		}
-		return db
-	}
-}
-
 // 获取考试列表
-func ListExams(ctx context.Context, namespace string, builder *PageBuilder) (res []*Exam, err error) {
-	err = GetGlobalDB().WithContext(ctx).Scopes(listExams(namespace, builder)).Find(&res).Error
+func ListExams(ctx context.Context, builder *PageBuilder) (res []*Exam, err error) {
+	err = GetGlobalDB().WithContext(ctx).Scopes(builder.Build).Find(&res).Error
 	return
 }
 
 // 获取考试列表
-func CountExams(ctx context.Context, namespace string) (res int64, err error) {
-	err = GetGlobalDB().WithContext(ctx).Model(new(Exam)).Scopes(listExams(namespace, nil)).Count(&res).Error
+func CountExams(ctx context.Context) (res int64, err error) {
+	err = GetGlobalDB().WithContext(ctx).Model(new(Exam)).Count(&res).Error
 	return
 }
 
@@ -105,9 +90,6 @@ func (e *Exam) Create(ctx context.Context) (err error) {
 		return errors.New("考试名为空")
 	}
 
-	if e.Namespace = strings.TrimSpace(e.Namespace); e.Namespace == "" {
-		e.Namespace = defaultExamNamespace
-	}
 	if e.BeginAt.After(e.EndAt) {
 		return errors.New("考试开始时间不能超过结束时间")
 	}
@@ -117,12 +99,6 @@ func (e *Exam) Create(ctx context.Context) (err error) {
 // 删除考试
 func DeleteExam(ctx context.Context, id uint) (err error) {
 	return GetGlobalDB().WithContext(ctx).Delete(new(Exam), id).Error
-}
-
-// 获取已有考试的命名空间列表
-func GetExamsNamespaces(ctx context.Context) (res []string, err error) {
-	err = GetGlobalDB().WithContext(ctx).Model(new(Exam)).Distinct().Pluck("namespace", &res).Error
-	return
 }
 
 // 获取考试已经使用的实验占比

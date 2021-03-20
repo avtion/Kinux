@@ -27,11 +27,10 @@ func ListDepartments(c *gin.Context) {
 
 	// 转译一下结果
 	type resType struct {
-		ID        uint     `json:"id"`
-		Name      string   `json:"name"`
-		CreatAt   string   `json:"creat_at"`
-		UpdatedAt string   `json:"updated_at"`
-		Namespace []string `json:"namespace"`
+		ID        uint   `json:"id"`
+		Name      string `json:"name"`
+		CreatAt   string `json:"creat_at"`
+		UpdatedAt string `json:"updated_at"`
 	}
 	res := make([]resType, 0, len(dps))
 	for _, v := range dps {
@@ -63,8 +62,7 @@ func CountDepartments(c *gin.Context) {
 // 新增班级
 func AddDepartment(c *gin.Context) {
 	params := new(struct {
-		Name      string   `json:"name" binding:"required"`
-		Namespace []string `json:"namespace"`
+		Name string `json:"name" binding:"required"`
 	})
 	if err := c.ShouldBindJSON(params); err != nil {
 		c.AbortWithStatusJSON(http.StatusOK, msg.BuildFailed(err))
@@ -94,9 +92,8 @@ func DeleteDepartment(c *gin.Context) {
 // 修改班级
 func EditDepartment(c *gin.Context) {
 	params := new(struct {
-		ID        int      `json:"id" binding:"required"`
-		Name      string   `json:"name" binding:"required"`
-		Namespace []string `json:"namespace"`
+		ID   int    `json:"id" binding:"required"`
+		Name string `json:"name" binding:"required"`
 	})
 	if err := c.ShouldBindJSON(params); err != nil {
 		c.AbortWithStatusJSON(http.StatusOK, msg.BuildFailed(err))
@@ -113,12 +110,7 @@ func EditDepartment(c *gin.Context) {
 
 // 快速返回班级数据
 func QuickListDepartments(c *gin.Context) {
-	params := &struct {
-		Ns string
-	}{
-		Ns: c.DefaultQuery("ns", ""),
-	}
-	res, err := models.QuickListDepartment(c, models.NamespaceFilter(params.Ns))
+	res, err := models.QuickListDepartment(c)
 	if err != nil {
 		c.AbortWithStatusJSON(http.StatusOK, msg.BuildFailed(err))
 		return

@@ -11,8 +11,6 @@ func init() {
 	migrateQueue = append(migrateQueue, new(Department))
 }
 
-const defaultDepartmentNamespace = "default"
-
 // 班级
 type Department struct {
 	gorm.Model
@@ -131,15 +129,6 @@ func DeleteDepartment(ctx context.Context, id int) (err error) {
 type QuickListDepartmentRes struct {
 	ID   int    `json:"id"`
 	Name string `json:"name"`
-}
-
-func NamespaceFilter(ns string) func(db *gorm.DB) *gorm.DB {
-	return func(db *gorm.DB) *gorm.DB {
-		if len(ns) == 0 {
-			return db
-		}
-		return db.Where("namespace LIKE ?", "%"+ns+"%")
-	}
 }
 
 // 用于快速返回班级相关的选项数据
