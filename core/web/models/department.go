@@ -144,3 +144,27 @@ func GetDepartmentByID(ctx context.Context, id uint) (d *Department, err error) 
 	err = GetGlobalDB().WithContext(ctx).First(d, id).Error
 	return
 }
+
+// 获取班级课程的ID
+func (d *Department) GetLessonIDs(ctx context.Context) (res []uint, err error) {
+	if err = GetGlobalDB().WithContext(ctx).Model(new(LessonDepartment)).Where(
+		&LessonDepartment{Department: d.ID}).Pluck("lesson", &res).Error; err != nil {
+		return
+	}
+	return
+}
+
+// 获取班级的课程
+func (d *Department) GetLessons(ctx context.Context) (res []*Lesson, err error) {
+	// 先获取课程拥有的LessonID
+	lessonIDs, err := d.GetLessonIDs(ctx)
+	if err != nil {
+		return
+	}
+	if len(lessonIDs) == 0 {
+		return
+	}
+	err = GetGlobalDB().WithContext(ctx).Model(new(Lesson)).Where(
+		"lesson IN ?", lessonIDs).Find(&res).Error
+	return
+}

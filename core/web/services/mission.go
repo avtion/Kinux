@@ -47,6 +47,58 @@ func ListMissions(_ context.Context, _ *models.Account, _ string, _ []string, _,
 	return []*Mission{}, errors.New("deprecated: 删除命名空间")
 }
 
+// 获取任务信息
+func ListMissionsV2(c *gin.Context, lessonID uint, page, size int) (res []*Mission, err error) {
+	ac, err := GetAccountFromCtx(c)
+	if err != nil {
+		return
+	}
+	lesson, err := models.GetLesson(c, lessonID)
+	if err != nil {
+		return
+	}
+
+	missionIDs, err := models.GetMissionIDsByLessons(c, func(db *gorm.DB) *gorm.DB {
+		return db.Scopes(models.NewPageBuilder(page, size).Build).Where("lesson = ?", lesson.ID)
+	})
+	if err != nil {
+		return
+	}
+
+	ms, err := models.GetMissions(c, func(db *gorm.DB) *gorm.DB {
+		return db.Where("id IN ?", missionIDs)
+	})
+	if err != nil {
+		return
+	}
+
+	dpStatusMapper, err := getDeploymentStatusForMission(c, "", NewLabelMarker().WithAccount(ac.ID))
+	if err != nil {
+		return
+	}
+
+	// 遍历构造对应的响应结果
+	for _, mission := range ms {
+		status, isExist := dpStatusMapper[mission.ID]
+		if !isExist {
+			status = MissionStatusStop
+		}
+
+		// 查询任务是否已经完成
+		if cps, _ := models.FindAllTodoCheckpoints(c, ac.ID, mission.ID); len(cps) == 0 {
+			status = MissionStatusDone
+		}
+		res = append(res, &Mission{
+			ID:     mission.ID,
+			Name:   mission.Name,
+			Desc:   mission.Desc,
+			Guide:  mission.Guide,
+			Status: status,
+		})
+	}
+	return
+}
+
 // 根据Deployment的状态获取对应任务的状态
 func getDeploymentStatusForMission(ctx context.Context, namespace string, l *labelMaker) (
 	res map[uint]MissionStatus, err error) {

@@ -267,3 +267,21 @@ func UpdateMissionGuide(c *gin.Context) {
 	}
 	c.JSON(http.StatusOK, msg.BuildSuccess("文档保存成功"))
 }
+
+// 获取实验
+func ListMissionsV2(c *gin.Context) {
+	params := &struct {
+		Page, Size int
+		Lesson     uint
+	}{
+		Page:   cast.ToInt(c.DefaultQuery("page", "1")),
+		Size:   cast.ToInt(c.DefaultQuery("size", "10")),
+		Lesson: cast.ToUint(c.DefaultQuery("lesson", "0")),
+	}
+	ms, err := services.ListMissionsV2(c, params.Lesson, params.Page, params.Size)
+	if err != nil {
+		c.AbortWithStatusJSON(http.StatusOK, msg.BuildFailed(err))
+		return
+	}
+	c.JSON(http.StatusOK, msg.BuildSuccess(ms))
+}
