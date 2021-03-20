@@ -74,7 +74,7 @@ type PageBuilder struct {
 	Page, Size int
 }
 
-func (p *PageBuilder) build(db *gorm.DB) *gorm.DB {
+func (p *PageBuilder) Build(db *gorm.DB) *gorm.DB {
 	if p.Page == 0 || p.Size == 0 {
 		return db
 	}
