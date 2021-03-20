@@ -105,7 +105,8 @@ func DepartmentNsOpt(ns ...string) DepartmentOpt {
 		}
 
 		// 需要进行一次排序
-		sort.Strings(append(ns, defaultDepartmentNamespace))
+		ns = append(ns, defaultDepartmentNamespace)
+		sort.Strings(ns)
 
 		d.Namespace = strings.Join(ns, ";")
 		return nil
