@@ -41,15 +41,6 @@ func missionPtyRegister(ws *WebsocketSchedule, any jsoniter.Any) (err error) {
 		return
 	}
 
-	// 校验命名空间
-	d, err := ws.Account.GetDepartment(ws.Context)
-	if err != nil {
-		return
-	}
-	if err = d.IsNamespaceAllowed(mission.Namespace); err != nil {
-		return
-	}
-
 	// 校验容器
 	if missionRaw.Container == "" {
 		if mission.ExecContainer == "" {

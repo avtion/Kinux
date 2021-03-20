@@ -4,7 +4,6 @@ import (
 	"context"
 	"errors"
 	"gorm.io/gorm"
-	"sort"
 	"strings"
 )
 
@@ -17,8 +16,7 @@ const defaultDepartmentNamespace = "default"
 // 班级
 type Department struct {
 	gorm.Model
-	Name      string `gorm:"unique"` // 名称
-	Namespace string // 可见的命名空间，以分号为间隔
+	Name string `gorm:"unique"` // 名称
 }
 
 type DepartmentOpt func(d *Department) error
@@ -82,37 +80,6 @@ func ListDepartments(ctx context.Context, name string, page *PageBuilder) (
 	return
 }
 
-// 班级设置命名空间
-func DepartmentNsOpt(ns ...string) DepartmentOpt {
-	return func(d *Department) error {
-		if len(ns) == 0 {
-			d.Namespace = defaultDepartmentNamespace
-			return nil
-		}
-
-		var mapper = make(map[string]struct{}, len(ns))
-		for k, v := range ns {
-			if _, isExist := mapper[v]; isExist {
-				return errors.New("命名空间重复")
-			}
-			if strings.EqualFold(v, defaultDepartmentNamespace) {
-				ns = append(ns[:k], ns[k+1:]...)
-			}
-			if strings.ContainsRune(v, ';') {
-				return errors.New("命名空间包括分号")
-			}
-			mapper[v] = struct{}{}
-		}
-
-		// 需要进行一次排序
-		ns = append(ns, defaultDepartmentNamespace)
-		sort.Strings(ns)
-
-		d.Namespace = strings.Join(ns, ";")
-		return nil
-	}
-}
-
 // 班级设置名称
 func DepartmentNameOpt(name string) DepartmentOpt {
 	return func(d *Department) error {
@@ -123,29 +90,6 @@ func DepartmentNameOpt(name string) DepartmentOpt {
 		d.Name = name
 		return nil
 	}
-}
-
-// 获取班级的命名空间
-func (d *Department) GetNS() []string {
-	return strings.Split(d.Namespace, ";")
-}
-
-// 校验命名空间是否被允许访问 TODO 有一定的优化空间
-func (d *Department) IsNamespaceAllowed(namespaces ...string) error {
-	switch len(namespaces) {
-	case 0:
-	default:
-		for _, ns := range namespaces {
-			if strings.ContainsRune(ns, ';') {
-				return errors.New("命名空间包含分隔符")
-			}
-			if !strings.Contains(d.Namespace, ns) {
-				return errors.New("越界访问命名空间")
-			}
-		}
-		return nil
-	}
-	return errors.New("越界访问命名空间")
 }
 
 // 查询班级的总量

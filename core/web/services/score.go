@@ -39,10 +39,6 @@ func ListMissionScores(ctx context.Context, mission uint, department uint) (res 
 	if err != nil {
 		return
 	}
-	if err = dp.IsNamespaceAllowed(ms.Namespace); err != nil {
-		err = errors.New("该班级无权访问该实验")
-		return
-	}
 
 	// 获取用户列表
 	acs, err := models.ListAccountsWithProfiles(ctx, nil,

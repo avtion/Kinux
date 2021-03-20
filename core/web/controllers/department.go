@@ -40,7 +40,6 @@ func ListDepartments(c *gin.Context) {
 			Name:      v.Name,
 			CreatAt:   v.CreatedAt.Format("2006-01-02 15:04:05"),
 			UpdatedAt: v.UpdatedAt.Format("2006-01-02 15:04:05"),
-			Namespace: v.GetNS(),
 		})
 	}
 	c.JSON(http.StatusOK, msg.BuildSuccess(res))
@@ -71,7 +70,7 @@ func AddDepartment(c *gin.Context) {
 		c.AbortWithStatusJSON(http.StatusOK, msg.BuildFailed(err))
 		return
 	}
-	if _, err := models.NewDepartment(c, params.Name, models.DepartmentNsOpt(params.Namespace...)); err != nil {
+	if _, err := models.NewDepartment(c, params.Name); err != nil {
 		c.AbortWithStatusJSON(http.StatusOK, msg.BuildFailed(err))
 		return
 	}
@@ -105,7 +104,6 @@ func EditDepartment(c *gin.Context) {
 	}
 	if err := models.UpdateDepartment(c, params.ID,
 		models.DepartmentNameOpt(params.Name),
-		models.DepartmentNsOpt(params.Namespace...),
 	); err != nil {
 		c.AbortWithStatusJSON(http.StatusOK, msg.BuildFailed(err))
 		return

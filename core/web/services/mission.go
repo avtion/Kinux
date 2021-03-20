@@ -41,72 +41,9 @@ type Mission struct {
 }
 
 // 批量获取任务信息
-func ListMissions(ctx context.Context, u *models.Account, name string, ns []string, page, size int) (res []*Mission, err error) {
-	if u == nil {
-		err = errors.New("用户信息不存在")
-		return
-	}
-
-	// 获取用户资料后获取班级信息，用于确定命名空间的访问
-	d, err := u.GetDepartment(ctx)
-	if err != nil {
-		return
-	}
-	departmentNS := d.GetNS()
-	if len(departmentNS) == 0 {
-		return
-	}
-
-	if len(ns) > 0 {
-		// 如果请求指定命名空间，则需要判断是否合法
-		for _, v := range ns {
-			// 防止分隔符导致的逻辑错误
-			if strings.ContainsRune(v, ';') {
-				err = errors.New("输入的命名空间包括分隔符")
-				return
-			}
-			if !strings.Contains(d.Namespace, v) {
-				err = errors.New("命名空间合法访问")
-				return
-			}
-		}
-	} else {
-		// 直接访问班级命名空间
-		ns = departmentNS
-	}
-
-	// 从数据库中查询对应命名空间的任务集合
-	ms, err := models.ListMissions(ctx, name, ns, models.NewPageBuilder(page, size))
-	if err != nil {
-		return
-	}
-
-	dpStatusMapper, err := getDeploymentStatusForMission(ctx, "", NewLabelMarker().WithAccount(u.ID))
-	if err != nil {
-		return
-	}
-
-	// 遍历构造对应的响应结果
-	for _, mission := range ms {
-		status, isExist := dpStatusMapper[mission.ID]
-		if !isExist {
-			status = MissionStatusStop
-		}
-
-		// 查询任务是否已经完成
-		if cps, _ := models.FindAllTodoCheckpoints(ctx, u.ID, mission.ID); len(cps) == 0 {
-			status = MissionStatusDone
-		}
-		res = append(res, &Mission{
-			ID:     mission.ID,
-			Name:   mission.Name,
-			Desc:   mission.Desc,
-			Guide:  mission.Guide,
-			Status: status,
-		})
-	}
-
-	return
+// Deprecated: 删除命名空间
+func ListMissions(_ context.Context, _ *models.Account, _ string, _ []string, _, _ int) (res []*Mission, err error) {
+	return []*Mission{}, errors.New("deprecated: 删除命名空间")
 }
 
 // 根据Deployment的状态获取对应任务的状态
@@ -176,15 +113,6 @@ func AccountMissionOpera(ctx context.Context, ac *models.Account,
 		return
 	}
 
-	// 校验任务的命名空间是否被允许访问
-	d, err := ac.GetDepartment(ctx)
-	if err != nil {
-		return
-	}
-	if err = d.IsNamespaceAllowed(ms.Namespace); err != nil {
-		return
-	}
-
 	// 创建任务控制器
 	switch operation {
 	case MissionCreate:
@@ -243,14 +171,6 @@ func missionResetRegister(ws *WebsocketSchedule, any jsoniter.Any) (err error) {
 		return
 	}
 
-	// 校验命名空间
-	d, err := ws.Account.GetDepartment(ws.Context)
-	if err != nil {
-		return
-	}
-	if err = d.IsNamespaceAllowed(mission.Namespace); err != nil {
-		return
-	}
 	ctx, cancel := context.WithTimeout(ws.Context, 5*time.Minute)
 	defer cancel()
 
@@ -296,15 +216,6 @@ func missionApply(ws *WebsocketSchedule, any jsoniter.Any) (err error) {
 	}
 	mission, err := models.GetMission(ws.Context, cast.ToUint(missionRaw.ID))
 	if err != nil {
-		return
-	}
-
-	// 校验命名空间
-	d, err := ws.Account.GetDepartment(ws.Context)
-	if err != nil {
-		return
-	}
-	if err = d.IsNamespaceAllowed(mission.Namespace); err != nil {
 		return
 	}
 

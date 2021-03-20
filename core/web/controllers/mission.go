@@ -11,6 +11,7 @@ import (
 )
 
 // 任务查询
+// Deprecated: 删除命名空间
 type MissionQuery struct {
 	Name      string   `form:"name" `
 	Namespace []string `form:"namespace"`
@@ -19,6 +20,7 @@ type MissionQuery struct {
 }
 
 // 查询任务
+// Deprecated: 删除命名空间
 func QueryMissions(c *gin.Context) {
 	var query = new(MissionQuery)
 	if err := c.ShouldBind(query); err != nil {
