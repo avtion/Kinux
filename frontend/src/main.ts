@@ -41,4 +41,6 @@ VueMarkdownEditor.use(vuepressTheme)
 VueMarkdownEditor.use(createEmojiPlugin())
 app.use(VueMarkdownEditor)
 
+import 'tailwindcss/tailwind.css'
+
 app.mount('#app')
