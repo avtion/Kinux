@@ -57,7 +57,7 @@
           </a-form-item>
 
           <!-- 成绩比例 -->
-          <a-form-item :label="'成绩比例（剩余' + restPercent + ')'">
+          <a-form-item :label="'完成度占比（剩余' + restPercent + ')'">
             <a-input-number
               :min="0"
               :max="restPercent"
@@ -67,7 +67,7 @@
           </a-form-item>
 
           <!-- 权重 -->
-          <a-form-item label="权重">
+          <a-form-item label="优先级">
             <a-input-number
               :defaultValue="0"
               v-model:value="formRef.priority"
@@ -184,23 +184,17 @@ type Pagination = TableState['pagination']
 // 表格的列参数
 const columns = [
   {
-    title: 'ID',
-    dataIndex: 'id',
-    key: 'id',
-  },
-
-  {
     title: '检查点',
     dataIndex: 'checkpoint',
     key: 'checkpoint',
   },
   {
-    title: '所占成绩比例',
+    title: '完成度比例',
     dataIndex: 'percent',
     slots: { customRender: 'percent' },
   },
   {
-    title: '权重',
+    title: '排序优先级',
     dataIndex: 'priority',
     slots: { customRender: 'priority' },
   },
