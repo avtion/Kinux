@@ -12,13 +12,13 @@
         <a-button @click="addFn" style="margin-bottom: 8px">新增课程</a-button>
         <!-- 表格 -->
         <a-table
-          class="ant-table-striped"
           :columns="columns"
           :data-source="listData"
           :pagination="pagination"
           :loading="isListDataLoading"
           row-key="id"
           @change="handleTableChange"
+          class="ant-table-striped"
           :rowClassName="
             (record, index) => (index % 2 === 1 ? 'table-striped' : null)
           "
