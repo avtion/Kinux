@@ -14,7 +14,7 @@
             v-model:value="currentNamespaceFilter"
             mode="multiple"
             style="width: 200px"
-            placeholder="请选择需要查询的命名空间"
+            placeholder="请选择需要查询的课程"
             @change="onSearch"
           >
             <a-select-option v-for="v in namespaceOptions" :key="v">{{
