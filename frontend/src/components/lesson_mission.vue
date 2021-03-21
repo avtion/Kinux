@@ -260,12 +260,12 @@ export default defineComponent({
     const modalTitle = ref<string>('添加')
     const modalStatus = ref<ModalStatus>(ModalStatus.add)
     const formRef = reactive({
-      mission: '',
+      mission: undefined,
       priority: 0,
     })
     const clearForm = () => {
       console.log('清理数据')
-      formRef.mission = ''
+      formRef.mission = undefined
       formRef.priority = 0
     }
 
