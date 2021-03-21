@@ -4,6 +4,7 @@ import (
 	"Kinux/core/web/models"
 	"Kinux/core/web/msg"
 	"Kinux/core/web/services"
+	"fmt"
 	"github.com/gin-gonic/gin"
 	"github.com/spf13/cast"
 	"gorm.io/gorm"
@@ -68,9 +69,11 @@ func AddLesson(c *gin.Context) {
 func ListLessons(c *gin.Context) {
 	params := &struct {
 		Page, Size int
+		Name       string
 	}{
 		Page: cast.ToInt(c.DefaultQuery("page", "1")),
 		Size: cast.ToInt(c.DefaultQuery("size", "10")),
+		Name: c.DefaultQuery("name", ""),
 	}
 	selectRes := make([]*models.Lesson, 0, params.Size)
 	if err := models.GetGlobalDB().WithContext(c).Model(new(models.Lesson)).Scopes(
@@ -270,4 +273,93 @@ func DeleteLessonMission(c *gin.Context) {
 		return
 	}
 	c.JSON(http.StatusOK, msg.BuildSuccess("实验删除成功"))
+}
+
+// 添加班级课程
+func AddDepartmentLesson(c *gin.Context) {
+	params := &struct {
+		Department uint `json:"department" binding:"gt=0"`
+		Lesson     uint `json:"lesson" binding:"gt=0"`
+	}{}
+	if err := c.ShouldBindJSON(params); err != nil {
+		c.AbortWithStatusJSON(http.StatusOK, msg.BuildFailed(err))
+		return
+	}
+	if err := models.GetGlobalDB().WithContext(c).Create(&models.LessonDepartment{
+		Model:      gorm.Model{},
+		Department: params.Department,
+		Lesson:     params.Lesson,
+	}).Error; err != nil {
+		c.AbortWithStatusJSON(http.StatusOK, msg.BuildFailed(err))
+		return
+	}
+	c.JSON(http.StatusOK, msg.BuildSuccess("班级课程创建成功"))
+}
+
+// 获取班级课程
+func ListDepartmentLesson(c *gin.Context) {
+	params := &struct {
+		Department uint
+		Page, Size int
+	}{
+		Page:       cast.ToInt(c.DefaultQuery("page", "1")),
+		Size:       cast.ToInt(c.DefaultQuery("size", "10")),
+		Department: cast.ToUint(c.DefaultQuery("department", "0")),
+	}
+	if params.Department == 0 {
+		c.AbortWithStatusJSON(http.StatusOK, msg.BuildFailed("班级不能为空"))
+		return
+	}
+	type resType struct {
+		ID   uint   `json:"id"`
+		Name string `json:"name"`
+		Desc string `json:"desc"`
+	}
+	var res = make([]*resType, 0, params.Size)
+	if err := models.GetGlobalDB().WithContext(c).Model(new(models.LessonDepartment)).Joins(
+		"left join lessons ON lesson_departments.lesson = lessons.id",
+	).Select("lesson_departments.id as id, lessons.desc as desc, lessons.name as name").Where(
+		"lesson_departments.department = ?", params.Department).Scopes(
+		models.NewPageBuilder(params.Page, params.Size).Build,
+	).Scan(&res).Error; err != nil {
+		c.AbortWithStatusJSON(http.StatusOK, msg.BuildFailed(err))
+		return
+	}
+	c.JSON(http.StatusOK, msg.BuildSuccess(res))
+}
+
+// 统计班级课程
+func CountDepartmentLesson(c *gin.Context) {
+	params := &struct {
+		Department uint
+	}{
+		Department: cast.ToUint(c.DefaultQuery("department", "0")),
+	}
+	if params.Department == 0 {
+		c.AbortWithStatusJSON(http.StatusOK, msg.BuildFailed("班级不能为空"))
+		return
+	}
+	var res int64
+	if err := models.GetGlobalDB().WithContext(c).Model(new(models.LessonDepartment)).Where(
+		"department= ?", params.Department).Count(&res).Error; err != nil {
+		c.AbortWithStatusJSON(http.StatusOK, msg.BuildFailed(err))
+		return
+	}
+	c.JSON(http.StatusOK, msg.BuildSuccess(res))
+}
+
+// 删除班级课程
+func DeleteDepartmentLesson(c *gin.Context) {
+	id := cast.ToUint(c.Param("id"))
+	if id == 0 {
+		c.AbortWithStatusJSON(http.StatusOK, msg.BuildFailed("id为空"))
+		return
+	}
+	if err := models.GetGlobalDB().WithContext(c).Unscoped().Delete(&models.LessonDepartment{
+		Model: gorm.Model{ID: id},
+	}).Error; err != nil {
+		c.AbortWithStatusJSON(http.StatusOK, msg.BuildFailed(err))
+		return
+	}
+	c.JSON(http.StatusOK, msg.BuildSuccess("课程删除成功"))
 }

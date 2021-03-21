@@ -6,14 +6,19 @@ import (
 )
 
 func init() {
-	migrateQueue = append(migrateQueue, new(Lesson), new(LessonMission), new(LessonExam))
+	migrateQueue = append(migrateQueue,
+		new(Lesson),
+		new(LessonMission),
+		new(LessonExam),
+		new(LessonDepartment),
+	)
 }
 
 // 课程
 type Lesson struct {
 	gorm.Model
-	Name string `json:"name"`
-	Desc string `json:"desc"`
+	Name string
+	Desc string
 }
 
 // 课程实验
@@ -34,8 +39,8 @@ type LessonExam struct {
 // 课程班级
 type LessonDepartment struct {
 	gorm.Model
-	Department uint
-	Lesson     uint
+	Department uint `gorm:"uniqueIndex:department_lesson_unique_index;not null"`
+	Lesson     uint `gorm:"uniqueIndex:department_lesson_unique_index;not null"`
 }
 
 func GetLesson(ctx context.Context, id uint) (res *Lesson, err error) {

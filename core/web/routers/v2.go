@@ -16,6 +16,7 @@ func v2Router() initFunc {
 
 		v2WithAuth := v2.Group("", middlewares.JsonWebTokenAuth)
 
+		// 课程管理
 		lesson := v2WithAuth.Group("/lesson")
 		{
 			lesson.GET("/", controllers.GetLessonsOptions)
@@ -26,6 +27,7 @@ func v2Router() initFunc {
 			lesson.DELETE("/:id/", controllers.DeleteLesson)
 		}
 
+		// 课程实验管理
 		lm := v2WithAuth.Group("/lm")
 		{
 			lm.GET("/list", controllers.ListLessonMission)
@@ -33,6 +35,15 @@ func v2Router() initFunc {
 			lm.PUT("/", controllers.EditLessonMission)
 			lm.POST("/", controllers.AddLessonMission)
 			lm.DELETE("/:id/", controllers.DeleteLessonMission)
+		}
+
+		// 班级课程管理
+		dl := v2WithAuth.Group("/dl")
+		{
+			dl.GET("/list", controllers.ListDepartmentLesson)
+			dl.GET("/count", controllers.CountDepartmentLesson)
+			dl.POST("/", controllers.AddDepartmentLesson)
+			dl.DELETE("/:id/", controllers.DeleteDepartmentLesson)
 		}
 
 		ms := v2WithAuth.Group("/ms")
