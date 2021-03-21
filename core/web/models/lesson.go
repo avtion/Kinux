@@ -19,8 +19,9 @@ type Lesson struct {
 // 课程实验
 type LessonMission struct {
 	gorm.Model
-	Lesson  uint
-	Mission uint
+	Lesson   uint `gorm:"uniqueIndex:lesson_mission_unique_index;not null"`
+	Mission  uint `gorm:"uniqueIndex:lesson_mission_unique_index;not null"`
+	Priority uint `gorm:"not null"`
 }
 
 // 课程考试
@@ -47,4 +48,14 @@ func GetLesson(ctx context.Context, id uint) (res *Lesson, err error) {
 func GetMissionIDsByLessons(ctx context.Context, fns ...func(db *gorm.DB) *gorm.DB) (res []uint, err error) {
 	err = GetGlobalDB().WithContext(ctx).Scopes(fns...).Pluck("mission", &res).Error
 	return
+}
+
+// 按照优先级排序
+func ScopeLessonMissionOrderByOrder(isAsc ...bool) func(db *gorm.DB) *gorm.DB {
+	return func(db *gorm.DB) *gorm.DB {
+		if len(isAsc) > 0 && isAsc[0] == true {
+			return db.Order("priority asc")
+		}
+		return db.Order("priority desc")
+	}
 }
