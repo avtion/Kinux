@@ -11,7 +11,7 @@
         v-model:selectedKeys="selectedKeys"
         @click="menuClickFn"
       >
-        <a-menu-item key="workspace">
+        <a-menu-item key="lessonSelector">
           <AppstoreOutlined></AppstoreOutlined>
           <span>在线实验</span>
         </a-menu-item>
