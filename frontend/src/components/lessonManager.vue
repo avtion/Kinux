@@ -25,7 +25,7 @@
           bordered
           tableLayout="auto"
         >
-          <!-- 编辑框 -->
+          <!-- 实验管理 -->
           <template #mission="{ record }">
             <a-button
               type="default"
@@ -34,6 +34,16 @@
               >编辑实验
             </a-button>
           </template>
+
+          <!-- 描述 -->
+          <template #desc="{ record }">
+            <div style="width: 300px">
+              <a-tooltip :title="record.desc">
+                <span class="desc">{{ record.desc }}</span>
+              </a-tooltip>
+            </div>
+          </template>
+
           <!-- 编辑框 -->
           <template #operation="{ record }">
             <a-button-group size="small">
@@ -77,7 +87,11 @@
           <a-input v-model:value="formRef.Name" style="width: 300px" />
         </a-form-item>
         <a-form-item label="课程描述">
-          <a-input v-model:value="formRef.Desc" style="width: 300px" />
+          <a-textarea
+            v-model:value="formRef.Desc"
+            style="width: 300px"
+            auto-size
+          />
         </a-form-item>
       </a-form>
     </a-modal>
@@ -135,7 +149,7 @@ const columns = [
   {
     title: '描述',
     dataIndex: 'desc',
-    key: 'desc',
+    slots: { customRender: 'desc' },
   },
   {
     title: '实验管理',
@@ -396,5 +410,12 @@ export default defineComponent({
 <style lang="less" scoped>
 .ant-table-striped :deep(.table-striped) {
   background-color: #fafafa;
+}
+.desc {
+  overflow: hidden;
+  -webkit-line-clamp: 1;
+  text-overflow: ellipsis;
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
 }
 </style>
