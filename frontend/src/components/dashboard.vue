@@ -12,29 +12,53 @@
         @click="menuClickFn"
       >
         <a-menu-item key="workspace">
-          <FundOutlined />
-          <span>学习空间</span>
+          <AppstoreOutlined></AppstoreOutlined>
+          <span>在线实验</span>
+        </a-menu-item>
+        <a-menu-item key="">
+          <FundOutlined></FundOutlined>
+          <span>在线考试</span>
+        </a-menu-item>
+        <a-menu-item key="">
+          <FundOutlined></FundOutlined>
+          <span>考试成绩查询</span>
         </a-menu-item>
         <a-menu-item key="profile">
-          <UserOutlined />
+          <UserOutlined></UserOutlined>
           <span>个人资料</span>
         </a-menu-item>
-        <a-menu-item key="session">
-          <AppstoreOutlined />
-          <span>实验会话</span>
+        <a-menu-item key="departmentManager">
+          <DatabaseOutlined></DatabaseOutlined>
+          <span>系统班级管理</span>
         </a-menu-item>
-        <a-sub-menu>
-          <template #title>
-            <DatabaseOutlined />
-            <span>后台管理</span>
-          </template>
-          <a-menu-item key="departmentManager">班级管理</a-menu-item>
-          <a-menu-item key="AccountManager">用户管理</a-menu-item>
-          <a-menu-item key="deploymentManager">配置管理</a-menu-item>
-          <a-menu-item key="missionManager">实验管理</a-menu-item>
-          <a-menu-item key="examManager">考试管理</a-menu-item>
-          <a-menu-item key="checkpointManager">检查点管理</a-menu-item>
-        </a-sub-menu>
+        <a-menu-item key="AccountManager">
+          <EditOutlined></EditOutlined>
+          <span>系统用户管理</span>
+        </a-menu-item>
+        <a-menu-item key="deploymentManager">
+          <FormOutlined></FormOutlined>
+          <span>实验容器配置</span>
+        </a-menu-item>
+        <a-menu-item key="missionManager">
+          <CodepenOutlined></CodepenOutlined>
+          <span>系统实验管理</span>
+        </a-menu-item>
+        <a-menu-item key="examManager">
+          <CodeSandboxOutlined></CodeSandboxOutlined>
+          <span>系统考试管理</span>
+        </a-menu-item>
+        <a-menu-item key="lessonManager">
+          <DropboxOutlined></DropboxOutlined>
+          <span>系统课程管理</span>
+        </a-menu-item>
+        <a-menu-item key="session">
+          <DingtalkOutlined></DingtalkOutlined>
+          <span>教师会话管理</span>
+        </a-menu-item>
+        <a-menu-item key="checkpointManager">
+          <DeploymentUnitOutlined></DeploymentUnitOutlined>
+          <span>系统考点管理</span>
+        </a-menu-item>
       </a-menu>
     </a-layout-sider>
     <!-- 右侧内容 -->
@@ -56,7 +80,7 @@
           </a-col>
           <a-col flex="auto"> </a-col>
           <a-col flex="100px">
-            <a-button @click="logout">
+            <a-button @click="logout" shape="round">
               <template #icon><UnlockOutlined /></template>
               注销
             </a-button>
@@ -91,6 +115,13 @@ import {
   UnlockOutlined,
   DatabaseOutlined,
   AppstoreOutlined,
+  EditOutlined,
+  FormOutlined,
+  CodepenOutlined,
+  CodeSandboxOutlined,
+  DropboxOutlined,
+  DingtalkOutlined,
+  DeploymentUnitOutlined,
 } from '@ant-design/icons-vue'
 
 // websocket
@@ -108,6 +139,13 @@ export default defineComponent({
     UnlockOutlined,
     DatabaseOutlined,
     AppstoreOutlined,
+    EditOutlined,
+    FormOutlined,
+    CodepenOutlined,
+    CodeSandboxOutlined,
+    DropboxOutlined,
+    DingtalkOutlined,
+    DeploymentUnitOutlined,
   },
   setup() {
     // logo
