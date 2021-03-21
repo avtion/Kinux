@@ -73,8 +73,15 @@ func ListLessons(c *gin.Context) {
 		Size: cast.ToInt(c.DefaultQuery("size", "10")),
 	}
 	selectRes := make([]*models.Lesson, 0, params.Size)
-	if err := models.GetGlobalDB().WithContext(c).Model(new(models.Lesson)).Scopes(models.NewPageBuilder(
-		params.Page, params.Size).Build).Find(&selectRes).Error; err != nil {
+	if err := models.GetGlobalDB().WithContext(c).Model(new(models.Lesson)).Scopes(
+		models.NewPageBuilder(params.Page, params.Size).Build,
+		func(db *gorm.DB) *gorm.DB {
+			if params.Name == "" {
+				return db
+			}
+			return db.Where("name LIKE ?", fmt.Sprintf("%%%s%%", params.Name))
+		},
+	).Find(&selectRes).Error; err != nil {
 		c.AbortWithStatusJSON(http.StatusOK, msg.BuildFailed(err))
 		return
 	}
