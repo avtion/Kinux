@@ -29,6 +29,12 @@
           :loading="isListDataLoading"
           row-key="id"
           @change="handleTableChange"
+          class="ant-table-striped"
+          :rowClassName="
+            (record, index) => (index % 2 === 1 ? 'table-striped' : null)
+          "
+          bordered
+          tableLayout="auto"
         >
           <!-- 徽章 -->
           <template #namespace="{ text: namespace }">
@@ -60,6 +66,13 @@
               </a-popconfirm>
             </a-button-group>
           </template>
+
+          <!-- 课程 -->
+          <template #lesson="{ record }">
+            <a-button-group size="small">
+              <a-button @click="openLessonMission(record)">编辑</a-button>
+            </a-button-group>
+          </template>
         </a-table>
       </a-layout-content>
     </a-layout>
@@ -83,29 +96,30 @@
         <a-form-item label="班级名称">
           <a-input v-model:value="formRef.Name" style="width: 400px" />
         </a-form-item>
-        <a-form-item label="命名空间">
-          <a-select
-            v-model:value="formRef.Namespace"
-            mode="tags"
-            style="width: 400px"
-            placeholder="输入命名空间并摁下回车添加"
-          >
-          </a-select>
-        </a-form-item>
       </a-form>
+    </a-modal>
+
+    <!-- 实验管理 -->
+    <a-modal
+      v-model:visible="lessonMissionVisible"
+      title="班级课程管理"
+      :footer="null"
+      width="920px"
+      :destroyOnClose="true"
+    >
+      <departmentLesson
+        :departmentID="lessonMissionLessonID"
+      ></departmentLesson>
     </a-modal>
   </div>
 </template>
 
 <script lang="ts" type="module">
 // vue
-import { defineComponent, ref, watch, UnwrapRef, reactive } from 'vue'
+import { defineComponent, ref, UnwrapRef, reactive } from 'vue'
 
 // antd
-import {
-  TableState,
-  TableStateFilters,
-} from 'ant-design-vue/es/table/interface'
+import { TableState } from 'ant-design-vue/es/table/interface'
 import { SmileOutlined, DownOutlined } from '@ant-design/icons-vue'
 
 // store
@@ -117,6 +131,8 @@ import { useRouter } from 'vue-router'
 // vue-request
 import { useRequest } from 'vue-request'
 import { BaseResponse, defaultClient, paths } from '@/apis/request'
+
+import departmentLesson from '@/components/department_lesson.vue'
 
 // 分页组件定义
 type Pagination = TableState['pagination']
@@ -135,12 +151,6 @@ const columns = [
     key: 'name',
   },
   {
-    title: '可视命名空间',
-    dataIndex: 'namespace',
-    slots: { customRender: 'namespace' },
-    key: 'namespace',
-  },
-  {
     title: '创建时间',
     dataIndex: 'creat_at',
     key: 'creat_at',
@@ -149,6 +159,11 @@ const columns = [
     title: '更新时间',
     dataIndex: 'updated_at',
     key: 'updated_at',
+  },
+  {
+    title: '课程',
+    dataIndex: 'lesson',
+    slots: { customRender: 'lesson' },
   },
   {
     title: '操作',
@@ -168,7 +183,6 @@ type ListResult = {
   name: string
   creat_at: string
   updated_at: string
-  namespace: string[]
 }
 
 type ListResults = ListResult[]
@@ -176,7 +190,6 @@ type ListResults = ListResult[]
 type UpdateParams = {
   ID: number
   Name: string
-  Namespace: string[]
 }
 
 enum ModalStatus {
@@ -214,6 +227,7 @@ export default defineComponent({
   components: {
     SmileOutlined,
     DownOutlined,
+    departmentLesson,
   },
   setup(props, ctx) {
     // vue相关变量
@@ -342,7 +356,6 @@ export default defineComponent({
       modalStatus.value = ModalStatus.edit
       formRef.ID = record.id + ''
       formRef.Name = record.name
-      formRef.Namespace = record.namespace
     }
     const deleteFn = (record: ListResult) => {
       deleteDepartment(record.id).finally(() => {
@@ -360,7 +373,6 @@ export default defineComponent({
         case ModalStatus.add:
           addDepartment(<UpdateParams>{
             Name: formRef.Name,
-            Namespace: formRef.Namespace,
           }).finally(() => {
             getListData(<ListParams>{
               page: currentPage.value,
@@ -387,7 +399,16 @@ export default defineComponent({
       }
     }
 
-    // 当前管理界面的管理类型
+    // 课程实验管理
+    const lessonMissionVisible = ref<boolean>(false)
+    const lessonMissionLessonID = ref<number>(0)
+    const openLessonMission = (record: ListResult) => {
+      console.log(record)
+
+      lessonMissionLessonID.value = record.id
+      lessonMissionVisible.value = true
+    }
+
     return {
       listData,
       columns,
@@ -406,10 +427,18 @@ export default defineComponent({
       isEditLoading,
       formRef,
       clearForm,
+
+      // 班级课程管理
+      lessonMissionVisible,
+      lessonMissionLessonID,
+      openLessonMission,
     }
   },
 })
 </script>
 
 <style lang="less" scoped>
+.ant-table-striped :deep(.table-striped) {
+  background-color: #fafafa;
+}
 </style>
