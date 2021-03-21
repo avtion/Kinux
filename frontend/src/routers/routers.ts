@@ -14,6 +14,18 @@ import examManagerComponents from '@/components/examManager.vue' // 考试管理
 
 import profileComponents from '@/components/profile.vue' // 个人资料
 import sessionManagerComponents from '@/components/sessionManager.vue' // 实验会话
+import lessonManagerComponents from '@/components/lessonManager.vue' // 课程管理
+
+// workspcae
+import LessonSelector from '@/components/workspaceComponents/lesson.vue'
+
+const workspaceChild = [
+  {
+    path: '/dashboard/lesson',
+    name: 'lessonSelector',
+    component: LessonSelector,
+  },
+]
 
 const routes = [
   {
@@ -30,6 +42,8 @@ const routes = [
         path: '',
         name: 'workspace',
         component: workspaceComponents,
+        redirect: { name: 'lessonSelector' },
+        children: workspaceChild,
       },
       {
         path: 'shell/:id',
@@ -83,6 +97,12 @@ const routes = [
         path: 'admin/cp',
         name: 'checkpointManager',
         component: checkpointManagerComponents,
+        props: true,
+      },
+      {
+        path: 'admin/lesson',
+        name: 'lessonManager',
+        component: lessonManagerComponents,
         props: true,
       },
     ],
