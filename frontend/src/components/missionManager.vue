@@ -17,18 +17,6 @@
             @search="onSearch"
           />
           <a-divider type="vertical" />
-          <a-select
-            v-model:value="currentNamespaceFilter"
-            mode="multiple"
-            style="width: 200px"
-            placeholder="请选择需要查询的命名空间"
-            @change="onSearch"
-          >
-            <a-select-option v-for="v in namespaceOptions" :key="v">{{
-              v
-            }}</a-select-option>
-          </a-select>
-          <a-divider type="vertical" />
           <a-button @click="addFn">新增</a-button>
         </div>
 
@@ -59,16 +47,13 @@
           <!-- 编辑框 -->
           <template #operation="{ record }">
             <a-button-group size="small">
-              <a-button type="primary" @click="openMissionScoreManager(record)"
-                >成绩查询</a-button
-              >
               <a-button type="primary" @click="editFn(record)"
                 >修改配置</a-button
               >
               <a-button
                 type="primary"
                 @click="openMissionCheckpointManager(record.id)"
-                >修改检查点</a-button
+                >修改考点</a-button
               >
               <a-popconfirm
                 placement="top"
@@ -112,13 +97,6 @@
             style="width: 300px"
             placeholder="请填写实验相关描述"
             :auto-size="{ minRows: 2 }"
-          />
-        </a-form-item>
-        <a-form-item label="命名空间">
-          <a-input
-            v-model:value="formRef.namespace"
-            style="width: 300px"
-            placeholder="default"
           />
         </a-form-item>
         <a-form-item label="实验总分" required>
@@ -174,20 +152,6 @@
         @save="guideSaver"
       >
       </v-md-editor>
-    </a-modal>
-
-    <!-- 成绩查询 -->
-    <a-modal
-      v-model:visible="missionScoreVisiable"
-      title="成绩查询"
-      :footer="null"
-      width="920px"
-      :destroyOnClose="true"
-    >
-      <missionScoreManager
-        :missionID="targetMissionID"
-        :namespace="targetNamepsce"
-      ></missionScoreManager>
     </a-modal>
 
     <!-- 实验检查点编辑 -->
@@ -246,11 +210,6 @@ const columns = [
     key: 'name',
   },
   {
-    title: '命名空间',
-    dataIndex: 'namespace',
-    key: 'namespace',
-  },
-  {
     title: '实验文档',
     dataIndex: 'id',
     slots: { customRender: 'guide' },
@@ -266,7 +225,6 @@ type ListParams = {
   page: number
   size: number
   name: string
-  ns: string[]
 }
 
 type ListResult = {
@@ -274,7 +232,6 @@ type ListResult = {
   total: number
   name: string
   desc: string
-  namespace: string
   containers: string[]
   deployment: number
   exec_container: string
@@ -287,7 +244,6 @@ type UpdateParams = {
   ID: number
   Name: string
   desc: string
-  namespace: string
   total: number
   containers: string[]
   deployment: number
@@ -324,10 +280,6 @@ const deleteAPI = (params: number) => {
   return defaultClient.delete<BaseResponse>(paths.ms.delete + params + '/')
 }
 
-const namespacesAPI = (params: number) => {
-  return defaultClient.get<BaseResponse>(paths.ms.ns)
-}
-
 const getGuideAPI = (params: number) => {
   return defaultClient.get<BaseResponse>(paths.ms.getGuide + params + '/')
 }
@@ -362,14 +314,6 @@ export default defineComponent({
     const store = GetStore()
     const routers = useRouter()
 
-    // 获取命名空间选项
-    const currentNamespaceFilter = ref<string[]>([])
-    const { data: namespaceOptions } = useRequest(namespacesAPI, {
-      formatResult: (res): string[] => {
-        return <string[]>res.data.Data
-      },
-    })
-
     // 表格
     const currentPage = ref<number>(1)
     const currentSize = ref<number>(10)
@@ -380,7 +324,6 @@ export default defineComponent({
         page: currentPage.value,
         size: currentSize.value,
         name: currentNameFilter.value,
-        ns: currentNamespaceFilter.value,
       }
     }
     const {
@@ -430,7 +373,6 @@ export default defineComponent({
       ID: '',
       Name: '',
       desc: '',
-      namespace: '',
       total: 100,
       containers: [],
       deployment: 0,
@@ -442,7 +384,6 @@ export default defineComponent({
       formRef.ID = ''
       formRef.Name = ''
       formRef.desc = ''
-      formRef.namespace = ''
       formRef.total = 100
       formRef.containers = []
       formRef.deployment = 0
@@ -454,7 +395,6 @@ export default defineComponent({
         ID: Number(formRef.ID),
         Name: formRef.Name,
         desc: formRef.desc,
-        namespace: formRef.namespace,
         total: formRef.total,
         containers: formRef.containers,
         deployment: formRef.deployment,
@@ -500,7 +440,6 @@ export default defineComponent({
       formRef.ID = record.id + ''
       formRef.Name = record.name
       formRef.desc = record.desc
-      formRef.namespace = record.namespace
       formRef.total = record.total
       formRef.containers = record.containers
       formRef.deployment = record.deployment
@@ -562,17 +501,11 @@ export default defineComponent({
 
     // 检查点编辑和成绩查询
     const targetMissionID = ref<number>(0)
-    const targetNamepsce = ref<string>('')
     const missionCheckpointVisiable = ref<boolean>(false)
     const missionScoreVisiable = ref<boolean>(false)
     const openMissionCheckpointManager = (id: number) => {
       targetMissionID.value = id
       missionCheckpointVisiable.value = true
-    }
-    const openMissionScoreManager = (record: ListResult) => {
-      targetMissionID.value = record.id
-      targetNamepsce.value = record.namespace
-      missionScoreVisiable.value = true
     }
 
     // 当前管理界面的管理类型
@@ -594,8 +527,6 @@ export default defineComponent({
       isEditLoading,
       formRef,
       clearForm,
-      currentNamespaceFilter,
-      namespaceOptions,
       openGuideEditor,
       guideData,
       instructionsVisible,
@@ -607,8 +538,6 @@ export default defineComponent({
       targetMissionID,
       openMissionCheckpointManager,
       missionScoreVisiable,
-      openMissionScoreManager,
-      targetNamepsce,
     }
   },
 })
