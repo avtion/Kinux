@@ -22,7 +22,7 @@
             style="width: 200px"
             @change="onSearch"
           >
-            <a-select-option :key="0">不筛选检测方式</a-select-option>
+            <a-select-option :key="0">检测方法</a-select-option>
             <a-select-option
               v-for="item in CheckpointMethodMapper"
               :key="item[0]"
