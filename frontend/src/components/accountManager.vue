@@ -182,7 +182,7 @@ const columns = [
     slots: { customRender: 'role' },
   },
   {
-    title: '班级名称',
+    title: '所属班级',
     dataIndex: 'department',
     key: 'department',
   },
