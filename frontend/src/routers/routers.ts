@@ -18,12 +18,18 @@ import lessonManagerComponents from '@/components/lessonManager.vue' // 课程�
 
 // workspcae
 import LessonSelector from '@/components/workspaceComponents/lesson.vue'
+import MissionSelector from '@/components/workspaceComponents/mission.vue'
 
 const workspaceChild = [
   {
     path: '/dashboard/lesson',
     name: 'lessonSelector',
     component: LessonSelector,
+  },
+  {
+    path: '/dashboard/mission/:lesson',
+    name: 'missionSelector',
+    component: MissionSelector,
   },
 ]
 
