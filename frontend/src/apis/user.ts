@@ -39,6 +39,7 @@ class Account {
             role: resp.role,
             department: resp.department,
             avatarSeed: resp.avatarSeed,
+            dpID: resp.dpID,
           })
 
           resolve(resp)
@@ -124,4 +125,5 @@ interface loginRespData {
   role: string
   department: string
   avatarSeed: string
+  dpID: string
 }

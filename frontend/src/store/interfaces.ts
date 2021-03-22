@@ -10,4 +10,5 @@ export interface Profile {
   role: string
   department: string
   avatarSeed: string
+  dpID: string
 }
