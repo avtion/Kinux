@@ -21,9 +21,7 @@ func TestNewDepartment(t *testing.T) {
 			args: args{
 				ctx:  context.Background(),
 				name: "test2",
-				opts: []DepartmentOpt{
-					DepartmentNsOpt("default", "test"),
-				},
+				opts: []DepartmentOpt{},
 			},
 			wantErr: false,
 		},

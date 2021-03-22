@@ -32,7 +32,6 @@ func TestCrateOrUpdateMission(t *testing.T) {
 				name: "centos",
 				dp:   dp,
 				opts: []MissionBuildOpt{
-					MissionOptNs("test"),
 					MissionOptDesc("测试描述"),
 					//MissionOptVnc("centos", "6777"),
 					MissionOptDeployment("bash", "centos", []string{"centos"}),
