@@ -1,6 +1,6 @@
 <template>
   <a-card title="实验选择" :bordered="false" :loading="isListDataLoading">
-    <a-list item-layout="horizontal" :data-source="dataList">
+    <a-list item-layout="horizontal" :data-source="missionData">
       <template #renderItem="{ item, index }">
         <a-list-item>
           <!-- 元数据 -->
@@ -81,7 +81,10 @@ import { BaseResponse, defaultClient } from '@/apis/request'
 
 export default {
   setup(props, ctx) {
-    const routers = useRouter()
+    const router = useRouter()
+
+    // 获取课程参数
+    const lessonID = Number(router.currentRoute.value.params.lesson)
 
     // 从上下文中获取对象
     const ws: WebSocketConn = inject<WebSocketConn>('websocket')
@@ -100,7 +103,6 @@ export default {
       size: number
       lesson: number
     }
-    type missionResType = missionResType[]
     const departmentLessonDataAPI = (params: missionReqParams) => {
       return defaultClient.get<BaseResponse>('/v2/ms/', {
         params: params,
@@ -110,14 +112,14 @@ export default {
       return <missionReqParams>{
         page: 0,
         size: 0,
-        lesson: 0,
+        lesson: lessonID,
       }
     }
     const { data: missionData, loading: isListDataLoading } = useRequest(
       departmentLessonDataAPI,
       {
         defaultParams: [getListParams()],
-        formatResult: (res): missionResType => {
+        formatResult: (res): missionResIf[] => {
           return res.data.Data
         },
       }
@@ -133,7 +135,7 @@ export default {
         case missionStatus.Pending:
           return
         case missionStatus.Working:
-          routers.push({ name: 'shell', params: { id: m.id } })
+          router.push({ name: 'shell', params: { id: m.id } })
           return
         case missionStatus.Done:
           return
@@ -199,7 +201,6 @@ export default {
       instructions.value = `🤪无实验文档数据，请联系刷新页面或实验教师`
     }
     return {
-      dataList,
       MissionHandler,
       missionStatus,
       GetMissionButtonType,
