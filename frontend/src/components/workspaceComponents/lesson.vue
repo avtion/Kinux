@@ -79,7 +79,7 @@ export default {
       return <ListParams>{
         page: 0,
         size: 0,
-        department: profile.dpID,
+        department: Number(profile.dpID),
       }
     }
     const {
@@ -88,7 +88,7 @@ export default {
       loading: isListDataLoading,
     } = useRequest(departmentLessonDataAPI, {
       defaultParams: [getListParams()],
-      formatResult: (res): ListResults => {
+      formatResult: (res): ListResult[] => {
         return res.data.Data
       },
     })
