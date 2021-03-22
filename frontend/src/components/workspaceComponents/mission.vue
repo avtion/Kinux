@@ -1,5 +1,5 @@
 <template>
-  <a-card title="课程选择" :bordered="false" :loading="isProjectDataLoading">
+  <a-card title="实验选择" :bordered="false" :loading="isListDataLoading">
     <a-list item-layout="horizontal" :data-source="dataList">
       <template #renderItem="{ item, index }">
         <a-list-item>
@@ -75,6 +75,10 @@ import {
   WebsocketOperation,
 } from '@/utils/websocketConn'
 
+// vue-request
+import { useRequest } from 'vue-request'
+import { BaseResponse, defaultClient } from '@/apis/request'
+
 export default {
   setup(props, ctx) {
     const routers = useRouter()
@@ -82,21 +86,42 @@ export default {
     // 从上下文中获取对象
     const ws: WebSocketConn = inject<WebSocketConn>('websocket')
 
-    // 数据加载
-    const isProjectDataLoading = ref(true)
-
     // 加载任务数据
     const dataList = ref(<missionList[]>[])
-    onMounted(() => {
-      new mission()
-        .list()
-        .then((res) => {
-          dataList.value = res
-        })
-        .finally(() => {
-          isProjectDataLoading.value = false
-        })
-    })
+    interface missionResIf {
+      id: number
+      name: string
+      desc: string
+      guide: string
+      status: number
+    }
+    interface missionReqParams {
+      page: number
+      size: number
+      lesson: number
+    }
+    type missionResType = missionResType[]
+    const departmentLessonDataAPI = (params: missionReqParams) => {
+      return defaultClient.get<BaseResponse>('/v2/ms/', {
+        params: params,
+      })
+    }
+    const getListParams = (): missionReqParams => {
+      return <missionReqParams>{
+        page: 0,
+        size: 0,
+        lesson: 0,
+      }
+    }
+    const { data: missionData, loading: isListDataLoading } = useRequest(
+      departmentLessonDataAPI,
+      {
+        defaultParams: [getListParams()],
+        formatResult: (res): missionResType => {
+          return res.data.Data
+        },
+      }
+    )
 
     // 任务处理函数
     const MissionHandler = (index: number, m: missionList) => {
@@ -174,7 +199,6 @@ export default {
       instructions.value = `🤪无实验文档数据，请联系刷新页面或实验教师`
     }
     return {
-      isProjectDataLoading,
       dataList,
       MissionHandler,
       missionStatus,
@@ -187,6 +211,8 @@ export default {
       instructions,
       openInstructions,
       instructionsTipAfterClose,
+      isListDataLoading,
+      missionData,
     }
   },
 }
