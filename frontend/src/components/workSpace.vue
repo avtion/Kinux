@@ -120,7 +120,6 @@ export default {
     return {
       routes: breadcrumbPath,
       avatar,
-
       profile,
     }
   },
