@@ -51,11 +51,8 @@ func LoginAccount(c *gin.Context) {
 		avatarSeed = profile.AvatarSeed
 	}
 
-	// 用户部门
-	var department string
-	if dp, _err := ac.GetDepartment(c); _err == nil {
-		department = dp.Name
-	}
+	// 用户班级
+	dp, _ := ac.GetDepartment(c)
 
 	c.JSON(http.StatusOK, msg.BuildSuccess(map[string]string{
 		"msg":        "🛫️登陆成功",
@@ -64,8 +61,9 @@ func LoginAccount(c *gin.Context) {
 		"username":   ac.Username,
 		"realName":   realName,
 		"role":       models.RoleTranslator(ac.Role),
-		"department": department,
+		"department": dp.Name,
 		"avatarSeed": avatarSeed,
+		"dpID":       cast.ToString(dp.ID),
 	}))
 	return
 }
