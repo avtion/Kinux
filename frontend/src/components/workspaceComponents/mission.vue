@@ -90,14 +90,6 @@ export default {
     const ws: WebSocketConn = inject<WebSocketConn>('websocket')
 
     // 加载任务数据
-    const dataList = ref(<missionList[]>[])
-    interface missionResIf {
-      id: number
-      name: string
-      desc: string
-      guide: string
-      status: number
-    }
     interface missionReqParams {
       page: number
       size: number
@@ -119,7 +111,7 @@ export default {
       departmentLessonDataAPI,
       {
         defaultParams: [getListParams()],
-        formatResult: (res): missionResIf[] => {
+        formatResult: (res): missionList[] => {
           return res.data.Data
         },
       }
@@ -127,6 +119,7 @@ export default {
 
     // 任务处理函数
     const MissionHandler = (index: number, m: missionList) => {
+      console.log(m)
       const status = m.status
       switch (status) {
         case missionStatus.Stop:
@@ -146,7 +139,7 @@ export default {
 
     // 启动任务
     const startMission = (missionListIndex: number, missionID: string) => {
-      dataList.value[missionListIndex].status = missionStatus.Pending
+      missionData.value[missionListIndex].status = missionStatus.Pending
       const msg: WebsocketMessage = {
         op: WebsocketOperation.MissionApply,
         data: {
@@ -158,7 +151,7 @@ export default {
           JSON.stringify(msg),
           WebsocketOperation.ContainersDone,
           (_ws: WebSocketConn): void => {
-            dataList.value[missionListIndex].status = missionStatus.Working
+            missionData.value[missionListIndex].status = missionStatus.Working
           },
           true
         )
