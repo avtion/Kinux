@@ -51,7 +51,7 @@ func GetLesson(ctx context.Context, id uint) (res *Lesson, err error) {
 
 // 根据课程ID查询实验ID
 func GetMissionIDsByLessons(ctx context.Context, fns ...func(db *gorm.DB) *gorm.DB) (res []uint, err error) {
-	err = GetGlobalDB().WithContext(ctx).Scopes(fns...).Pluck("mission", &res).Error
+	err = GetGlobalDB().WithContext(ctx).Model(new(LessonMission)).Scopes(fns...).Pluck("mission", &res).Error
 	return
 }
 
