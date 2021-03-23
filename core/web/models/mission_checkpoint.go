@@ -155,7 +155,7 @@ func EditMissionCheckpoints(ctx context.Context, missionID uint, checkpoints ...
 }
 
 // 获取用户需要完成的检查点
-func FindAllTodoCheckpoints(ctx context.Context, account, mission uint, containers ...string) (cps []*Checkpoint, err error) {
+func FindAllTodoMissionCheckpoints(ctx context.Context, account, mission uint, containers ...string) (cps []*Checkpoint, err error) {
 	if account == 0 || mission == 0 {
 		return nil, errors.New("缺乏参数，无法获取用户需要完成的检查点")
 	}
@@ -166,7 +166,7 @@ func FindAllTodoCheckpoints(ctx context.Context, account, mission uint, containe
 	}
 
 	// 查找已经完成的检查点
-	finishedCheckpointsIDs, err := FindAllAccountFinishMissionScore(ctx, account, mission, containers...)
+	finishedCheckpointsIDs, err := FindAllAccountFinishScoreCpIDs(ctx, account, 0, mission, containers...)
 	if err != nil {
 		return
 	}
