@@ -43,7 +43,7 @@ func NewScoreListener(account *models.Account, lesson *models.Lesson, exam *mode
 	// 回调函数
 	newCallbackFn := func(cp *models.Checkpoint) func(w *WsPtyWrapper) (err error) {
 		return func(w *WsPtyWrapper) (err error) {
-			if err = w.ws.SendMsg(msg.BuildSuccess(fmt.Sprintf("考点已完成: %s", cp.Desc))); err != nil {
+			if err = w.ws.SendMsg(msg.BuildSuccess(fmt.Sprintf("考点已完成: %s", cp.Name))); err != nil {
 				return
 			}
 			return models.GetGlobalDB().WithContext(w.ChildCtx).Create(&models.Score{
