@@ -173,9 +173,6 @@ export const paths: routePath = {
     delete: 'v1/mcp/',
     percent: 'v1/mcp/percent/',
   },
-  score: {
-    msList: 'v1/score/ms/',
-  },
   exam: {
     list: 'v1/exam/list/',
     count: 'v1/exam/count/',
@@ -194,7 +191,6 @@ interface routePath {
   deployment: deployment
   cp: checkpoint
   mcp: missionCheckpoint
-  score: score
   exam: examCheckpoint
 }
 
@@ -262,10 +258,6 @@ interface missionCheckpoint {
   edit: string
   delete: string
   percent: string
-}
-
-interface score {
-  msList: string
 }
 
 interface examCheckpoint {

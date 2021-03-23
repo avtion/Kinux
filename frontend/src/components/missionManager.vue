@@ -190,9 +190,6 @@ import { BaseResponse, defaultClient, paths } from '@/apis/request'
 // 实验检查点管理
 import missionCheckpointManager from '@/components/missionCheckpointManager.vue'
 
-// 成绩查询
-import missionScoreManager from '@/components/missionScore.vue'
-
 // 分页组件定义
 type Pagination = TableState['pagination']
 
@@ -305,7 +302,6 @@ const deploymentQuickAPI = () => {
 export default defineComponent({
   components: {
     missionCheckpointManager,
-    missionScoreManager,
     SmileOutlined,
     DownOutlined,
   },
@@ -502,7 +498,6 @@ export default defineComponent({
     // 检查点编辑和成绩查询
     const targetMissionID = ref<number>(0)
     const missionCheckpointVisiable = ref<boolean>(false)
-    const missionScoreVisiable = ref<boolean>(false)
     const openMissionCheckpointManager = (id: number) => {
       targetMissionID.value = id
       missionCheckpointVisiable.value = true
@@ -537,7 +532,6 @@ export default defineComponent({
       missionCheckpointVisiable,
       targetMissionID,
       openMissionCheckpointManager,
-      missionScoreVisiable,
     }
   },
 })
