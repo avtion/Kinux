@@ -34,6 +34,13 @@ type ExamMissions struct {
 	Priority int  // 自定义排序
 }
 
+// 查询考试
+func GetExam(ctx context.Context, id uint) (res *Exam, err error) {
+	res = new(Exam)
+	err = GetGlobalDB().WithContext(ctx).First(&res, id).Error
+	return
+}
+
 // 获取考试名字的映射
 func GetExamsNameMapper(ctx context.Context, id ...uint) (res map[uint]string, err error) {
 	type api struct {
