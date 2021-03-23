@@ -5,6 +5,10 @@ import (
 	"gorm.io/gorm"
 )
 
+func init() {
+	migrateQueue = append(migrateQueue, new(Score))
+}
+
 // 检查点成绩
 type Score struct {
 	gorm.Model
