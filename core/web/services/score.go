@@ -2,130 +2,127 @@ package services
 
 import (
 	"Kinux/core/web/models"
-	"context"
-	"errors"
-	"math"
-	"sort"
+	"Kinux/core/web/msg"
+	"fmt"
+	"github.com/sergi/go-diff/diffmatchpatch"
+	"github.com/sirupsen/logrus"
+	"gorm.io/gorm"
 )
 
-type scoreListData struct {
-	ID                uint    `json:"id"`
-	Account           uint    `json:"account"`
-	DepartmentID      uint    `json:"department_id"`
-	Username          string  `json:"username"`
-	Department        string  `json:"department"`
-	Score             float64 `json:"score"`
-	FinishCheckpoints uint    `json:"finish_checkpoints"`
-}
-
-type ScoresListResult struct {
-	Total       uint             `json:"total"`
-	CpsNum      int              `json:"cps_num"`
-	FinishCount int              `json:"finish_count"`
-	Data        []*scoreListData `json:"data"`
-}
-
-func ListMissionScores(ctx context.Context, mission uint, department uint) (res *ScoresListResult, err error) {
-	if department == 0 || mission == 0 {
-		err = errors.New("非法参数")
-		return
+// 成绩监听器
+func NewScoreListener(account *models.Account, lesson *models.Lesson, exam *models.Exam, mc *models.Mission,
+	container string, cps ...*models.Checkpoint) (opt WsPtyWrapperOption) {
+	// 校验参数
+	if account == nil || account.ID == 0 {
+		return nil
 	}
-	// 获取班级和实验对象
-	dp, err := models.GetDepartmentByID(ctx, department)
-	if err != nil {
-		return
+	if lesson == nil || lesson.ID == 0 {
+		return nil
 	}
-	ms, err := models.GetMission(ctx, mission)
-	if err != nil {
-		return
+	if mc == nil || mc.ID == 0 {
+		return nil
+	}
+	if container == "" {
+		return nil
+	}
+	if len(cps) == 0 {
+		return nil
+	}
+	var examID uint
+	if exam != nil && exam.ID != 0 {
+		examID = exam.ID
 	}
 
-	// 获取用户列表
-	acs, err := models.ListAccountsWithProfiles(ctx, nil,
-		models.AccountRoleFilter(models.RoleNormalAccount),
-		models.AccountDepartmentFilter(int(dp.ID)),
+	// 定义监听器
+	var (
+		inOpt, outOpt       WsPtyWrapperOption
+		inReader, outReader *TerminalListener
+		inMap, outMap       map[string]func(w *WsPtyWrapper) (err error)
 	)
-	if err != nil {
-		return
-	}
-	res = &ScoresListResult{Total: ms.Total}
-	if len(acs) == 0 {
-		res.Data = make([]*scoreListData, 0)
-		return
-	}
 
-	// 获取用户ID和初始化结果
-	acsIDs := make([]uint, 0, len(acs))
-	res.Data = make([]*scoreListData, 0, len(acs))
-	acMapper := make(map[uint]*scoreListData, len(acs)) // id -> *ScoresListResult
-	for _, v := range acs {
-		acsIDs = append(acsIDs, v.ID)
-		_res := &scoreListData{
-			ID:                0,
-			Account:           v.ID,
-			DepartmentID:      v.DepartmentId,
-			Username:          v.Username,
-			Department:        v.Department,
-			Score:             0,
-			FinishCheckpoints: 0,
-		}
-		res.Data = append(res.Data, _res)
-		acMapper[v.ID] = _res
-	}
-
-	// 获取检查点
-	cps, err := models.FindAllMissionCheckpoints(ctx, mission)
-	if err != nil {
-		return
-	}
-	res.CpsNum = len(cps)
-	// 构建二维匹配哈希 x=目标容器 y=目标检查点 --> 成绩比例
-	var cpsMapper = func() (mapper map[string]map[uint]uint) {
-		mapper = make(map[string]map[uint]uint)
-		for _, cp := range cps {
-			if _, isExist := mapper[cp.TargetContainer]; !isExist {
-				mapper[cp.TargetContainer] = make(map[uint]uint)
+	// 回调函数
+	newCallbackFn := func(cp *models.Checkpoint) func(w *WsPtyWrapper) (err error) {
+		return func(w *WsPtyWrapper) (err error) {
+			if err = w.ws.SendMsg(msg.BuildSuccess(fmt.Sprintf("考点已完成: %s", cp.Desc))); err != nil {
+				return
 			}
-			mapper[cp.TargetContainer][cp.CheckPoint] = cp.Percent
-		}
-		return
-	}()
-
-	mcs, err := models.FindAccountsFinishScore(ctx, acsIDs, mission)
-	mcsCounterMapper := make(map[uint]int, len(acs))
-	if err != nil {
-		return
-	}
-	for _, mc := range mcs {
-		// 防止空指针
-		if _, isExist := cpsMapper[mc.Container]; !isExist {
-			continue
-		}
-		if _, isExist := acMapper[mc.Account]; !isExist {
-			continue
-		}
-		percent, isExist := cpsMapper[mc.Container][mc.Checkpoint]
-		if !isExist {
-			continue
-		}
-		acMapper[mc.Account].FinishCheckpoints++
-		score := float64(ms.Total) * (float64(percent) * 0.01)
-		acMapper[mc.Account].Score += math.RoundToEven(score)
-		if _, isExist = mcsCounterMapper[mc.Account]; isExist {
-			mcsCounterMapper[mc.Account]++
-		} else {
-			mcsCounterMapper[mc.Account] = 1
-		}
-		if mcsCounterMapper[mc.Account] == res.CpsNum {
-			res.FinishCount++
+			return models.GetGlobalDB().WithContext(w.ChildCtx).Create(&models.Score{
+				Model:      gorm.Model{},
+				Account:    account.ID,
+				Lesson:     lesson.ID,
+				Exam:       examID,
+				Mission:    mc.ID,
+				Checkpoint: cp.ID,
+				Container:  container,
+			}).Error
 		}
 	}
 
-	sort.Slice(res.Data, func(i, j int) bool {
-		return res.Data[i].Score > res.Data[j].Score
+	for _, cp := range cps {
+		switch cp.Method {
+		case models.MethodExec:
+			// 初始化
+			if inOpt == nil || inReader == nil {
+				inOpt, inReader = NewPtyWrapperListenerOpt(ListenStdin)
+			}
+			if inMap == nil {
+				inMap = make(map[string]func(w *WsPtyWrapper) (err error))
+			}
+			inMap[cp.In] = newCallbackFn(cp)
+		case models.MethodStdout:
+			// 初始化
+			if outOpt == nil || outReader == nil {
+				outOpt, outReader = NewPtyWrapperListenerOpt(ListenStdin)
+			}
+			if outMap == nil {
+				outMap = make(map[string]func(w *WsPtyWrapper) (err error))
+			}
+			outMap[cp.Out] = newCallbackFn(cp)
+		case models.MethodTargetPort:
+			// TODO 支持
+		}
+	}
+
+	// 监听方法
+	listenFn := func(listener *TerminalListener, w *WsPtyWrapper,
+		callbackMap map[string]func(w *WsPtyWrapper) (err error)) {
+		// 比较器
+		dmp := diffmatchpatch.New()
+		for {
+			select {
+			case <-listener.Context.Done():
+				return
+			default:
+			}
+			line, _err := listener.Reader.ReadLine()
+			if _err != nil {
+				logrus.WithField("err", _err).Error("监听器发生错误")
+				return
+			}
+			if callback, isExist := callbackMap[line]; isExist {
+				if _err := callback(w); _err != nil {
+					logrus.WithField("err", _err).Error("监听器执行回调函数失败")
+					continue
+				}
+				delete(callbackMap, line)
+			} else {
+				for k := range callbackMap {
+					diffs := dmp.DiffMain(line, k, false)
+					logrus.WithField("diff", dmp.DiffPrettyText(diffs)).Trace("指令差异")
+				}
+			}
+		}
+	}
+
+	return CombineWsPtyWrapperOptions(inOpt, outOpt, func(w *WsPtyWrapper) {
+		// 输入和输出监听
+		for _, tmp := range []struct {
+			l *TerminalListener
+			m map[string]func(w *WsPtyWrapper) (err error)
+		}{{l: inReader, m: inMap}, {l: outReader, m: outMap}} {
+			if tmp.l != nil {
+				go listenFn(tmp.l, w, tmp.m)
+			}
+		}
 	})
-	for k, v := range res.Data {
-		v.ID = uint(k)
-	}
-	return
 }
