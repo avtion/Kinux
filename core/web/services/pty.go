@@ -14,41 +14,62 @@ import (
 )
 
 func init() {
-	RegisterWebsocketOperation(wsOpNewPty, missionPtyRegister)
+	RegisterWebsocketOperation(wsOpNewPty, missionPtyRegisterV2)
 	RegisterWebsocketOperation(wsOpResize, missionPtyResizeRegister)
 	RegisterWebsocketOperation(wsOpStdin, missionPtyStdinRegister)
 	RegisterWebsocketOperation(wsOpShutdownPty, missionPtyShutdownRegister)
 }
 
-// 创建任务终端
-func missionPtyRegister(ws *WebsocketSchedule, any jsoniter.Any) (err error) {
+type missionPtyParams struct {
+	MissionID string `json:"mission_id"`
+	Container string `json:"container"`
+	LessonID  string `json:"lesson_id"`
+	ExamID    string `json:"exam_id"`
+}
+
+// 创建任务终端V2
+func missionPtyRegisterV2(ws *WebsocketSchedule, any jsoniter.Any) (err error) {
 	// 从 WebsocketSchedule 获取用户信息
 	if ws.Account == nil {
 		return errors.New("user info not exist")
 	}
+	params := new(missionPtyParams)
+	any.Get("data").ToVal(params)
 
-	// 获取任务信息
-	missionRaw := &struct {
-		ID        string `json:"id"`
-		Container string `json:"container"`
-	}{}
-	any.Get("data").ToVal(missionRaw)
-	if cast.ToInt(missionRaw.ID) == 0 {
+	// 获取课程
+	lessonID := cast.ToUint(params.LessonID)
+	if lessonID == 0 {
+		return errors.New("目标课程为空")
+	}
+	lesson, err := models.GetLesson(ws.Context, lessonID)
+	if err != nil {
+		return
+	}
+
+	// 考试
+	var exam = new(models.Exam)
+	if examID := cast.ToUint(params.ExamID); examID != 0 {
+		exam, _ = models.GetExam(ws.Context, examID)
+	}
+
+	// 获取实验
+	missionID := cast.ToUint(params.MissionID)
+	if missionID == 0 {
 		return errors.New("目标任务为空")
 	}
-	mission, err := models.GetMission(ws.Context, cast.ToUint(missionRaw.ID))
+	mission, err := models.GetMission(ws.Context, missionID)
 	if err != nil {
 		return
 	}
 
 	// 校验容器
-	if missionRaw.Container == "" {
+	if params.Container == "" {
 		if mission.ExecContainer == "" {
 			return errors.New("目标任务未制定容器")
 		}
-		missionRaw.Container = mission.ExecContainer
+		params.Container = mission.ExecContainer
 	}
-	if !mission.IsContainerAllowed(missionRaw.Container) {
+	if !mission.IsContainerAllowed(params.Container) {
 		err = errors.New("container不合法")
 		return
 	}
@@ -75,7 +96,7 @@ func missionPtyRegister(ws *WebsocketSchedule, any jsoniter.Any) (err error) {
 	}
 	var c = pod.Spec.Containers[0]
 	for _, v := range pod.Spec.Containers {
-		if v.Name == missionRaw.Container {
+		if v.Name == params.Container {
 			c = v
 		}
 	}
@@ -83,33 +104,29 @@ func missionPtyRegister(ws *WebsocketSchedule, any jsoniter.Any) (err error) {
 		return errors.New("目标任务无可用容器")
 	}
 
-	// TODO 移除监听者测试
-	stdinListenerOpt, stdinListener := NewPtyWrapperListenerOpt(ListenStdin)
-	stdoutListenerOpt, stdoutListener := NewPtyWrapperListenerOpt(ListenStdout)
-
-	// 挂载检查点
-	cps, err := models.FindAllTodoCheckpoints(ws.Context, ws.Account.ID, mission.ID, c.Name)
-	if err != nil {
-		return
+	// 挂载考点
+	var cps []*models.Checkpoint
+	if exam.ID == 0 {
+		cps, err = models.FindAllTodoMissionCheckpoints(ws.Context, ws.Account.ID, mission.ID, c.Name)
+		if err != nil {
+			return
+		}
+	} else {
+		// TODO 支持考试的考点加载
 	}
-	checkpointListenerOpt := NewWrapperForCheckpointCallback(ws.Account, nil, mission, c.Name, cps...)
+	scoreListener := NewScoreListener(ws.Account, lesson, exam, mission, params.Container, cps...)
 
 	// 初始化pty
 	ptyWrapper := ws.InitPtyWrapper(
-		stdinListenerOpt,
-		stdoutListenerOpt,
-		checkpointListenerOpt,
+		scoreListener,
 		SetWsPtyMetaDataOption(fmt.Sprintf("实验: %s(%d)", mission.Name, mission.ID)),
 	)
-	stdinListener.DebugPrint()
-	stdoutListener.DebugPrint()
 
 	go func() {
 		if _err := k8s.ConnectToPod(ws.Context, &pod, c.Name, ptyWrapper, mission.GetCommand()); _err != nil {
 			logrus.Error("创建POD终端失败", err)
 		}
 	}()
-
 	return
 }
 
