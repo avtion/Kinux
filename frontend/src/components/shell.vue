@@ -112,7 +112,9 @@ export default defineComponent({
   components: { App, CodeSandboxOutlined, DownOutlined },
   name: 'shell',
   props: {
-    id: String,
+    mission: String,
+    exam: String,
+    lesson: String,
   },
   setup(props, ctx) {
     // 从上下文中获取对象
@@ -142,11 +144,19 @@ export default defineComponent({
     })
 
     // 建立POD链接
-    const connectToPOD = (ws: WebSocketConn, id: String, container: string) => {
+    const connectToPOD = (
+      ws: WebSocketConn,
+      lesson: string,
+      exam: string,
+      mission: string,
+      container: string
+    ) => {
       const msg: WebsocketMessage = {
         op: WebsocketOperation.newPty,
         data: {
-          id: id,
+          mission_id: mission,
+          lesson_id: lesson,
+          exam_id: exam,
           container: container,
         },
       }
@@ -201,13 +211,13 @@ export default defineComponent({
       // 将终端连接到新的控制台
       if (ws.readyState !== WebSocket.OPEN) {
         ws.waitQueue.push((_ws) => {
-          connectToPOD(ws, props.id, newValue)
+          connectToPOD(ws, props.lesson, props.exam, props.mission, newValue)
           setTimeout(() => {
             fitAddon.fit()
           }, 1)
         })
       } else {
-        connectToPOD(ws, props.id, newValue)
+        connectToPOD(ws, props.lesson, props.exam, props.mission, newValue)
         setTimeout(() => {
           fitAddon.fit()
         }, 1)
@@ -216,7 +226,7 @@ export default defineComponent({
 
     // 获取容器列表
     const containersNames = ref<string[]>()
-    new mission().listContainersNames(props.id).then((names: string[]) => {
+    new mission().listContainersNames(props.mission).then((names: string[]) => {
       containersNames.value = names
       if (selectContainer.value == '') {
         selectContainer.value = containersNames.value[0]
@@ -229,7 +239,7 @@ export default defineComponent({
     )
     const instructionsLoading = ref<boolean>(true)
     new mission()
-      .getGuide(props.id)
+      .getGuide(props.mission)
       .then((res) => {
         instructions.value = res
       })
@@ -250,14 +260,20 @@ export default defineComponent({
           const msg: WebsocketMessage = {
             op: WebsocketOperation.ResetContainers,
             data: {
-              id: props.id,
+              id: props.mission,
             },
           }
           ws.sendWithCallback(
             JSON.stringify(msg),
             WebsocketOperation.ContainersDone,
             (ws) => {
-              connectToPOD(ws, props.id, selectContainer.value)
+              connectToPOD(
+                ws,
+                props.lesson,
+                props.exam,
+                props.mission,
+                selectContainer.value
+              )
               setTimeout(() => {
                 fitAddon.fit()
               }, 1)
@@ -281,7 +297,7 @@ export default defineComponent({
         okType: 'danger',
         cancelText: '取消',
         onOk() {
-          new mission().deleteDeployment(props.id).then((res) => {
+          new mission().deleteDeployment(props.mission).then((res) => {
             notification.success({
               message: res,
             })

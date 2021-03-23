@@ -52,7 +52,7 @@ const routes = [
         children: workspaceChild,
       },
       {
-        path: 'shell/:id',
+        path: 'shell',
         name: 'shell',
         component: shellComponents,
         props: true,

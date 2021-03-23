@@ -128,7 +128,10 @@ export default {
         case missionStatus.Pending:
           return
         case missionStatus.Working:
-          router.push({ name: 'shell', params: { id: m.id } })
+          router.push({
+            name: 'shell',
+            params: { mission: m.id, lesson: lessonID },
+          })
           return
         case missionStatus.Done:
           return
