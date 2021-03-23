@@ -85,7 +85,12 @@ func ListMissionsV2(c *gin.Context, lessonID uint, page, size int) (res []*Missi
 		}
 
 		// 查询任务是否已经完成
-		if cps, _ := models.FindAllTodoMissionCheckpoints(c, ac.ID, mission.ID); len(cps) == 0 {
+		var cps []*models.Checkpoint
+		cps, err = models.FindAllTodoMissionCheckpoints(c, ac.ID, mission.ID)
+		if err != nil {
+			return
+		}
+		if len(cps) == 0 {
 			status = MissionStatusDone
 		}
 		res = append(res, &Mission{
