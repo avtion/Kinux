@@ -9,7 +9,6 @@ func init() {
 	migrateQueue = append(migrateQueue,
 		new(Lesson),
 		new(LessonMission),
-		new(LessonExam),
 		new(LessonDepartment),
 	)
 }
@@ -27,13 +26,6 @@ type LessonMission struct {
 	Lesson   uint `gorm:"uniqueIndex:lesson_mission_unique_index;not null"`
 	Mission  uint `gorm:"uniqueIndex:lesson_mission_unique_index;not null"`
 	Priority uint `gorm:"not null"`
-}
-
-// 课程考试
-type LessonExam struct {
-	gorm.Model
-	Lesson uint
-	Exam   uint
 }
 
 // 课程班级
