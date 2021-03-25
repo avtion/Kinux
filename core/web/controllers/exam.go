@@ -14,12 +14,15 @@ import (
 func ListExams(c *gin.Context) {
 	params := &struct {
 		Page, Size int
-		Ns         string
+		Lesson     uint
 	}{
-		Page: cast.ToInt(c.DefaultQuery("page", "1")),
-		Size: cast.ToInt(c.DefaultQuery("size", "10")),
+		Page:   cast.ToInt(c.DefaultQuery("page", "1")),
+		Size:   cast.ToInt(c.DefaultQuery("size", "10")),
+		Lesson: cast.ToUint(c.DefaultQuery("lesson", "0")),
 	}
-	data, err := models.ListExams(c, models.NewPageBuilder(params.Page, params.Size))
+	data, err := models.ListExams(c, models.NewPageBuilder(params.Page, params.Size).Build, func(db *gorm.DB) *gorm.DB {
+		return db.Where("lesson = ?", params.Lesson)
+	})
 	if err != nil {
 		c.AbortWithStatusJSON(http.StatusOK, msg.BuildFailed(err))
 		return
@@ -58,7 +61,14 @@ func ListExams(c *gin.Context) {
 
 // count
 func CountExams(c *gin.Context) {
-	res, err := models.CountExams(c)
+	params := &struct {
+		Lesson uint
+	}{
+		Lesson: cast.ToUint(c.DefaultQuery("lesson", "0")),
+	}
+	res, err := models.CountExams(c, func(db *gorm.DB) *gorm.DB {
+		return db.Where("lesson = ?", params.Lesson)
+	})
 	if err != nil {
 		c.AbortWithStatusJSON(http.StatusOK, msg.BuildFailed(err))
 		return
@@ -86,6 +96,7 @@ func AddExam(c *gin.Context) {
 		EndAt      int64  `json:"end_at" binding:"required"`
 		ForceOrder bool   `json:"force_order"`
 		TimeLimit  uint   `json:"time_limit"`
+		Lesson     uint   `json:"lesson" binding:"required"`
 	}{}
 	if err := c.ShouldBindJSON(params); err != nil {
 		c.AbortWithStatusJSON(http.StatusOK, msg.BuildFailed(err))
@@ -99,6 +110,7 @@ func AddExam(c *gin.Context) {
 		EndAt:      time.Unix(params.EndAt, 0),
 		ForceOrder: params.ForceOrder,
 		TimeLimit:  time.Duration(params.TimeLimit) * time.Minute,
+		Lesson:     params.Lesson,
 	}).Create(c); err != nil {
 		c.AbortWithStatusJSON(http.StatusOK, msg.BuildFailed(err))
 		return
@@ -134,12 +146,6 @@ func EditExam(c *gin.Context) {
 		c.AbortWithStatusJSON(http.StatusOK, msg.BuildFailed(err))
 		return
 	}
-}
-
-// 获取已有考试的命名空间列表
-// Deprecated: 删除命名空间
-func GetExamsNamespaces(c *gin.Context) {
-	c.JSON(http.StatusOK, msg.BuildFailed("// Deprecated: 删除命名空间"))
 }
 
 // list
