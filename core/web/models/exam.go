@@ -67,14 +67,14 @@ func GetExamsNameMapper(ctx context.Context, id ...uint) (res map[uint]string, e
 }
 
 // 获取考试列表
-func ListExams(ctx context.Context, builder *PageBuilder) (res []*Exam, err error) {
-	err = GetGlobalDB().WithContext(ctx).Scopes(builder.Build).Find(&res).Error
+func ListExams(ctx context.Context, fns ...func(db *gorm.DB) *gorm.DB) (res []*Exam, err error) {
+	err = GetGlobalDB().WithContext(ctx).Scopes(fns...).Find(&res).Error
 	return
 }
 
 // 获取考试列表
-func CountExams(ctx context.Context) (res int64, err error) {
-	err = GetGlobalDB().WithContext(ctx).Model(new(Exam)).Count(&res).Error
+func CountExams(ctx context.Context, fns ...func(db *gorm.DB) *gorm.DB) (res int64, err error) {
+	err = GetGlobalDB().WithContext(ctx).Model(new(Exam)).Scopes(fns...).Count(&res).Error
 	return
 }
 
