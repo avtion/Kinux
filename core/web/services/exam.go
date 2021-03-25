@@ -23,7 +23,7 @@ type ExamListResult struct {
 
 // 查询考试列表
 func ListExams(ctx context.Context, ac *models.Account, page, size int) (res []*ExamListResult, err error) {
-	exams, err := models.ListExams(ctx, models.NewPageBuilder(page, size))
+	exams, err := models.ListExams(ctx, models.NewPageBuilder(page, size).Build)
 	if err != nil {
 		return
 	}
