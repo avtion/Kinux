@@ -23,6 +23,7 @@ type Exam struct {
 	EndAt      time.Time     // 结束时间
 	ForceOrder bool          // 强制按照顺序完成任务
 	TimeLimit  time.Duration // 考试限制时间 （分钟作为单位）
+	Lesson     uint          // 课程 考试与课程是N:1的关系
 }
 
 // 实验与任务点为一对多关系
