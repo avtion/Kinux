@@ -28,8 +28,8 @@
                   :key="v.id"
                   :title="v.name"
                   >{{ v.id }} - {{ v.name }}
-                </a-select-option></a-select
-              >
+                </a-select-option>
+              </a-select>
             </a-form-item>
             <a-form-item>
               <a-button @click="addFn">添加课程</a-button>
