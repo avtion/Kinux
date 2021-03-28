@@ -27,7 +27,10 @@
           <!-- 编辑框 -->
           <template #operation="{ record }">
             <a-button-group size="small">
-              <a-button type="primary">监控</a-button>
+              <a-button type="primary" :disabled="!record.is_pty"
+                >终端监控</a-button
+              >
+              <a-button type="primary">发送消息</a-button>
               <a-popconfirm
                 placement="top"
                 ok-text="是"
