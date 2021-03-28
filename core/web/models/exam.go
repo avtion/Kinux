@@ -200,3 +200,10 @@ func CountExamMissions(ctx context.Context, exam, mission uint) (
 	err = GetGlobalDB().WithContext(ctx).Scopes(listExamMission(exam, mission, nil)).Count(&res).Error
 	return
 }
+
+// 考试日志 - 用于记录用户开始考试的时间
+type ExamLogs struct {
+	gorm.Model
+	Account uint
+	Exam    uint
+}
