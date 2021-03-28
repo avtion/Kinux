@@ -2,8 +2,10 @@ package services
 
 import (
 	"Kinux/core/k8s"
+	"Kinux/core/web/models"
 	"Kinux/tools/bytesconv"
 	"context"
+	"fmt"
 	jsoniter "github.com/json-iterator/go"
 	"io"
 	"k8s.io/client-go/tools/remotecommand"
@@ -24,7 +26,7 @@ type WsPtyWrapper struct {
 	cancelFn context.CancelFunc
 
 	// 额外参数
-	metaData string // 用于展示当前终端正在执行的任务信息
+	metaData PtyMeta // 用于展示当前终端正在执行的任务信息
 }
 
 type WsPtyWrapperOption = func(w *WsPtyWrapper)
@@ -122,8 +124,44 @@ func CombineWsPtyWrapperOptions(wrappers ...WsPtyWrapperOption) WsPtyWrapperOpti
 }
 
 // 设置pty的元数据
-func SetWsPtyMetaDataOption(metaData string) WsPtyWrapperOption {
+func SetWsPtyMetaDataOption(metaData PtyMeta) WsPtyWrapperOption {
 	return func(w *WsPtyWrapper) {
 		w.metaData = metaData
+	}
+}
+
+// 元数据
+type PtyMeta interface {
+	GetType() MetaType
+	StrFormat() string
+}
+
+type MetaType = uint
+
+const (
+	MissionMetaType MetaType = iota
+	ExamMetaType
+)
+
+// 实验元数据
+type MissionMeta struct {
+	Mc        *models.Mission
+	Container string
+}
+
+var _ PtyMeta = (*MissionMeta)(nil)
+
+func (mm *MissionMeta) GetType() MetaType {
+	return MissionMetaType
+}
+
+func (mm *MissionMeta) StrFormat() string {
+	return fmt.Sprintf("实验: %s(%d)", mm.Mc.Name, mm.Mc.ID)
+}
+
+func NewMissionMeta(mc *models.Mission, container string) PtyMeta {
+	return &MissionMeta{
+		Mc:        mc,
+		Container: container,
 	}
 }

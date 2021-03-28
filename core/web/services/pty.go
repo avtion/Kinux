@@ -5,7 +5,6 @@ import (
 	"Kinux/core/web/models"
 	"Kinux/tools/bytesconv"
 	"errors"
-	"fmt"
 	jsoniter "github.com/json-iterator/go"
 	"github.com/sirupsen/logrus"
 	"github.com/spf13/cast"
@@ -119,7 +118,7 @@ func missionPtyRegisterV2(ws *WebsocketSchedule, any jsoniter.Any) (err error) {
 	// 初始化pty
 	ptyWrapper := ws.InitPtyWrapper(
 		scoreListener,
-		SetWsPtyMetaDataOption(fmt.Sprintf("实验: %s(%d)", mission.Name, mission.ID)),
+		SetWsPtyMetaDataOption(NewMissionMeta(mission, params.Container)),
 	)
 
 	go func() {

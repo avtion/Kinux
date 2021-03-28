@@ -48,9 +48,9 @@ func ListScheduleCenterInfo(_ context.Context) (res []*ScheduleCenterListResult)
 			IsPty:     ws.pty != nil,
 			PtyMetaData: func() string {
 				if ws.pty != nil {
-					return ws.pty.metaData
+					return ws.pty.metaData.StrFormat()
 				}
-				return ""
+				return "无终端活动"
 			}(),
 		})
 		return true
