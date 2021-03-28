@@ -105,7 +105,6 @@ function messageHandler(this: WebSocketConn, ev: MessageEvent): any {
   console.log('接收到websocket消息 操作码:', msg.op, '数据:', msg.data)
 
   switch (msg.op) {
-
     // 页面通知 - 采用Notification的形式
     case WebsocketOperation.Msg:
       const resp = new BaseResponse(msg.data)
