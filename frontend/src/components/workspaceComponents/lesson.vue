@@ -14,9 +14,7 @@
               </div>
               <div class="inline-block absolute inset-y-0 right-0">></div>
             </div>
-            <div
-              class="block text-sm pr-8 text-opacity-5 font-mono leading-relaxed h-auto line-clamp-3"
-            >
+            <div class="block text-sm pr-8 leading-relaxed h-auto line-clamp-3">
               {{ item.desc }}
             </div>
           </a>
