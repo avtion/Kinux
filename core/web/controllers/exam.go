@@ -3,10 +3,12 @@ package controllers
 import (
 	"Kinux/core/web/models"
 	"Kinux/core/web/msg"
+	"errors"
 	"github.com/gin-gonic/gin"
 	"github.com/spf13/cast"
 	"gorm.io/gorm"
 	"net/http"
+	"strings"
 	"time"
 )
 
@@ -30,29 +32,37 @@ func ListExams(c *gin.Context) {
 
 	// 转译
 	type resType struct {
-		ID         uint          `json:"id"`
-		Name       string        `json:"name"`
-		Desc       string        `json:"desc"`
-		Total      uint          `json:"total"`
-		ForceOrder bool          `json:"force_order"`
-		BeginAt    string        `json:"begin_at"`
-		EndAt      string        `json:"end_at"`
-		CreatedAt  string        `json:"created_at"`
-		TimeLimit  time.Duration `json:"time_limit"`
+		ID            uint   `json:"id"`
+		Name          string `json:"name"`
+		Desc          string `json:"desc"`
+		Total         uint   `json:"total"`
+		ForceOrder    bool   `json:"force_order"`
+		BeginAt       string `json:"begin_at"`
+		EndAt         string `json:"end_at"`
+		CreatedAt     string `json:"created_at"`
+		TimeLimit     string `json:"time_limit"`
+		BeginAtUnix   int64  `json:"begin_at_unix"`
+		EndAtUnix     int64  `json:"end_at_unix"`
+		CreatedAtUnix int64  `json:"created_at_unix"`
+		TimeLimitUnix int64  `json:"time_limit_unix"`
 	}
 
 	res := make([]*resType, 0, len(data))
 	for _, v := range data {
 		res = append(res, &resType{
-			ID:         v.ID,
-			Name:       v.Name,
-			Desc:       v.Desc,
-			Total:      v.Total,
-			ForceOrder: v.ForceOrder,
-			BeginAt:    v.BeginAt.Format("2006-01-02 15:04:05"),
-			EndAt:      v.EndAt.Format("2006-01-02 15:04:05"),
-			CreatedAt:  v.CreatedAt.Format("2006-01-02 15:04:05"),
-			TimeLimit:  v.TimeLimit / time.Minute,
+			ID:            v.ID,
+			Name:          v.Name,
+			Desc:          v.Desc,
+			Total:         v.Total,
+			ForceOrder:    v.ForceOrder,
+			BeginAt:       v.BeginAt.Format("2006-01-02 15:04:05"),
+			EndAt:         v.EndAt.Format("2006-01-02 15:04:05"),
+			CreatedAt:     v.CreatedAt.Format("2006-01-02 15:04:05"),
+			TimeLimit:     v.TimeLimit.String(),
+			BeginAtUnix:   v.BeginAt.Unix(),
+			EndAtUnix:     v.EndAt.Unix(),
+			CreatedAtUnix: v.CreatedAt.Unix(),
+			TimeLimitUnix: int64(v.TimeLimit / time.Second),
 		})
 	}
 
@@ -95,7 +105,7 @@ func AddExam(c *gin.Context) {
 		BeginAt    int64  `json:"begin_at" binding:"required"`
 		EndAt      int64  `json:"end_at" binding:"required"`
 		ForceOrder bool   `json:"force_order"`
-		TimeLimit  uint   `json:"time_limit"`
+		TimeLimit  int64  `json:"time_limit"`
 		Lesson     uint   `json:"lesson" binding:"required"`
 	}{}
 	if err := c.ShouldBindJSON(params); err != nil {
@@ -106,10 +116,10 @@ func AddExam(c *gin.Context) {
 		Name:       params.Name,
 		Desc:       params.Desc,
 		Total:      params.Total,
-		BeginAt:    time.Unix(params.BeginAt, 0),
-		EndAt:      time.Unix(params.EndAt, 0),
+		BeginAt:    time.Unix(0, params.BeginAt*int64(time.Millisecond)),
+		EndAt:      time.Unix(0, params.EndAt*int64(time.Millisecond)),
 		ForceOrder: params.ForceOrder,
-		TimeLimit:  time.Duration(params.TimeLimit) * time.Minute,
+		TimeLimit:  time.Duration(params.TimeLimit) * time.Second,
 		Lesson:     params.Lesson,
 	}).Create(c); err != nil {
 		c.AbortWithStatusJSON(http.StatusOK, msg.BuildFailed(err))
@@ -127,7 +137,8 @@ func EditExam(c *gin.Context) {
 		BeginAt    int64  `json:"begin_at" binding:"required"`
 		EndAt      int64  `json:"end_at" binding:"required"`
 		ForceOrder bool   `json:"force_order"`
-		TimeLimit  uint   `json:"time_limit"`
+		TimeLimit  int64  `json:"time_limit"`
+		Lesson     uint   `json:"lesson"`
 	}{}
 	if err := c.ShouldBindJSON(params); err != nil {
 		c.AbortWithStatusJSON(http.StatusOK, msg.BuildFailed(err))
@@ -138,10 +149,11 @@ func EditExam(c *gin.Context) {
 		Name:       params.Name,
 		Desc:       params.Desc,
 		Total:      params.Total,
-		BeginAt:    time.Unix(params.BeginAt, 0),
-		EndAt:      time.Unix(params.EndAt, 0),
+		BeginAt:    time.Unix(0, params.BeginAt*int64(time.Millisecond)),
+		EndAt:      time.Unix(0, params.EndAt*int64(time.Millisecond)),
 		ForceOrder: params.ForceOrder,
-		TimeLimit:  time.Duration(params.TimeLimit) * time.Minute,
+		TimeLimit:  time.Duration(params.TimeLimit) * time.Second,
+		Lesson:     params.Lesson,
 	}).Save(c); err != nil {
 		c.AbortWithStatusJSON(http.StatusOK, msg.BuildFailed(err))
 		return
@@ -168,21 +180,31 @@ func ListExamMissions(c *gin.Context) {
 
 	// 转译一下
 	type resType struct {
-		ID       uint `json:"id"`
-		Exam     uint `json:"exam"`
-		Mission  uint `json:"mission"`
-		Percent  uint `json:"percent"`
-		Priority int  `json:"priority"`
+		ID        uint   `json:"id"`
+		Exam      uint   `json:"exam"`
+		Mission   string `json:"mission"`
+		Percent   uint   `json:"percent"`
+		Priority  int    `json:"priority"`
+		MissionID uint   `json:"mission_id"`
 	}
 	var res = make([]*resType, 0, len(data))
 
+	// 查找实验的名称
+	var missionIDs = make([]uint, 0, len(data))
 	for _, v := range data {
+		missionIDs = append(missionIDs, v.ID)
+	}
+	nameMapper, _ := models.GetMissionsNameMapper(c, missionIDs...)
+
+	for _, v := range data {
+		missionName, _ := nameMapper[v.Mission]
 		res = append(res, &resType{
-			ID:       v.ID,
-			Exam:     v.Exam,
-			Mission:  v.Mission,
-			Percent:  v.Percent,
-			Priority: v.Priority,
+			ID:        v.ID,
+			Exam:      v.Exam,
+			Mission:   missionName,
+			Percent:   v.Percent,
+			Priority:  v.Priority,
+			MissionID: v.Mission,
 		})
 	}
 	c.JSON(http.StatusOK, msg.BuildSuccess(res))
@@ -220,7 +242,7 @@ func AddExamMission(c *gin.Context) {
 		Exam     uint `json:"exam" binding:"required"`
 		Mission  uint `json:"mission" binding:"required"`
 		Percent  uint `json:"percent" binding:"required"`
-		Priority int  `json:"priority" binding:"required"`
+		Priority int  `json:"priority"`
 	}{}
 	if err := c.ShouldBindJSON(params); err != nil {
 		c.AbortWithStatusJSON(http.StatusOK, msg.BuildFailed(err))
@@ -232,6 +254,9 @@ func AddExamMission(c *gin.Context) {
 		Percent:  params.Percent,
 		Priority: params.Priority,
 	}).Create(c); err != nil {
+		if strings.Contains(err.Error(), "UNIQUE") {
+			err = errors.New("该考试已经存在当前实验")
+		}
 		c.AbortWithStatusJSON(http.StatusOK, msg.BuildFailed(err))
 		return
 	}
@@ -245,7 +270,7 @@ func EditExamMission(c *gin.Context) {
 		Exam     uint `json:"exam" binding:"required"`
 		Mission  uint `json:"mission" binding:"required"`
 		Percent  uint `json:"percent" binding:"required"`
-		Priority int  `json:"priority" binding:"required"`
+		Priority int  `json:"priority"`
 	}{}
 	if err := c.ShouldBindJSON(params); err != nil {
 		c.AbortWithStatusJSON(http.StatusOK, msg.BuildFailed(err))

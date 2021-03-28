@@ -106,7 +106,7 @@ func (e *Exam) Create(ctx context.Context) (err error) {
 
 // 删除考试
 func DeleteExam(ctx context.Context, id uint) (err error) {
-	return GetGlobalDB().WithContext(ctx).Delete(new(Exam), id).Error
+	return GetGlobalDB().WithContext(ctx).Unscoped().Delete(new(Exam), id).Error
 }
 
 // 获取考试已经使用的实验占比
@@ -152,6 +152,9 @@ func (em *ExamMissions) Create(ctx context.Context) (err error) {
 
 // 保存
 func (em *ExamMissions) Save(ctx context.Context) (err error) {
+	if em.ID == 0 {
+		return errors.New("未指定记录ID")
+	}
 	if em.Exam == 0 || em.Mission == 0 {
 		return errors.New("必须指定考试和实验")
 	}
@@ -166,7 +169,7 @@ func DeleteExamMission(ctx context.Context, id uint) (err error) {
 	if id == 0 {
 		return errors.New("id不能为空")
 	}
-	return GetGlobalDB().WithContext(ctx).Delete(new(ExamMissions), id).Error
+	return GetGlobalDB().WithContext(ctx).Unscoped().Delete(new(ExamMissions), id).Error
 }
 
 func listExamMission(exam, mission uint, builder *PageBuilder) func(db *gorm.DB) *gorm.DB {
