@@ -21,6 +21,7 @@ func v1Routers() initFunc {
 		ws := v1.Group("/ws")
 		{
 			ws.GET("/", controllers.WebSocketHandlerV1)
+			ws.GET("/list/", controllers.ListLiveWebsocket)
 		}
 
 		// 挂载JWT鉴权中间件
@@ -117,11 +118,12 @@ func v1Routers() initFunc {
 		// 考试相关
 		exam := v1.Group("/exam")
 		{
-			exam.GET("/list/", controllers.ListExams)    // list
-			exam.GET("/count/", controllers.CountExams)  // count
-			exam.DELETE("/:id/", controllers.DeleteExam) // delete
-			exam.POST("/", controllers.AddExam)          // add
-			exam.PUT("/", controllers.EditExam)          // edit
+			exam.GET("/list/", controllers.ListExams)          // list
+			exam.GET("/count/", controllers.CountExams)        // count
+			exam.DELETE("/:id/", controllers.DeleteExam)       // delete
+			exam.POST("/", controllers.AddExam)                // add
+			exam.PUT("/", controllers.EditExam)                // edit
+			exam.GET("/dp/", controllers.ListExamByDepartment) // list For user
 		}
 
 		// 考试实验相关

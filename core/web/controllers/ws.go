@@ -15,3 +15,9 @@ func WebSocketHandlerV1(c *gin.Context) {
 		return
 	}
 }
+
+// 获取当前活跃状态的会话
+func ListLiveWebsocket(c *gin.Context) {
+	res := services.ListScheduleCenterInfo(c)
+	c.JSON(http.StatusOK, msg.BuildSuccess(res))
+}
