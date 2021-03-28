@@ -298,3 +298,87 @@ func GetExamMissionUsedPercent(c *gin.Context) {
 	}
 	c.JSON(http.StatusOK, msg.BuildSuccess(res))
 }
+
+// 根据班级获取对应的考试
+func ListExamByDepartment(c *gin.Context) {
+	params := &struct {
+		Dp uint
+	}{
+		Dp: cast.ToUint(c.DefaultQuery("dp", "0")),
+	}
+
+	// 查看班级的课程
+	type LessonType struct {
+		ID   uint   `json:"id"`
+		Name string `json:"name"`
+		Desc string `json:"desc"`
+	}
+	var lessons = make([]*LessonType, 0)
+	if err := models.GetGlobalDB().WithContext(c).Model(new(models.LessonDepartment)).Joins(
+		"left join lessons ON lesson_departments.lesson = lessons.id",
+	).Select("lesson_departments.id as id, lessons.desc as desc, lessons.name as name").Where(
+		"lesson_departments.department = ?", params.Dp).Scan(&lessons).Error; err != nil {
+		c.AbortWithStatusJSON(http.StatusOK, msg.BuildFailed(err))
+		return
+	}
+
+	var lessonIDs = make([]uint, 0, len(lessons))
+	var lessonMapping = make(map[uint]*LessonType, len(lessons))
+	for k, v := range lessons {
+		lessonIDs = append(lessonIDs, v.ID)
+		lessonMapping[v.ID] = lessons[k]
+	}
+
+	data, err := models.ListExams(c, func(db *gorm.DB) *gorm.DB {
+		return db.Where("lesson IN ?", lessonIDs)
+	})
+	if err != nil {
+		c.AbortWithStatusJSON(http.StatusOK, msg.BuildFailed(err))
+		return
+	}
+
+	// 转译
+	type resType struct {
+		ID            uint   `json:"id"`
+		Name          string `json:"name"`
+		Desc          string `json:"desc"`
+		Total         uint   `json:"total"`
+		ForceOrder    bool   `json:"force_order"`
+		BeginAt       string `json:"begin_at"`
+		EndAt         string `json:"end_at"`
+		CreatedAt     string `json:"created_at"`
+		TimeLimit     string `json:"time_limit"`
+		BeginAtUnix   int64  `json:"begin_at_unix"`
+		EndAtUnix     int64  `json:"end_at_unix"`
+		CreatedAtUnix int64  `json:"created_at_unix"`
+		TimeLimitUnix int64  `json:"time_limit_unix"`
+		Lesson        uint   `json:"lesson"`
+		LessonName    string `json:"lesson_name"`
+		LessonDesc    string `json:"lesson_desc"`
+	}
+
+	res := make([]*resType, 0, len(data))
+	for _, v := range data {
+		l, _ := lessonMapping[v.Lesson]
+		res = append(res, &resType{
+			ID:            v.ID,
+			Name:          v.Name,
+			Desc:          v.Desc,
+			Total:         v.Total,
+			ForceOrder:    v.ForceOrder,
+			BeginAt:       v.BeginAt.Format("2006-01-02 15:04:05"),
+			EndAt:         v.EndAt.Format("2006-01-02 15:04:05"),
+			CreatedAt:     v.CreatedAt.Format("2006-01-02 15:04:05"),
+			TimeLimit:     v.TimeLimit.String(),
+			BeginAtUnix:   v.BeginAt.Unix(),
+			EndAtUnix:     v.EndAt.Unix(),
+			CreatedAtUnix: v.CreatedAt.Unix(),
+			TimeLimitUnix: int64(v.TimeLimit / time.Second),
+			Lesson:        v.Lesson,
+			LessonName:    l.Name,
+			LessonDesc:    l.Desc,
+		})
+	}
+
+	c.JSON(http.StatusOK, msg.BuildSuccess(res))
+}
