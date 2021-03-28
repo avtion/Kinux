@@ -19,6 +19,8 @@ import lessonManagerComponents from '@/components/lessonManager.vue' // 课程�
 // workspcae
 import LessonSelector from '@/components/workspaceComponents/lesson.vue'
 import MissionSelector from '@/components/workspaceComponents/mission.vue'
+import ExamSelector from '@/components/workspaceComponents/exam.vue'
+import ExamMissionSelector from '@/components/workspaceComponents/examMission.vue'
 
 const workspaceChild = [
   {
@@ -30,6 +32,16 @@ const workspaceChild = [
     path: '/dashboard/mission/:lesson',
     name: 'missionSelector',
     component: MissionSelector,
+  },
+  {
+    path: '/dashboard/exam',
+    name: 'examSelector',
+    component: ExamSelector,
+  },
+  {
+    path: '/dashboard/exam/mission/:exam',
+    name: 'examMissionSelector',
+    component: ExamMissionSelector,
   },
 ]
 
