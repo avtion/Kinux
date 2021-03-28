@@ -15,7 +15,7 @@
           <AppstoreOutlined></AppstoreOutlined>
           <span>在线实验</span>
         </a-menu-item>
-        <a-menu-item key="">
+        <a-menu-item key="examSelector">
           <FundOutlined></FundOutlined>
           <span>在线考试</span>
         </a-menu-item>
