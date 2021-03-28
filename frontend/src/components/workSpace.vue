@@ -58,7 +58,7 @@
     </a-page-header>
 
     <!-- 下方表格 -->
-    <a-layout style="padding: 24px 24px 24px">
+    <a-layout class="table">
       <a-layout-content
         :style="{
           background: '#fff',
@@ -190,5 +190,10 @@ export default {
       display: none;
     }
   }
+}
+
+.table {
+  width: 100%;
+  padding: 24px 24px 24px;
 }
 </style>
