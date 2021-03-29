@@ -22,6 +22,7 @@ func v1Routers() initFunc {
 		{
 			ws.GET("/", controllers.WebSocketHandlerV1)
 			ws.GET("/list/", controllers.ListLiveWebsocket)
+			ws.POST("/msg/", controllers.SendMessageToTargetWs)
 		}
 
 		// 挂载JWT鉴权中间件
