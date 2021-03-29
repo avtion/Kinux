@@ -39,3 +39,20 @@ func SendMessageToTargetWs(c *gin.Context) {
 	}
 	c.JSON(http.StatusOK, msg.BuildSuccess("消息发送成功"))
 }
+
+// 强制目标Websocket链接登出
+func ForceTargetLogout(c *gin.Context) {
+	params := &struct {
+		TargetID int `json:"target_id"`
+	}{}
+	if err := c.ShouldBindJSON(params); err != nil {
+		c.AbortWithStatusJSON(http.StatusOK, msg.BuildFailed(err))
+		return
+	}
+	err := services.ForceTargetLogout(c, params.TargetID)
+	if err != nil {
+		c.AbortWithStatusJSON(http.StatusOK, msg.BuildFailed(err))
+		return
+	}
+	c.JSON(http.StatusOK, msg.BuildSuccess("目标已登出"))
+}

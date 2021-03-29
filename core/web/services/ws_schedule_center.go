@@ -104,3 +104,14 @@ func AttachTargetWs(ws *WebsocketSchedule, any jsoniter.Any) (err error) {
 	})
 	return
 }
+
+// 强制目标Websocket链接登出
+func ForceTargetLogout(_ context.Context, id int) (err error) {
+	_ws, isExist := scheduleCenter.Load(id)
+	if !isExist {
+		return TargetWebsocketNotExistErr
+	}
+	ws, _ := _ws.(*WebsocketSchedule)
+	ws.RequireClientAuth()
+	return
+}
