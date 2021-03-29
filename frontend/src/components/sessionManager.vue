@@ -30,12 +30,14 @@
               <a-button type="primary" :disabled="!record.is_pty"
                 >终端监控</a-button
               >
-              <a-button type="primary">发送消息</a-button>
+              <a-button type="primary" @click="openSendMsgModal(record)"
+                >发送消息</a-button
+              >
               <a-popconfirm
                 placement="top"
                 ok-text="是"
                 cancel-text="否"
-                @confirm="deleteFn(record)"
+                @confirm="forceLogout({ target_id: record.id })"
               >
                 <template #title>
                   <p>确定强制用户下线？</p>
@@ -47,6 +49,24 @@
         </a-table>
       </a-layout-content>
     </a-layout>
+
+    <!-- 发送消息使用的Modal -->
+    <a-modal
+      v-model:visible="sendMsgModalVisible"
+      title="发送消息"
+      :afterClose="sendMsgModalAfterClose"
+      width="720px"
+      @ok="sendMsg"
+    >
+      <a-form-item label="消息内容">
+        <a-textarea
+          auto-size
+          v-model:value="msgText"
+          placeholder="请输入要发送的消息"
+          style="width: 420px"
+        />
+      </a-form-item>
+    </a-modal>
   </div>
 </template>
 
@@ -125,6 +145,14 @@ const listDataAPI = (params: ListParams) => {
   })
 }
 
+const sendMsgAPI = (params: { target_id: number; text: string }) => {
+  return defaultClient.post<BaseResponse>('/v1/ws/msg/', params)
+}
+
+const forceLogoutAPI = (params: { target_id: number }) => {
+  return defaultClient.post<BaseResponse>('/v1/ws/logout/', params)
+}
+
 export default defineComponent({
   components: {
     SmileOutlined,
@@ -147,11 +175,52 @@ export default defineComponent({
       },
     })
 
+    //发送消息
+    const { run: sendMsgFn } = useRequest(sendMsgAPI, {
+      formatResult: (res): ListResults => {
+        return res.data.Data
+      },
+      manual: true,
+    })
+    const msgTargetID = ref<number>()
+    const msgText = ref<string>()
+    const sendMsgModalVisible = ref<boolean>(false)
+
+    const sendMsg = () => {
+      sendMsgModalVisible.value = false
+      sendMsgFn({ target_id: msgTargetID.value, text: msgText.value })
+    }
+
+    const sendMsgModalAfterClose = () => {
+      msgTargetID.value = 0
+      msgText.value = ''
+    }
+    const openSendMsgModal = (record: ListResult) => {
+      sendMsgModalVisible.value = true
+      msgTargetID.value = record.id
+    }
+
+    // 强制下线
+    const { run: forceLogout } = useRequest(forceLogoutAPI, {
+      formatResult: (res): ListResults => {
+        return res.data.Data
+      },
+      manual: true,
+    })
+
     // 当前管理界面的管理类型
     return {
       listData,
       columns,
       isListDataLoading,
+
+      // 发送消息
+      sendMsg,
+      msgText,
+      sendMsgModalVisible,
+      sendMsgModalAfterClose,
+      openSendMsgModal,
+      forceLogout,
     }
   },
 })
