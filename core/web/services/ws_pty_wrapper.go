@@ -145,7 +145,7 @@ const (
 
 // 实验元数据
 type MissionMeta struct {
-	Mc        *models.Mission
+	Mission   *models.Mission
 	Container string
 }
 
@@ -156,12 +156,39 @@ func (mm *MissionMeta) GetType() MetaType {
 }
 
 func (mm *MissionMeta) StrFormat() string {
-	return fmt.Sprintf("实验: %s(%d)", mm.Mc.Name, mm.Mc.ID)
+	return fmt.Sprintf("实验: %s(%d)", mm.Mission.Name, mm.Mission.ID)
 }
 
-func NewMissionMeta(mc *models.Mission, container string) PtyMeta {
+// 创建新的实验元数据
+func NewMissionMeta(ms *models.Mission, container string) PtyMeta {
 	return &MissionMeta{
-		Mc:        mc,
+		Mission:   ms,
+		Container: container,
+	}
+}
+
+// 考试元数据
+type ExamMeta struct {
+	Exam      *models.Exam
+	Mission   *models.Mission
+	Container string
+}
+
+var _ PtyMeta = (*ExamMeta)(nil)
+
+func (em *ExamMeta) GetType() MetaType {
+	return ExamMetaType
+}
+
+func (em *ExamMeta) StrFormat() string {
+	return fmt.Sprintf("考试: %s-%s(%d)", em.Exam.Name, em.Mission.Name, em.Mission.ID)
+}
+
+// 创建新的考试元数据
+func NewExamMeta(ex *models.Exam, ms *models.Mission, container string) PtyMeta {
+	return &ExamMeta{
+		Exam:      ex,
+		Mission:   ms,
 		Container: container,
 	}
 }
