@@ -3,6 +3,7 @@ package controllers
 import (
 	"Kinux/core/web/models"
 	"Kinux/core/web/msg"
+	"Kinux/core/web/services"
 	"errors"
 	"github.com/gin-gonic/gin"
 	"github.com/spf13/cast"
@@ -355,6 +356,16 @@ func ListExamByDepartment(c *gin.Context) {
 		Lesson        uint   `json:"lesson"`
 		LessonName    string `json:"lesson_name"`
 		LessonDesc    string `json:"lesson_desc"`
+
+		// 考试状态
+		ExamStatus services.ExamStatus
+	}
+
+	// 为了获取考试状态
+	ac, err := services.GetAccountFromCtx(c)
+	if err != nil {
+		c.AbortWithStatusJSON(http.StatusOK, msg.BuildFailed(err))
+		return
 	}
 
 	res := make([]*resType, 0, len(data))
@@ -377,8 +388,51 @@ func ListExamByDepartment(c *gin.Context) {
 			Lesson:        v.Lesson,
 			LessonName:    l.Name,
 			LessonDesc:    l.Desc,
+
+			ExamStatus: services.GetExamStatus(c, ac.ID, v.ID),
 		})
 	}
 
 	c.JSON(http.StatusOK, msg.BuildSuccess(res))
+}
+
+// 确定考试状态（用户在开始考试之前先检查全局考试状态）
+func CheckinExamStatus(c *gin.Context) {
+	// TODO
+}
+
+// 开始考试
+func StartExam(c *gin.Context) {
+	params := &struct {
+		ExamID uint
+	}{
+		ExamID: cast.ToUint(c.DefaultQuery("exam", "0")),
+	}
+	if params.ExamID == 0 {
+		c.AbortWithStatusJSON(http.StatusOK, msg.BuildFailed("考试ID为空"))
+		return
+	}
+
+	// 检查用户是否处于考试状态
+	ac, err := services.GetAccountFromCtx(c)
+	if err != nil {
+		c.AbortWithStatusJSON(http.StatusOK, msg.BuildFailed(err))
+		return
+	}
+
+	// 检查考试状态
+	switch examStatus := services.GetExamStatus(c, ac.ID, params.ExamID); examStatus {
+	case services.ESNotStart:
+		// 启动监控者
+		if err = services.NewExamWatcher(c, ac.ID, params.ExamID); err != nil {
+			c.AbortWithStatusJSON(http.StatusOK, msg.BuildFailed(err))
+			return
+		}
+		c.JSON(http.StatusOK, msg.BuildFailed("考试开始成功"))
+	case services.ESRunning:
+		c.JSON(http.StatusOK, msg.BuildSuccess("考试已开始"))
+	case services.ESFinish:
+		c.JSON(http.StatusOK, msg.BuildFailed("考试已经结束"))
+	}
+	return
 }
