@@ -152,3 +152,25 @@ func leaveExam(_ context.Context, ac uint) {
 	})
 	ws.SendData(data)
 }
+
+// 获取考试剩余时间
+func GetLeftTime(_ context.Context, ac uint) (res time.Duration, err error) {
+	// 如果
+	_ew, isExist := ExamWatchers.Load(ac)
+	if !isExist {
+		return 0, errors.New("用户没有考试")
+	}
+	ew, _ := _ew.(*ExamWatcher)
+	return ew.RestTime - time.Now().Sub(ew.StartedAt), nil
+}
+
+// 获取考试的信息
+func GetExamInfo(ctx context.Context, ac uint) (res *models.Exam, err error) {
+	// 如果
+	_ew, isExist := ExamWatchers.Load(ac)
+	if !isExist {
+		return nil, errors.New("用户没有考试")
+	}
+	ew, _ := _ew.(*ExamWatcher)
+	return models.GetExam(ctx, ew.ELog.Exam)
+}
