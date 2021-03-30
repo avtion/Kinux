@@ -11,14 +11,23 @@ import (
 	"time"
 )
 
-// 考试监控者 uint -> channel struct{}
+// 考试监控者 uint -> ExamWatcher
 var ExamWatchers sync.Map
+
+// 监控实例
+type ExamWatcher struct {
+	ELog           *models.ExamLog
+	ManualFinishCh chan struct{}
+	RestTime       time.Duration
+	StartedAt      time.Time
+}
 
 // 考试监考者
 func NewExamWatcher(ctx context.Context, ac, examID uint) (err error) {
-	_manualFinishCh, isExist := ExamWatchers.LoadAndDelete(ac)
+	eWatcher, isExist := ExamWatchers.LoadAndDelete(ac)
 	if isExist {
-		close(_manualFinishCh.(chan struct{}))
+		// 如果存在旧监控者，则终止那场考试
+		close(eWatcher.(*ExamWatcher).ManualFinishCh)
 	}
 
 	// 查询目标用户和对应的考试是否有效（未超时）
@@ -52,19 +61,24 @@ func NewExamWatcher(ctx context.Context, ac, examID uint) (err error) {
 		return err
 	}
 
-	// 剩余时间
-	restTime := exam.TimeLimit
+	// 主动结束通道
+	manualFinishCh := make(chan struct{})
+	ew := &ExamWatcher{
+		ELog:           eLog,
+		ManualFinishCh: manualFinishCh,
+		StartedAt:      eLog.CreatedAt,
+		RestTime:       exam.TimeLimit,
+	}
+
+	ExamWatchers.Store(ac, ew)
 
 	// 如果TickAt不为零值，则认为该用户在进行考试过程中发生了中断
 	if !eLog.TickAt.IsZero() {
 		// 那么剩余时间从TickAt开始计算
 		passT := eLog.TickAt.Sub(eLog.CreatedAt)
-		restTime -= passT
+		ew.StartedAt = eLog.TickAt
+		ew.RestTime -= passT
 	}
-
-	// 主动结束通道
-	manualFinishCh := make(chan struct{})
-	ExamWatchers.Store(ac, manualFinishCh)
 
 	go func(mFinishCh chan struct{}) {
 		defer func() {
@@ -76,7 +90,7 @@ func NewExamWatcher(ctx context.Context, ac, examID uint) (err error) {
 		}()
 
 		ctx = context.Background()
-		finishT := time.NewTimer(restTime)
+		finishT := time.NewTimer(ew.RestTime)
 		tickerT := time.NewTicker(5 * time.Minute)
 		defer func() {
 			finishT.Stop()
@@ -86,6 +100,8 @@ func NewExamWatcher(ctx context.Context, ac, examID uint) (err error) {
 		for {
 			select {
 			case <-tickerT.C:
+				// TODO 检查用户Websocket是否在线并主动发送时间校验信息
+
 				// 定时脉冲用于记录TickAt
 				if _err := models.GetGlobalDB().WithContext(ctx).Model(eLog).Update(
 					"tick_at", time.Now()).Error; _err != nil {
