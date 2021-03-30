@@ -149,3 +149,34 @@ func getDeploymentStatusForExam(ctx context.Context, namespace string, l *labelM
 
 	return
 }
+
+// 考试状态
+type ExamStatus uint
+
+const (
+	_          ExamStatus = iota
+	ESNotStart            // 考试未开始
+	ESRunning             // 正在考试
+	ESFinish              // 考试已经结束
+)
+
+// 获取考试的状态
+func GetExamStatus(ctx context.Context, ac uint, exam uint) (res ExamStatus) {
+	_eWatcher, isExist := ExamWatchers.Load(ac)
+	if isExist {
+		eWatcher, _ := _eWatcher.(*ExamWatcher)
+		if eWatcher.ELog.Exam == exam {
+			return ESRunning
+		}
+	}
+	eLog := new(models.ExamLog)
+	if err := models.GetGlobalDB().WithContext(ctx).Where(
+		"account = ? AND examID = ?", eLog.Account, eLog.Exam).First(eLog).Error; err != nil {
+		return ESNotStart
+	}
+	if eLog.EndAt.IsZero() {
+		return ESRunning
+	} else {
+		return ESFinish
+	}
+}
