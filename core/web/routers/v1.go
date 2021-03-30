@@ -126,6 +126,7 @@ func v1Routers() initFunc {
 			exam.POST("/", controllers.AddExam)                // add
 			exam.PUT("/", controllers.EditExam)                // edit
 			exam.GET("/dp/", controllers.ListExamByDepartment) // list For user
+			exam.GET("/start/", controllers.StartExam)         // 开启考试
 		}
 
 		// 考试实验相关
