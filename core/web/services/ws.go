@@ -239,6 +239,7 @@ const (
 	wsOpResetContainers                 // 重置容器
 	wsOpContainersDone                  // 容器部署成功
 	wsOpAttachOtherWsWriter             // 侵入其他Websocket链接
+	wsOpLeaveExam                       // 退出考试
 )
 
 // ws处理函数 - any指向未解析的原数据

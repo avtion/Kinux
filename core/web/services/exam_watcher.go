@@ -4,24 +4,24 @@ import (
 	"Kinux/core/web/models"
 	"context"
 	"errors"
+	jsoniter "github.com/json-iterator/go"
 	"github.com/sirupsen/logrus"
 	"gorm.io/gorm"
+	"sync"
 	"time"
 )
 
-// 考试监控者
-type ExamWatcher struct {
-}
-
-// 用于守护暴毙的监考对象
-func NewExamWatcherDaemon() {
-	// TODO 从数据库中查询未结束的考试日志
-	// TODO 重新拉起监控者
-}
+// 考试监控者 uint -> channel struct{}
+var ExamWatchers sync.Map
 
 // 考试监考者
 func NewExamWatcher(ctx context.Context, ac, examID uint) (err error) {
-	// TODO 查询目标用户和对应的考试是否有效（未超时）
+	_manualFinishCh, isExist := ExamWatchers.LoadAndDelete(ac)
+	if isExist {
+		close(_manualFinishCh.(chan struct{}))
+	}
+
+	// 查询目标用户和对应的考试是否有效（未超时）
 	eLog := &models.ExamLog{
 		Model:   gorm.Model{},
 		Account: ac,
@@ -62,16 +62,30 @@ func NewExamWatcher(ctx context.Context, ac, examID uint) (err error) {
 		restTime -= passT
 	}
 
-	finishC := time.After(restTime)
-	timer := time.NewTimer(5 * time.Minute)
-	go func() {
-		ctx = context.Background()
+	// 主动结束通道
+	manualFinishCh := make(chan struct{})
+	ExamWatchers.Store(ac, manualFinishCh)
+
+	go func(mFinishCh chan struct{}) {
 		defer func() {
-			timer.Stop()
+			// 写入EndAt
+			finishExam(ctx, eLog.ID)
+			ExamWatchers.Delete(eLog.ID)
+			// 告诉用户退出考试界面
+			leaveExam(ctx, eLog.Account)
 		}()
+
+		ctx = context.Background()
+		finishT := time.NewTimer(restTime)
+		tickerT := time.NewTicker(5 * time.Minute)
+		defer func() {
+			finishT.Stop()
+			tickerT.Stop()
+		}()
+
 		for {
 			select {
-			case <-timer.C:
+			case <-tickerT.C:
 				// 定时脉冲用于记录TickAt
 				if _err := models.GetGlobalDB().WithContext(ctx).Model(eLog).Update(
 					"tick_at", time.Now()).Error; _err != nil {
@@ -81,22 +95,44 @@ func NewExamWatcher(ctx context.Context, ac, examID uint) (err error) {
 					}).Error(err)
 					// 脉冲更新失败不返回
 				}
-			case <-finishC:
+			case <-finishT.C:
 				// 结束时间为考试结束时间
-				if _err := models.GetGlobalDB().WithContext(ctx).Model(eLog).Update("end_at", time.Now()).Error; _err != nil {
-					logrus.WithFields(logrus.Fields{
-						"ac":     ac,
-						"examID": examID,
-					}).Error(err)
-					return
-				}
+				return
+			case <-mFinishCh:
+				// 主动结束考试
 				return
 			}
 		}
-	}()
-
-	go func() {
-		// TODO 告诉考生还有多久考试结束
-	}()
+	}(manualFinishCh)
 	return
+}
+
+// 结束考试
+func finishExam(ctx context.Context, eLogID uint) {
+	if err := models.GetGlobalDB().WithContext(ctx).Model(&models.ExamLog{
+		Model: gorm.Model{
+			ID: eLogID,
+		},
+	}).Update("end_at", time.Now()).Error; err != nil {
+		logrus.WithFields(logrus.Fields{
+			"eLogID": eLogID,
+		}).Error(err)
+		return
+	}
+	return
+}
+
+// 退出考试
+func leaveExam(_ context.Context, ac uint) {
+	_ws, isExist := scheduleCenter.Load(ac)
+	if !isExist {
+		return
+	}
+	ws, _ := _ws.(*WebsocketSchedule)
+
+	data, _ := jsoniter.Marshal(&WebsocketMessage{
+		Op:   wsOpLeaveExam,
+		Data: "退出考试",
+	})
+	ws.SendData(data)
 }
