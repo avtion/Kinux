@@ -100,7 +100,17 @@ func NewExamWatcher(ctx context.Context, ac, examID uint) (err error) {
 		for {
 			select {
 			case <-tickerT.C:
-				// TODO 检查用户Websocket是否在线并主动发送时间校验信息
+				// 检查用户Websocket是否在线并主动发送时间校验信息
+				if _ws, isExist := scheduleCenter.Load(ac); isExist {
+					ws := _ws.(*WebsocketSchedule)
+					raw, _err := jsoniter.Marshal(&WebsocketMessage{
+						Op:   wsOpExamRunning,
+						Data: NewExamRunningInfo(ew),
+					})
+					if _err == nil {
+						ws.SendData(raw)
+					}
+				}
 
 				// 定时脉冲用于记录TickAt
 				if _err := models.GetGlobalDB().WithContext(ctx).Model(eLog).Update(
@@ -173,4 +183,24 @@ func GetExamInfo(ctx context.Context, ac uint) (res *models.Exam, err error) {
 	}
 	ew, _ := _ew.(*ExamWatcher)
 	return models.GetExam(ctx, ew.ELog.Exam)
+}
+
+// 实验进行中信息
+type ExamRunningInfo struct {
+	Account  uint          `json:"account"`   // 用户ID
+	ExamID   uint          `json:"exam_id"`   // 实验ID
+	ExamName string        `json:"exam_name"` // 实验名称
+	LeftTime time.Duration `json:"left_time"` // 剩余时间
+}
+
+// 创建实验进行中信息
+func NewExamRunningInfo(ew *ExamWatcher) (res ExamRunningInfo) {
+	exam, _ := models.GetExam(context.Background(), ew.ELog.Exam)
+	res = ExamRunningInfo{
+		Account:  ew.ELog.Account,
+		ExamID:   exam.ID,
+		ExamName: exam.Name,
+		LeftTime: ew.RestTime - time.Now().Sub(ew.StartedAt),
+	}
+	return
 }
