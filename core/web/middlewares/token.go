@@ -47,7 +47,6 @@ var JsonWebTokenAuth = NewJsonWebTokenAuth()
 var TokenCentral = &jwt.GinJWTMiddleware{
 	Realm: "Kinux",
 	// 加密的密钥采用随机加密生成
-	// TODO 分布式密钥生成
 	Key:         bytesconv.StringToBytes(tools.GetRandomString(12)),
 	Timeout:     time.Hour,
 	MaxRefresh:  0,
