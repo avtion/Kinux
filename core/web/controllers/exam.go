@@ -398,7 +398,20 @@ func ListExamByDepartment(c *gin.Context) {
 
 // 确定考试状态（用户在开始考试之前先检查全局考试状态）
 func CheckinExamStatus(c *gin.Context) {
-	// TODO
+	// 检查用户是否处于考试状态
+	ac, err := services.GetAccountFromCtx(c)
+	if err != nil {
+		c.AbortWithStatusJSON(http.StatusOK, msg.BuildFailed(err))
+		return
+	}
+
+	_eWatcher, isExist := services.ExamWatchers.Load(ac)
+	if isExist {
+		ew := _eWatcher.(*services.ExamWatcher)
+		c.JSON(http.StatusOK, msg.BuildSuccess(services.NewExamRunningInfo(ew)))
+		return
+	}
+	c.JSON(http.StatusOK, msg.BuildSuccess(nil))
 }
 
 // 开始考试
