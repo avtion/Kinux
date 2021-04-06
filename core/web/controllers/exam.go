@@ -358,7 +358,7 @@ func ListExamByDepartment(c *gin.Context) {
 		LessonDesc    string `json:"lesson_desc"`
 
 		// 考试状态
-		ExamStatus services.ExamStatus
+		ExamStatus services.ExamStatus `json:"exam_status"`
 	}
 
 	// 为了获取考试状态
