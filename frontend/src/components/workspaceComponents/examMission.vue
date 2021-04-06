@@ -1,5 +1,5 @@
 <template>
-  <a-card title="实验选择" :bordered="false" :loading="isListDataLoading">
+  <a-card title="考试实验" :bordered="false" :loading="isListDataLoading">
     <a-list item-layout="horizontal" :data-source="missionData">
       <template #renderItem="{ item, index }">
         <a-list-item>
@@ -7,7 +7,7 @@
           <a-list-item-meta :description="item.desc">
             <!-- 标题 -->
             <template #title>
-              <a @click="openInstructions(item.id)">{{ item.name }}</a>
+              <a>{{ item.name }}</a>
             </template>
             <!-- 头像 -->
             <template #avatar>
@@ -29,24 +29,6 @@
       </template>
     </a-list>
   </a-card>
-
-  <!-- 说明文档Modal -->
-  <a-modal
-    v-model:visible="instructionsVisible"
-    title="实验文档"
-    :footer="null"
-    :afterClose="instructionsTipAfterClose"
-    width="720px"
-  >
-    <a-skeleton v-if="instructionsLoading" :active="true" />
-    <v-md-editor
-      v-model="instructions"
-      height="800px"
-      mode="preview"
-      v-if="!instructionsLoading"
-    >
-    </v-md-editor>
-  </a-modal>
 </template>
 
 <script lang="ts" type="module">
@@ -84,7 +66,8 @@ export default {
     const router = useRouter()
 
     // 获取课程参数
-    const lessonID = Number(router.currentRoute.value.params.lesson)
+    const examID = Number(router.currentRoute.value.params.exam)
+    console.log(examID)
 
     // 从上下文中获取对象
     const ws: WebSocketConn = inject<WebSocketConn>('websocket')
@@ -104,7 +87,7 @@ export default {
       return <missionReqParams>{
         page: 0,
         size: 0,
-        lesson: lessonID,
+        lesson: examID,
       }
     }
     const { data: missionData, loading: isListDataLoading } = useRequest(
@@ -130,7 +113,7 @@ export default {
         case missionStatus.Working:
           router.push({
             name: 'shell',
-            params: { mission: m.id, lesson: lessonID },
+            params: { mission: m.id, lesson: examID },
           })
           return
         case missionStatus.Done:
@@ -174,28 +157,6 @@ export default {
       return numberCreator.create(str + '')
     }
 
-    // 说明文档提示
-    const instructionsVisible = ref<boolean>(false)
-    const instructionsLoading = ref<boolean>(true)
-    const instructions = ref<string>(
-      `🤪无实验文档数据，请联系刷新页面或实验教师`
-    )
-    const openInstructions = (missionID: string) => {
-      instructionsVisible.value = true
-      new mission()
-        .getGuide(missionID)
-        .then((res: string) => {
-          instructions.value = res
-        })
-        .finally(() => {
-          instructionsLoading.value = false
-        })
-    }
-    const instructionsTipAfterClose = () => {
-      instructionsLoading.value = true
-      instructionsVisible.value = false
-      instructions.value = `🤪无实验文档数据，请联系刷新页面或实验教师`
-    }
     return {
       MissionHandler,
       missionStatus,
@@ -203,11 +164,6 @@ export default {
       GetMissionButtonLoadingStatus,
       GetMissionButtonDesc,
       numberCreatorFn,
-      instructionsVisible,
-      instructionsLoading,
-      instructions,
-      openInstructions,
-      instructionsTipAfterClose,
       isListDataLoading,
       missionData,
     }
