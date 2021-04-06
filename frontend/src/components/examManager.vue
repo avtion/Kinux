@@ -256,7 +256,9 @@ import { BaseResponse, defaultClient, paths } from '@/apis/request'
 
 // 实验检查点管理
 import missionCheckpointManager from '@/components/missionCheckpointManager.vue'
-import * as moment from 'moment'
+
+// 时间处理
+import { moment } from '@/utils/time'
 
 // 分页组件定义
 type Pagination = TableState['pagination']
