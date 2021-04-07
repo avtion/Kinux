@@ -72,7 +72,7 @@ func ListMissionsV2(c *gin.Context, lessonID uint, page, size int) (res []*Missi
 		return
 	}
 
-	dpStatusMapper, err := getDeploymentStatusForMission(c, "", NewLabelMarker().WithAccount(ac.ID))
+	dpStatusMapper, err := GetDeploymentStatusForMission(c, "", NewLabelMarker().WithAccount(ac.ID))
 	if err != nil {
 		return
 	}
@@ -105,7 +105,7 @@ func ListMissionsV2(c *gin.Context, lessonID uint, page, size int) (res []*Missi
 }
 
 // 根据Deployment的状态获取对应任务的状态
-func getDeploymentStatusForMission(ctx context.Context, namespace string, l *labelMaker) (
+func GetDeploymentStatusForMission(ctx context.Context, namespace string, l *labelMaker) (
 	res map[uint]MissionStatus, err error) {
 	if l == nil {
 		l = NewLabelMarker()
