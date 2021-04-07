@@ -26,7 +26,7 @@ type Exam struct {
 	Lesson     uint          // 课程 考试与课程是N:1的关系
 }
 
-// 实验与任务点为一对多关系
+// 考试和实验为一对多关系
 type ExamMissions struct {
 	gorm.Model
 	Exam     uint `gorm:"uniqueIndex:ex_missions"`
@@ -188,9 +188,9 @@ func listExamMission(exam, mission uint, builder *PageBuilder) func(db *gorm.DB)
 }
 
 // 获取考试的实验数据
-func ListExamMissions(ctx context.Context, exam, mission uint, builder *PageBuilder) (
+func ListExamMissions(ctx context.Context, exam, mission uint, builder *PageBuilder, fns ...func(db *gorm.DB) *gorm.DB) (
 	res []*ExamMissions, err error) {
-	err = GetGlobalDB().WithContext(ctx).Scopes(listExamMission(exam, mission, builder)).Find(&res).Error
+	err = GetGlobalDB().WithContext(ctx).Scopes(append(fns, listExamMission(exam, mission, builder))...).Find(&res).Error
 	return
 }
 
