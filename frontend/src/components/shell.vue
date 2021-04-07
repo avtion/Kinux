@@ -1,14 +1,12 @@
 <template>
-  <div class="back">
-    <a-card class="markdown" title="实验文档" :loading="instructionsLoading">
-      <v-md-editor
-        v-model="instructions"
-        height="400px"
-        mode="preview"
-      ></v-md-editor>
-    </a-card>
-    <a-card class="terminal" title="实操终端">
-      <!-- 按钮 -->
+  <div class="back h-full">
+    <!-- 顶部 -->
+    <a-page-header
+      class="border border-solid border-gray-200 h-auto"
+      title="虚拟实验环境"
+      :ghost="false"
+    >
+      <!-- 按钮组 -->
       <template #extra>
         <!-- 容器切换 -->
         <a-dropdown>
@@ -24,23 +22,64 @@
               </a-menu-item>
             </a-menu>
           </template>
-          <a-button> 容器列表 </a-button>
+          <a-button>切换容器</a-button>
         </a-dropdown>
         <a-divider type="vertical" />
         <!-- 容器管理 -->
         <a-button-group>
           <a-button type="danger" @click="comfirmToResetContainer"
-            >重置实验</a-button
+            >重置环境</a-button
           >
           <a-button type="primary" @click="comfirmToShutdownMission"
-            >结束实验</a-button
+            >关闭环境</a-button
           >
-          <a-button type="default" @click="comfirmToLeave">返回空间</a-button>
+          <a-button type="default" @click="comfirmToLeave">返回</a-button>
         </a-button-group>
       </template>
-      <!-- 终端 -->
-      <div class="xterm terminal-container" ref="terminalRef"></div>
-    </a-card>
+      <!-- 底部切换 -->
+      <template #footer>
+        <a-tabs defaultActiveKey="ter" @change="tabHandler">
+          <a-tab-pane key="ter" tab="实验终端" />
+          <a-tab-pane key="doc" tab="实验文档" />
+          <a-tab-pane key="checkpoint" tab="考点" />
+        </a-tabs>
+      </template>
+      <!-- 描述 -->
+      <a-descriptions size="small" :column="2">
+        <a-descriptions-item label="实验名称">
+          {{ missionInfo.name }}
+        </a-descriptions-item>
+        <a-descriptions-item label="实验总分">
+          <a>{{ missionInfo.total }}</a>
+        </a-descriptions-item>
+        <a-descriptions-item label="实验描述">
+          <span>{{ missionInfo.desc }}</span>
+        </a-descriptions-item>
+      </a-descriptions>
+    </a-page-header>
+
+    <!-- 实操终端 -->
+    <div class="w-full h-4/5 mt-2 p-3" v-show="currentTab === 'ter'">
+      <div class="w-full h-full rounded p-3" style="background-color: #1f2937">
+        <!-- 终端 -->
+        <div class="xterm terminal-container h-full" ref="terminalRef"></div>
+      </div>
+    </div>
+
+    <!-- 实验文档 -->
+    <div class="w-full h-4/5 mt-2 p-3" v-show="currentTab === 'doc'">
+      <v-md-editor
+        class="h-full"
+        v-model="instructions"
+        mode="preview"
+        v-if="currentTab === 'doc'"
+      ></v-md-editor>
+    </div>
+
+    <div
+      class="w-full h-4/5 mt-2 p-3"
+      v-show="currentTab === 'checkpoint'"
+    ></div>
   </div>
 </template>
 
@@ -56,16 +95,17 @@ import {
   onUnmounted,
 } from 'vue'
 
+// vue-router
+import { useRouter } from 'vue-router'
+
 // xterm
 import 'xterm/css/xterm.css'
 import { Terminal, ITheme } from 'xterm'
 import { WebLinksAddon } from 'xterm-addon-web-links'
 import { FitAddon } from 'xterm-addon-fit'
 const defaultTheme: ITheme = {
-  background: '#1E1E1E',
-  foreground: '#CCCCCC',
-  cursor: undefined,
-  cursorAccent: undefined,
+  background: '#1F2937',
+  foreground: '#F3F4F6',
   selection: '#FFFFFF40',
   black: '#000000',
   red: '#cd3131',
@@ -104,9 +144,8 @@ import App from '@/App.vue'
 
 // apis
 import { mission } from '@/apis/mission'
-
-// vue-router
-import routers from '@/routers/routers'
+import { BaseResponse, defaultClient } from '@/apis/request'
+import { useRequest } from 'vue-request'
 
 export default defineComponent({
   components: { App, CodeSandboxOutlined, DownOutlined },
@@ -120,18 +159,30 @@ export default defineComponent({
     // 从上下文中获取对象
     const ws: WebSocketConn = inject<WebSocketConn>('websocket')
 
+    // 路由
+    const router = useRouter()
+
+    const leaveShell = (examID = '') => {
+      if (examID !== '') {
+        router.push({
+          name: 'examMissionSelector',
+          params: { exam: examID },
+        })
+        return
+      }
+      router.push({ name: 'workspace' })
+      return
+    }
+
     // 终端的DOM
     const terminalRef = ref<HTMLDivElement>()
 
     // 创建终端对象
     const ter = new Terminal({
       fontFamily: 'monaco, Consolas, "Lucida Console", monospace',
-      fontSize: 14,
+      fontSize: 16,
       cursorStyle: 'underline', //光标样式
       cursorBlink: true, //光标闪烁
-      theme: {
-        background: '#1b1b1b',
-      },
     })
     ter.setOption('theme', defaultTheme)
     ter.onData((input: string): void => {
@@ -301,7 +352,7 @@ export default defineComponent({
             notification.success({
               message: res,
             })
-            leaveShell()
+            leaveShell(props.exam)
           })
         },
         onCancel() {},
@@ -317,7 +368,7 @@ export default defineComponent({
         okText: '确定',
         cancelText: '取消',
         onOk() {
-          leaveShell()
+          leaveShell(props.exam)
         },
         onCancel() {},
       })
@@ -338,6 +389,31 @@ export default defineComponent({
       shutdownPtyConn(ws)
     })
 
+    // 获取实验数据
+    type missionInfoType = {
+      id: number
+      name: string
+      desc: string
+      total: number
+    }
+    const missionInfo = ref<missionInfoType>({
+      id: 0,
+      name: '',
+      desc: '',
+      total: 0,
+    })
+    defaultClient
+      .get<BaseResponse>('/v1/mission/get/' + props.mission + '/')
+      .then((res) => {
+        missionInfo.value = res.data.Data
+      })
+
+    // 当前tab
+    const currentTab = ref<string>('ter')
+    const tabHandler = (activeKey) => {
+      currentTab.value = activeKey
+    }
+
     return {
       ter,
       terminalRef,
@@ -350,6 +426,16 @@ export default defineComponent({
       leaveShell,
       instructions,
       instructionsLoading,
+
+      // 实验数据
+      missionInfo,
+
+      // 考试
+      isExam: props.exam !== '',
+
+      // 标签
+      currentTab,
+      tabHandler,
     }
   },
 })
@@ -363,34 +449,29 @@ function shutdownPtyConn(ws: WebSocketConn): void {
   }
   ws.send(JSON.stringify(msg))
 }
-
-// 离开终端
-function leaveShell() {
-  console.log('离开终端')
-  routers.push({ name: 'workspace' })
-}
 </script>
 
 <style lang="less" scoped>
 .back {
   background: #ececec;
-  padding: 15px;
-  height: 100%;
   width: 100%;
 }
 .markdown {
   margin-bottom: 15px;
 }
 .terminal {
-  height: 600px;
   :deep(.ant-card-body) {
-    height: 100%;
     padding: 0;
   }
 }
 
 .terminal-container {
-  height: 100%;
   width: 100%;
+  :deep(.xterm) {
+    height: 100%;
+  }
+  :deep(.xterm-viewport) {
+    overflow-y: hidden;
+  }
 }
 </style>
