@@ -73,7 +73,7 @@ const apiPath = {
 }
 
 // 考试状态
-import { examStatus, getExamRunningInfo, examRunningInfo } from '@/apis/exma'
+import { examStatus, examRunningInfo, exam } from '@/apis/exam'
 
 export default {
   components: {
@@ -180,10 +180,12 @@ export default {
             cancelText: '考虑一下',
             onOk() {
               return new Promise((resolve, reject) => {
-                getExamRunningInfo
+                new exam()
+                  .getExamRunningInfo()
                   .then((res: examRunningInfo) => {
                     if (res === undefined) {
                       resolve(res)
+                      return
                     } else {
                       jumpToRunningExam(res)
                       reject(res)
