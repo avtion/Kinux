@@ -44,6 +44,7 @@ func v1Routers() initFunc {
 			ms.PUT("/model/", controllers.EditMission)                            // edit
 			ms.DELETE("/delete/:id/", controllers.DeleteMission)                  // delete
 			ms.GET("/ns/", controllers.ListMissionNamespaces)                     // 获取所有任务的命名空间
+			ms.GET("/get/:id/", controllers.GetMissionInfo)                       // 单独获取实验信息
 		}
 
 		// 用户账号相关

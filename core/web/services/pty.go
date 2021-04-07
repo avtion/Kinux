@@ -74,7 +74,7 @@ func missionPtyRegisterV2(ws *WebsocketSchedule, any jsoniter.Any) (err error) {
 	}
 
 	// 确定目标容器
-	pods, err := NewMissionController(ws.Context).SetAc(ws.Account).SetMission(mission).GetPods()
+	pods, err := NewMissionController(ws.Context).SetAc(ws.Account).SetExam(exam).SetMission(mission).GetPods()
 	if err != nil {
 		return
 	}
@@ -111,7 +111,12 @@ func missionPtyRegisterV2(ws *WebsocketSchedule, any jsoniter.Any) (err error) {
 			return
 		}
 	} else {
-		// TODO 支持考试的考点加载
+		// 支持考试的考点加载
+		cps, err = GetAllTodoCheckpointsForExam(ws.Context, ws.Account.ID, exam.ID, missionID, c.Name)
+		// TODO 支持自定义考点加载
+	}
+	if err != nil {
+		return
 	}
 	scoreListener := NewScoreListener(ws.Account, lesson, exam, mission, params.Container, cps...)
 
