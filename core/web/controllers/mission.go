@@ -285,3 +285,26 @@ func ListMissionsV2(c *gin.Context) {
 	}
 	c.JSON(http.StatusOK, msg.BuildSuccess(ms))
 }
+
+// 单独获取实验信息
+func GetMissionInfo(c *gin.Context) {
+	id := cast.ToUint(c.Param("id"))
+	ms, err := models.GetMission(c, id)
+	if err != nil {
+		c.AbortWithStatusJSON(http.StatusOK, msg.BuildFailed(err))
+		return
+	}
+	type resType struct {
+		ID uint `json:"id"`
+		// 任务本身相关
+		Name  string `json:"name"`  // 名称
+		Desc  string `json:"desc"`  // 描述
+		Total uint   `json:"total"` // 任务总分（默认值为100）
+	}
+	c.JSON(http.StatusOK, msg.BuildSuccess(&resType{
+		ID:    ms.ID,
+		Name:  ms.Name,
+		Desc:  ms.Desc,
+		Total: ms.Total,
+	}))
+}
