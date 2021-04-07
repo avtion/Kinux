@@ -449,3 +449,87 @@ func StartExam(c *gin.Context) {
 	}
 	return
 }
+
+// 用户获取考试实验
+func ListExamMissionsForAccount(c *gin.Context) {
+	params := &struct {
+		Exam uint
+	}{
+		Exam: cast.ToUint(c.DefaultQuery("exam", "")),
+	}
+
+	if params.Exam == 0 {
+		c.AbortWithStatusJSON(http.StatusOK, msg.BuildFailed(errors.New("考试为空")))
+		return
+	}
+	examMissions, err := models.ListExamMissions(c, params.Exam, 0, nil, func(db *gorm.DB) *gorm.DB {
+		return db.Order("priority desc")
+	})
+	if err != nil {
+		c.AbortWithStatusJSON(http.StatusOK, msg.BuildFailed(err))
+		return
+	}
+
+	type resType struct {
+		ID          uint   `json:"id"`
+		ExamID      uint   `json:"exam_id"`
+		MissionID   uint   `json:"mission_id"`
+		MissionName string `json:"mission_name"`
+		Percent     uint   `json:"percent"`
+		Priority    int    `json:"priority"`
+
+		// 任务状态
+		Status services.MissionStatus `json:"status"`
+	}
+	if len(examMissions) == 0 {
+		c.JSON(http.StatusOK, msg.BuildSuccess([]resType{}))
+		return
+	}
+
+	// 获取实验ID
+	var missionIDs = make([]uint, 0, len(examMissions))
+	for _, v := range examMissions {
+		missionIDs = append(missionIDs, v.Mission)
+	}
+
+	// 获取实验名
+	missionNameMapping, err := models.GetMissionsNameMapper(c, missionIDs...)
+	if err != nil {
+		c.AbortWithStatusJSON(http.StatusOK, msg.BuildFailed(err))
+		return
+	}
+
+	// 获取K8S运行状态
+	ac, err := services.GetAccountFromCtx(c)
+	if err != nil {
+		c.AbortWithStatusJSON(http.StatusOK, msg.BuildFailed(err))
+		return
+	}
+	dpStatusMapper, err := services.GetDeploymentStatusForMission(c, "",
+		services.NewLabelMarker().WithAccount(ac.ID).WithExam(params.Exam))
+	if err != nil {
+		return
+	}
+
+	var res = make([]*resType, 0, len(examMissions))
+	for _, v := range examMissions {
+		status, isExist := dpStatusMapper[v.Mission]
+		if !isExist {
+			status = services.MissionStatusStop
+		}
+
+		// TODO 检查是否已经完成对应的任务点
+
+		name, _ := missionNameMapping[v.Mission]
+		res = append(res, &resType{
+			ID:          v.ID,
+			ExamID:      v.Exam,
+			MissionID:   v.Mission,
+			MissionName: name,
+			Percent:     v.Percent,
+			Priority:    v.Priority,
+			Status:      status,
+		})
+	}
+
+}
