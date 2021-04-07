@@ -4,10 +4,10 @@
       <template #renderItem="{ item, index }">
         <a-list-item>
           <!-- 元数据 -->
-          <a-list-item-meta :description="item.desc">
+          <a-list-item-meta :description="descCreator(item)">
             <!-- 标题 -->
             <template #title>
-              <a>{{ item.name }}</a>
+              <a>{{ item.mission_name }}</a>
             </template>
             <!-- 头像 -->
             <template #avatar>
@@ -33,14 +33,13 @@
 
 <script lang="ts" type="module">
 // vue
-import { reactive, ref, inject, onMounted } from 'vue'
+import { inject, onMounted } from 'vue'
 
 // apis
-import { mission, missionList, missionStatus } from '@api/mission'
+import { missionStatus } from '@api/mission'
 
 // 图标生成
 import Avatars from '@dicebear/avatars'
-import AvatarsSprites from '@dicebear/avatars-male-sprites'
 import sprites from '@dicebear/avatars-initials-sprites'
 
 // store
@@ -48,7 +47,6 @@ import { GetStore } from '@/store/store'
 
 // vue-router
 import { useRouter } from 'vue-router'
-import { Profile } from '@/store/interfaces'
 
 // websocket
 import {
@@ -73,35 +71,40 @@ export default {
     const ws: WebSocketConn = inject<WebSocketConn>('websocket')
 
     // 加载任务数据
-    interface missionReqParams {
-      page: number
-      size: number
-      lesson: number
+    interface examReqParams {
+      exam: number
     }
-    const departmentLessonDataAPI = (params: missionReqParams) => {
-      return defaultClient.get<BaseResponse>('/v2/ms/', {
+    type examMission = {
+      exam_id: number
+      id: number
+      mission_id: number
+      mission_name: string
+      percent: number
+      priority: number
+      status: number
+    }
+    const departmentLessonDataAPI = (params: examReqParams) => {
+      return defaultClient.get<BaseResponse>('/v1/em/list/', {
         params: params,
       })
     }
-    const getListParams = (): missionReqParams => {
-      return <missionReqParams>{
-        page: 0,
-        size: 0,
-        lesson: examID,
+    const getListParams = (): examReqParams => {
+      return <examReqParams>{
+        exam: examID,
       }
     }
     const { data: missionData, loading: isListDataLoading } = useRequest(
       departmentLessonDataAPI,
       {
         defaultParams: [getListParams()],
-        formatResult: (res): missionList[] => {
+        formatResult: (res): examMission[] => {
           return res.data.Data
         },
       }
     )
 
     // 任务处理函数
-    const MissionHandler = (index: number, m: missionList) => {
+    const MissionHandler = (index: number, m: examMission) => {
       console.log(m)
       const status = m.status
       switch (status) {
@@ -113,7 +116,7 @@ export default {
         case missionStatus.Working:
           router.push({
             name: 'shell',
-            params: { mission: m.id, lesson: examID },
+            params: { mission: m.id, lesson: m.mission_id, exam: examID },
           })
           return
         case missionStatus.Done:
@@ -130,6 +133,7 @@ export default {
         op: WebsocketOperation.MissionApply,
         data: {
           id: missionID,
+          exam: examID + '',
         },
       }
       const fn = (ws: WebSocketConn) => {
@@ -157,6 +161,11 @@ export default {
       return numberCreator.create(str + '')
     }
 
+    // 描述生成
+    const descCreator = (item: examMission): string => {
+      return `> 所占成绩比例: ${item.percent / 100}%`
+    }
+
     return {
       MissionHandler,
       missionStatus,
@@ -166,6 +175,7 @@ export default {
       numberCreatorFn,
       isListDataLoading,
       missionData,
+      descCreator,
     }
   },
 }
