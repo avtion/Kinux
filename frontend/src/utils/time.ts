@@ -5,7 +5,6 @@ export function IsTimeOutLine(ttl: number): boolean {
 
 // moment处理库
 import * as _moment from 'moment'
-import 'moment/locale/zh-cn'
 _moment.locale('zh-cn', {
   months: '一月_二月_三月_四月_五月_六月_七月_八月_九月_十月_十一月_十二月'.split(
     '_'
