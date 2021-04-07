@@ -88,7 +88,9 @@
         </a-row>
       </a-layout-header>
       <!-- 内容页 -->
-      <router-view></router-view>
+      <a-layout-content>
+        <router-view></router-view>
+      </a-layout-content>
     </a-layout>
   </a-layout>
 </template>
