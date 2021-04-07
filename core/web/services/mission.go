@@ -266,7 +266,8 @@ func missionApply(ws *WebsocketSchedule, any jsoniter.Any) (err error) {
 
 	// 获取任务信息
 	missionRaw := &struct {
-		ID string `json:"id"`
+		ID   string `json:"id"`
+		Exam string `json:"exam"`
 	}{}
 	any.Get("data").ToVal(missionRaw)
 	if cast.ToInt(missionRaw.ID) == 0 {
@@ -277,8 +278,17 @@ func missionApply(ws *WebsocketSchedule, any jsoniter.Any) (err error) {
 		return
 	}
 
+	var exam *models.Exam
+	examID := cast.ToUint(missionRaw.Exam)
+	if examID != 0 {
+		exam, err = models.GetExam(ws.Context, examID)
+		if err != nil {
+			return
+		}
+	}
+
 	// 初始化
-	mc := NewMissionController(ws).SetAc(ws.Account).SetMission(mission)
+	mc := NewMissionController(ws).SetAc(ws.Account).SetExam(exam).SetMission(mission)
 
 	// 启动监听
 	errCh := mc.WatchDeploymentToReady("")

@@ -20,6 +20,7 @@ type MissionController struct {
 	ctx     context.Context
 	Ac      *models.Account
 	Mission *models.Mission
+	Exam    *models.Exam
 	opts    []mcOpt
 
 	// 容器部署配置
@@ -40,6 +41,15 @@ func (mc *MissionController) SetAc(ac *models.Account) *MissionController {
 		return mc
 	}
 	mc.Ac = ac
+	return mc
+}
+
+// 设置考试
+func (mc *MissionController) SetExam(e *models.Exam) *MissionController {
+	if e == nil {
+		return mc
+	}
+	mc.Exam = e
 	return mc
 }
 
@@ -84,7 +94,7 @@ func (mc *MissionController) NewDeployment() (err error) {
 
 // 清除用户正在进行的Deployment
 func (mc *MissionController) ClearAllMission() (err error) {
-	return mc.destroyDeployment(missionLabel, deploymentLabel)
+	return mc.destroyDeployment(missionLabel, deploymentLabel, examLabel)
 }
 
 // 删除用户指定的dp
@@ -228,6 +238,9 @@ func (mc *MissionController) generateSelector(other map[string]string) *MissionC
 		}
 		if mc.Mission != nil {
 			l.WithMission(mc.Mission.ID)
+		}
+		if mc.Exam != nil {
+			l.WithExam(mc.Exam.ID)
 		}
 		if mc.Mission != nil && mc.Mission.Deployment != 0 {
 			l.WithDeployment(mc.Mission.Deployment)
