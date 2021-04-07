@@ -106,7 +106,7 @@ func missionPtyRegisterV2(ws *WebsocketSchedule, any jsoniter.Any) (err error) {
 	// 挂载考点
 	var cps []*models.Checkpoint
 	if exam.ID == 0 {
-		cps, err = models.FindAllTodoMissionCheckpoints(ws.Context, ws.Account.ID, mission.ID, c.Name)
+		cps, err = models.FindAllTodoMissionCheckpoints(ws.Context, ws.Account.ID, 0, mission.ID, c.Name)
 		if err != nil {
 			return
 		}
