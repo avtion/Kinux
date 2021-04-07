@@ -518,7 +518,16 @@ func ListExamMissionsForAccount(c *gin.Context) {
 			status = services.MissionStatusStop
 		}
 
-		// TODO 检查是否已经完成对应的任务点
+		// 检查是否已经完成对应的任务点
+		var cps []*models.Checkpoint
+		cps, err = services.GetAllTodoCheckpointsForExam(c, ac.ID, v.Exam, v.Mission)
+		if err != nil {
+			c.AbortWithStatusJSON(http.StatusOK, msg.BuildFailed(err))
+			return
+		}
+		if len(cps) == 0 {
+			status = services.MissionStatusDone
+		}
 
 		name, _ := missionNameMapping[v.Mission]
 		res = append(res, &resType{
@@ -531,5 +540,5 @@ func ListExamMissionsForAccount(c *gin.Context) {
 			Status:      status,
 		})
 	}
-
+	c.JSON(http.StatusOK, msg.BuildSuccess(res))
 }

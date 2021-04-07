@@ -139,6 +139,7 @@ func v1Routers() initFunc {
 			examMission.POST("/", controllers.AddExamMission)                       // add
 			examMission.PUT("/", controllers.EditExamMission)                       // edit
 			examMission.GET("/percent/:id/", controllers.GetExamMissionUsedPercent) // option percent
+			examMission.GET("/list/", controllers.ListExamMissionsForAccount)       // option percent
 		}
 	}
 }

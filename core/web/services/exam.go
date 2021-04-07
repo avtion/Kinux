@@ -180,3 +180,11 @@ func GetExamStatus(ctx context.Context, ac uint, exam uint) (res ExamStatus) {
 		return ESFinish
 	}
 }
+
+// 查找考试中需要完成的检查点
+func GetAllTodoCheckpointsForExam(ctx context.Context, ac, exam, mission uint, containers ...string) (cps []*models.Checkpoint, err error) {
+	// TODO 支持自定义考试考点
+	// 默认为实验的考点
+	cps, err = models.FindAllTodoMissionCheckpoints(ctx, ac, exam, mission, containers...)
+	return
+}
