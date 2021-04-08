@@ -115,6 +115,13 @@ func (ws *WebsocketSchedule) Apply(fns ...WsFn) (err error) {
 func (ws *WebsocketSchedule) daemon(ctxCancelFn context.CancelFunc) {
 	l := logrus.WithField("module", "websocket守护协程")
 
+	defer func() {
+		if err := recover(); err != nil {
+			l.Error(err)
+			return
+		}
+	}()
+
 	// FIX 修复并发控制问题
 	// 当守护协程终止即该Websocket调度器旗下所有协程终结
 	defer ctxCancelFn()
