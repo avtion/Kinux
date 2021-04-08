@@ -46,7 +46,7 @@ func (mc *MissionController) SetAc(ac *models.Account) *MissionController {
 
 // 设置考试
 func (mc *MissionController) SetExam(e *models.Exam) *MissionController {
-	if e == nil {
+	if e == nil || e.ID == 0 {
 		return mc
 	}
 	mc.Exam = e
