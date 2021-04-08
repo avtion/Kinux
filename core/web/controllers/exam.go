@@ -462,6 +462,14 @@ func ListExamMissionsForAccount(c *gin.Context) {
 		c.AbortWithStatusJSON(http.StatusOK, msg.BuildFailed(errors.New("考试为空")))
 		return
 	}
+	// 考试
+	exam, err := models.GetExam(c, params.Exam)
+	if err != nil {
+		c.AbortWithStatusJSON(http.StatusOK, msg.BuildFailed(err))
+		return
+	}
+
+	// 考试实验
 	examMissions, err := models.ListExamMissions(c, params.Exam, 0, nil, func(db *gorm.DB) *gorm.DB {
 		return db.Order("priority desc")
 	})
@@ -511,11 +519,18 @@ func ListExamMissionsForAccount(c *gin.Context) {
 		return
 	}
 
+	// 用于确保按顺序完成考试
+	var canContinueNext = true
+
 	var res = make([]*resType, 0, len(examMissions))
 	for _, v := range examMissions {
 		status, isExist := dpStatusMapper[v.Mission]
 		if !isExist {
-			status = services.MissionStatusStop
+			if canContinueNext {
+				status = services.MissionStatusStop
+			} else {
+				status = services.MissionStatusBlock
+			}
 		}
 
 		// 检查是否已经完成对应的任务点
@@ -527,6 +542,12 @@ func ListExamMissionsForAccount(c *gin.Context) {
 		}
 		if len(cps) == 0 {
 			status = services.MissionStatusDone
+		}
+
+		// 如果当前实验未开始，且要求按顺序完成，且可以继续，则将next设置为false保证下一个实验无法开始
+		if (status == services.MissionStatusStop || status == services.MissionStatusWorking) &&
+			exam.ForceOrder && canContinueNext {
+			canContinueNext = false
 		}
 
 		name, _ := missionNameMapping[v.Mission]
