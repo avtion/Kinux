@@ -225,13 +225,6 @@ export default defineComponent({
     // 插件 - DOM适应器
     const fitAddon = new FitAddon()
     ter.loadAddon(fitAddon)
-    window.addEventListener(
-      'resize',
-      (e: UIEvent) => {
-        fitAddon.fit()
-      },
-      false
-    )
     ter.onResize((size: { cols: number; rows: number }): any => {
       const msg: WebsocketMessage = {
         op: WebsocketOperation.Resize,
@@ -244,6 +237,17 @@ export default defineComponent({
       } else {
         ws.send(JSON.stringify(msg))
       }
+    })
+
+    // 浏览器监听窗口变化
+    const fitListener = (e: UIEvent) => {
+      fitAddon.fit()
+    }
+    onMounted(() => {
+      window.addEventListener('resize', fitListener, false)
+    })
+    onUnmounted(() => {
+      window.removeEventListener('resize', fitListener, false)
     })
 
     // 插件 - 链接检测器
@@ -259,19 +263,23 @@ export default defineComponent({
     watch(selectContainer, (newValue) => {
       console.log('当前选择的新容器', selectContainer.value)
 
-      // 将终端连接到新的控制台
-      if (ws.readyState !== WebSocket.OPEN) {
-        ws.waitQueue.push((_ws) => {
-          connectToPOD(ws, props.lesson, props.exam, props.mission, newValue)
-          setTimeout(() => {
-            fitAddon.fit()
-          }, 1)
-        })
-      } else {
+      // 初始化函数
+      const fn = () => {
         connectToPOD(ws, props.lesson, props.exam, props.mission, newValue)
         setTimeout(() => {
           fitAddon.fit()
         }, 1)
+        ter.focus()
+      }
+
+      // 将终端连接到新的控制台
+      if (ws.readyState !== WebSocket.OPEN) {
+        // 如果ws未准备就绪则压入等待队列
+        ws.waitQueue.push((_ws) => {
+          fn()
+        })
+      } else {
+        fn()
       }
     })
 
