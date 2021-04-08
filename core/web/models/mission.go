@@ -287,11 +287,8 @@ func EditMission(ctx context.Context, id uint, name string, dp uint, opts ...Mis
 	if err != nil {
 		return
 	}
-	return GetGlobalDB().WithContext(ctx).Model(&Mission{
-		Model: gorm.Model{
-			ID: id,
-		},
-	}).Updates(m).Error
+	m.ID = id
+	return GetGlobalDB().WithContext(ctx).Save(m).Error
 }
 
 // 修改任务的文档
