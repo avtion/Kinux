@@ -105,6 +105,10 @@ func v1Routers() initFunc {
 			checkpoint.DELETE("/:id/", controllers.DeleteCheckpoint)    // delete
 			checkpoint.GET("/count/", controllers.CountCheckpoints)     // count
 			checkpoint.GET("/quick/", controllers.QuickListCheckpoints) // options quick
+
+			checkpoint.GET("/mcp/", controllers.GetCheckpoints)        // 获取实验的检查点
+			checkpoint.GET("/todo/", controllers.GetTodoCheckpointIDs) // 获取需要完成的检查点
+
 		}
 
 		// 实验监测点相关
