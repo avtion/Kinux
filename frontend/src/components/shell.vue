@@ -211,6 +211,7 @@ export default defineComponent({
           container: container,
         },
       }
+      ter.clear()
       ws.sendWithCallback(
         JSON.stringify(msg),
         WebsocketOperation.Stdout,
@@ -253,13 +254,13 @@ export default defineComponent({
     // 插件 - 链接检测器
     ter.loadAddon(new WebLinksAddon())
 
-    // 切换容器
-    const changeContainer = (e: Event) => {
-      console.log('click', e)
-    }
-
     // 选择的容器
     const selectContainer = ref<string>('')
+
+    // 切换容器
+    const changeContainer = ({ item, key, keyPath }) => {
+      selectContainer.value = containersNames.value[key]
+    }
     watch(selectContainer, (newValue) => {
       console.log('当前选择的新容器', selectContainer.value)
 
