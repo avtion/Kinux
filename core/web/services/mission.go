@@ -196,6 +196,10 @@ func ListMissionAllowedContainersNames(ctx context.Context, missionID uint) (
 		return
 	}
 	for _, c := range containers {
+		if c.Name == mission.ExecContainer {
+			res = append([]string{c.Name}, res...)
+			continue
+		}
 		res = append(res, c.Name)
 	}
 	return
