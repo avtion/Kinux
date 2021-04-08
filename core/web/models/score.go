@@ -34,3 +34,18 @@ func FindAllAccountFinishScoreCpIDs(ctx context.Context, account, exam, mission 
 	err = db.Pluck("checkpoint", &cpIDs).Error
 	return
 }
+
+// 获取用户所有已经完成考点的成绩点
+func FindAllAccountFinishScores(ctx context.Context, account, exam, mission uint, containers ...string) (
+	score []*Score, err error) {
+	db := GetGlobalDB().WithContext(ctx).Model(new(Score)).Where(&Score{
+		Account: account,
+		Mission: mission,
+		Exam:    exam,
+	})
+	if len(containers) > 0 {
+		db = db.Where("container IN ?", containers)
+	}
+	err = db.Find(&score).Error
+	return
+}
