@@ -6,6 +6,7 @@ import (
 	"errors"
 	"fmt"
 	"gorm.io/gorm"
+	"gorm.io/gorm/callbacks"
 	v1 "k8s.io/api/core/v1"
 	"strings"
 )
@@ -249,12 +250,14 @@ func CountMissions(ctx context.Context, name string) (res int64, err error) {
 	return
 }
 
-// 删除任务 TODO 删除正在运行的Deployment
+// 删除任务
 func DeleteMission(ctx context.Context, id uint) (err error) {
 	if id == 0 {
 		return errors.New("id为空")
 	}
-	err = GetGlobalDB().WithContext(ctx).Unscoped().Delete(new(Mission), id).Error
+	err = GetGlobalDB().WithContext(ctx).Unscoped().Delete(&Mission{
+		Model: gorm.Model{ID: id},
+	}, id).Error
 	return
 }
 
@@ -301,3 +304,10 @@ func GetMissions(ctx context.Context, fns ...func(db *gorm.DB) *gorm.DB) (res []
 	err = GetGlobalDB().WithContext(ctx).Scopes(fns...).Find(&res).Error
 	return
 }
+
+// 删除钩子
+func (m *Mission) BeforeDelete(tx *gorm.DB) (err error) {
+	return tx.Unscoped().Delete(new(MissionCheckpoints), "mission = ?", m.ID).Error
+}
+
+var _ callbacks.BeforeDeleteInterface = (*Mission)(nil)
