@@ -27,7 +27,8 @@ func ConnectToPod(_ context.Context, p *coreV1.Pod, container string, pty PtyHan
 	// 关闭pty连接
 	defer func() {
 		logrus.Debug("pty被释放")
-		_ = pty.Close()
+		// TODO 暂时修复切换容器导致的exit
+		//_ = pty.Close()
 	}()
 
 	// 设置默认容器
