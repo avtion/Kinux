@@ -4,6 +4,7 @@ import (
 	"Kinux/core/web/models"
 	"Kinux/core/web/msg"
 	"Kinux/core/web/services"
+	"errors"
 	"github.com/gin-gonic/gin"
 	"github.com/spf13/cast"
 	"net/http"
@@ -213,6 +214,27 @@ func EditMission(c *gin.Context) {
 		c.AbortWithStatusJSON(http.StatusOK, msg.BuildFailed(err))
 		return
 	}
+	// 如果containers为空则默认放行全部容器
+	if len(params.Containers) == 0 {
+		if params.Deployment == 0 {
+			c.AbortWithStatusJSON(http.StatusOK, msg.BuildFailed(errors.New("容器白名单为空时部署配置不能同时为空")))
+			return
+		}
+		dp, err := models.GetDeployment(c, params.Deployment)
+		if err != nil {
+			c.AbortWithStatusJSON(http.StatusOK, msg.BuildFailed(err))
+			return
+		}
+		params.Containers, err = dp.ParseDeploymentContainerNames()
+		if err != nil {
+			c.AbortWithStatusJSON(http.StatusOK, msg.BuildFailed(err))
+			return
+		}
+		if len(params.Containers) == 0 {
+			c.AbortWithStatusJSON(http.StatusOK, msg.BuildFailed(errors.New("当前部署配置没有可用容器")))
+			return
+		}
+	}
 	if err := models.EditMission(c, params.ID, params.Name, params.Deployment,
 		models.MissionOptDesc(params.Desc),
 		models.MissionOptTotal(params.Total),
@@ -239,6 +261,27 @@ func AddMission(c *gin.Context) {
 	if err := c.ShouldBindJSON(params); err != nil {
 		c.AbortWithStatusJSON(http.StatusOK, msg.BuildFailed(err))
 		return
+	}
+	// 如果containers为空则默认放行全部容器
+	if len(params.Containers) == 0 {
+		if params.Deployment == 0 {
+			c.AbortWithStatusJSON(http.StatusOK, msg.BuildFailed(errors.New("容器白名单为空时部署配置不能同时为空")))
+			return
+		}
+		dp, err := models.GetDeployment(c, params.Deployment)
+		if err != nil {
+			c.AbortWithStatusJSON(http.StatusOK, msg.BuildFailed(err))
+			return
+		}
+		params.Containers, err = dp.ParseDeploymentContainerNames()
+		if err != nil {
+			c.AbortWithStatusJSON(http.StatusOK, msg.BuildFailed(err))
+			return
+		}
+		if len(params.Containers) == 0 {
+			c.AbortWithStatusJSON(http.StatusOK, msg.BuildFailed(errors.New("当前部署配置没有可用容器")))
+			return
+		}
 	}
 	if err := models.AddMission(c, params.Name, params.Deployment,
 		models.MissionOptDesc(params.Desc),
