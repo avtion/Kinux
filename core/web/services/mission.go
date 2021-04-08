@@ -28,6 +28,7 @@ const (
 	MissionStatusPending               // 正在启动
 	MissionStatusWorking               // 运行中
 	MissionStatusDone                  // 已经完成
+	MissionStatusBlock                 // 无法进行
 )
 
 var _ = [...]MissionStatus{MissionStatusStop, MissionStatusPending, MissionStatusWorking, MissionStatusDone}
