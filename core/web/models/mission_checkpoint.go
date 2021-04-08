@@ -165,25 +165,77 @@ func FindAllTodoMissionCheckpoints(ctx context.Context, account, exam, mission u
 		return
 	}
 
-	// 查找已经完成的检查点
-	finishedCheckpointsIDs, err := FindAllAccountFinishScoreCpIDs(ctx, account, exam, mission, containers...)
+	// 查找已经完成的检查点成绩
+	finishedCheckpointsScores, err := FindAllAccountFinishScores(ctx, account, exam, mission, containers...)
 	if err != nil {
 		return
 	}
+	// map[container]map[checkpointID]struct{}
+	var scoreMapping = make(map[string]map[uint]struct{})
+	for _, v := range finishedCheckpointsScores {
+		if _, isExist := scoreMapping[v.Container]; !isExist {
+			scoreMapping[v.Container] = make(map[uint]struct{})
+		}
+		scoreMapping[v.Container][v.Checkpoint] = struct{}{}
+	}
 
 	// 过滤已经完成的检查点
-	var idMapper = make(map[uint]struct{}, len(finishedCheckpointsIDs))
-	for _, id := range finishedCheckpointsIDs {
-		idMapper[id] = struct{}{}
-	}
 	var todoCheckpointIDs = make([]uint, 0)
 	for _, mc := range mcs {
-		if _, isExist := idMapper[mc.CheckPoint]; !isExist {
+		// 先查对应的容器
+		if _, isExist := scoreMapping[mc.TargetContainer]; !isExist {
+			todoCheckpointIDs = append(todoCheckpointIDs, mc.CheckPoint)
+			continue
+		}
+		// 如果这个容器没有完成相应的检查点则加入
+		if _, isExist := scoreMapping[mc.TargetContainer][mc.CheckPoint]; !isExist {
 			todoCheckpointIDs = append(todoCheckpointIDs, mc.CheckPoint)
 		}
 	}
 
 	return FindCheckpoints(ctx, todoCheckpointIDs...)
+}
+
+// 获取用户需要完成的检查点V2
+func FindAllTodoMissionCheckpointsV2(ctx context.Context, account, exam, mission uint, containers ...string) (
+	mcp []*MissionCheckpoints, err error) {
+	if account == 0 || mission == 0 {
+		return nil, errors.New("缺乏参数，无法获取用户需要完成的检查点")
+	}
+	// 首先获取全部的检查点
+	mcs, err := FindAllMissionCheckpoints(ctx, mission, containers...)
+	if err != nil {
+		return
+	}
+
+	// 查找已经完成的检查点成绩
+	finishedCheckpointsScores, err := FindAllAccountFinishScores(ctx, account, exam, mission, containers...)
+	if err != nil {
+		return
+	}
+	// map[container]map[checkpointID]struct{}
+	var scoreMapping = make(map[string]map[uint]struct{})
+	for _, v := range finishedCheckpointsScores {
+		if _, isExist := scoreMapping[v.Container]; !isExist {
+			scoreMapping[v.Container] = make(map[uint]struct{})
+		}
+		scoreMapping[v.Container][v.Checkpoint] = struct{}{}
+	}
+
+	// 过滤已经完成的检查点
+	for _, mc := range mcs {
+		// 先查对应的容器
+		if _, isExist := scoreMapping[mc.TargetContainer]; !isExist {
+			mcp = append(mcp, mc)
+			continue
+		}
+		// 如果这个容器没有完成相应的检查点则加入
+		if _, isExist := scoreMapping[mc.TargetContainer][mc.CheckPoint]; !isExist {
+			mcp = append(mcp, mc)
+		}
+	}
+
+	return
 }
 
 // 获取任务相关的检查点（内部实现）
