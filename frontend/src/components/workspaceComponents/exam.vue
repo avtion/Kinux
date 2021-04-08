@@ -134,6 +134,7 @@ export default {
     // 序号
     const numberCreator = new Avatars(sprites, {
       dataUri: true,
+      background: '#F59E0B',
     })
     const numberCreatorFn = (str: any): string => {
       return numberCreator.create(str + '')

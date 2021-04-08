@@ -20,7 +20,10 @@
               :type="GetMissionButtonType(item.status)"
               :loading="GetMissionButtonLoadingStatus(item.status)"
               @click="MissionHandler(index, item)"
-              :disabled="item.status == missionStatus.Done"
+              :disabled="
+                item.status == missionStatus.Done ||
+                item.status == missionStatus.Block
+              "
             >
               {{ GetMissionButtonDesc(item.status) }}
             </a-button>
@@ -65,7 +68,6 @@ export default {
 
     // 获取课程参数
     const examID = Number(router.currentRoute.value.params.exam)
-    console.log(examID)
 
     // 从上下文中获取对象
     const ws: WebSocketConn = inject<WebSocketConn>('websocket')
@@ -105,7 +107,6 @@ export default {
 
     // 任务处理函数
     const MissionHandler = (index: number, m: examMission) => {
-      console.log(m)
       const status = m.status
       switch (status) {
         case missionStatus.Stop:
@@ -156,6 +157,7 @@ export default {
     // 序号
     const numberCreator = new Avatars(sprites, {
       dataUri: true,
+      background: '#3B82F6',
     })
     const numberCreatorFn = (str: any): string => {
       return numberCreator.create(str + '')
@@ -163,7 +165,7 @@ export default {
 
     // 描述生成
     const descCreator = (item: examMission): string => {
-      return `> 所占成绩比例: ${item.percent / 100}%`
+      return `> 成绩占比: ${item.percent}%`
     }
 
     return {
@@ -191,8 +193,10 @@ function GetMissionButtonType(t: number): string {
       return 'primary'
     case missionStatus.Done:
       return 'default'
+    case missionStatus.Block:
+      return 'default'
     default:
-      return 'dashed'
+      return 'default'
   }
 }
 
@@ -212,6 +216,8 @@ function GetMissionButtonDesc(t: number): string {
       return '进入终端'
     case missionStatus.Done:
       return '已完成'
+    case missionStatus.Block:
+      return '需完成之前实验才能开始'
     default:
       return ''
   }
