@@ -267,9 +267,19 @@ export default defineComponent({
       const fn = () => {
         connectToPOD(ws, props.lesson, props.exam, props.mission, newValue)
         setTimeout(() => {
-          fitAddon.fit()
-        }, 1)
-        ter.focus()
+          const size = fitAddon.proposeDimensions()
+          const msg: WebsocketMessage = {
+            op: WebsocketOperation.Resize,
+            data: size,
+          }
+          if (ws.readyState !== WebSocket.OPEN) {
+            ws.waitQueue.push((_ws) => {
+              ws.send(JSON.stringify(msg))
+            })
+          } else {
+            ws.send(JSON.stringify(msg))
+          }
+        }, 1000)
       }
 
       // 将终端连接到新的控制台
