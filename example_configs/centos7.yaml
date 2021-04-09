@@ -1,0 +1,26 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: centos7
+  namespace: default
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: centos7
+  template:
+    metadata:
+      labels:
+        app: centos7
+    spec:
+      nodeSelector:
+        cpu: amd64
+      containers:
+        - name: centos
+          image: centos/tools
+          imagePullPolicy: IfNotPresent
+          command: ["tail","-f","/dev/null"]
+          resources:
+            limits:
+              memory: "128Mi"
+              cpu: "500m"
