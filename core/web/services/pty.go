@@ -128,7 +128,7 @@ func missionPtyRegisterV2(ws *WebsocketSchedule, any jsoniter.Any) (err error) {
 
 	go func() {
 		if _err := k8s.ConnectToPod(ws.Context, &pod, c.Name, ptyWrapper, mission.GetCommand()); _err != nil {
-			logrus.Error("创建POD终端失败", err)
+			logrus.Error("创建POD终端失败", _err)
 		}
 	}()
 	return
