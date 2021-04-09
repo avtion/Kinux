@@ -15,10 +15,10 @@ func init() {
 /* Websocket调度器中心 */
 var scheduleCenter = new(sync.Map)
 
-// 错误
+// TargetWebsocketNotExistErr 错误
 var TargetWebsocketNotExistErr = errors.New("目标Websocket链接不存在")
 
-// 注册websocket链接
+// RegisterWsConn 注册websocket链接
 func RegisterWsConn(id int, ws *WebsocketSchedule) (err error) {
 	if id == 0 {
 		err = errors.New("非法用户，链接无法挂载调度中心")
@@ -32,13 +32,14 @@ func RegisterWsConn(id int, ws *WebsocketSchedule) (err error) {
 	}
 
 	// 如果存在则抛弃原本的链接并保存
+	oldWs.(*WebsocketSchedule).Context.Done()
 	oldWs.(*WebsocketSchedule).SayGoodbyeToPty()
 	_ = oldWs.(*WebsocketSchedule).Close()
 	scheduleCenter.Store(id, ws)
 	return
 }
 
-// Websocket链接信息
+// ScheduleCenterListResult Websocket链接信息
 type ScheduleCenterListResult struct {
 	ID          int    `json:"id"` // 用户ID
 	Username    string `json:"username"`
@@ -47,7 +48,7 @@ type ScheduleCenterListResult struct {
 	PtyMetaData string `json:"pty_meta_data"`
 }
 
-// 获取Websocket链接信息
+// ListScheduleCenterInfo 获取Websocket链接信息
 func ListScheduleCenterInfo(_ context.Context) (res []*ScheduleCenterListResult) {
 	res = make([]*ScheduleCenterListResult, 0)
 	scheduleCenter.Range(func(key, value interface{}) bool {
@@ -69,7 +70,7 @@ func ListScheduleCenterInfo(_ context.Context) (res []*ScheduleCenterListResult)
 	return
 }
 
-// 向目标Websocket链接发送信息
+// SendMessageToTargetWs 向目标Websocket链接发送信息
 func SendMessageToTargetWs(_ context.Context, id int, text string) (err error) {
 	_ws, isExist := scheduleCenter.Load(id)
 	if !isExist {
@@ -79,7 +80,7 @@ func SendMessageToTargetWs(_ context.Context, id int, text string) (err error) {
 	return ws.SendMsg(msg.BuildSuccess(text))
 }
 
-// 侵入目标Websocket链接的终端
+// AttachTargetWs 侵入目标Websocket链接的终端
 func AttachTargetWs(ws *WebsocketSchedule, any jsoniter.Any) (err error) {
 	// 解析数据
 	params := &struct {
@@ -105,7 +106,7 @@ func AttachTargetWs(ws *WebsocketSchedule, any jsoniter.Any) (err error) {
 	return
 }
 
-// 强制目标Websocket链接登出
+// ForceTargetLogout 强制目标Websocket链接登出
 func ForceTargetLogout(_ context.Context, id int) (err error) {
 	_ws, isExist := scheduleCenter.Load(id)
 	if !isExist {

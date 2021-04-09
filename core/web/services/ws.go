@@ -1,4 +1,4 @@
-// WebSocket业务层
+// Package services WebSocket业务层
 package services
 
 import (
@@ -16,7 +16,7 @@ import (
 	"time"
 )
 
-// 终止标识符EOT
+// EndOfTransmission 终止标识符EOT
 const EndOfTransmission = "\u0004"
 
 // webSocket默认升级器
@@ -27,7 +27,7 @@ var defaultUpgrader = &websocket.Upgrader{
 	},
 }
 
-// Websocket调度器
+// WebsocketSchedule Websocket调度器
 type WebsocketSchedule struct {
 	*websocket.Conn
 	context.Context
@@ -54,7 +54,7 @@ type WebsocketSchedule struct {
 
 type WsFn func(ws *WebsocketSchedule) (err error)
 
-// 创建websocket调度器
+// NewWebsocketSchedule 创建websocket调度器
 func NewWebsocketSchedule(c *gin.Context, fns ...WsFn) (ws *WebsocketSchedule, err error) {
 	wsConn, err := defaultUpgrader.Upgrade(c.Writer, c.Request, nil)
 	if err != nil {
@@ -96,7 +96,7 @@ func NewWebsocketSchedule(c *gin.Context, fns ...WsFn) (ws *WebsocketSchedule, e
 	return ws, nil
 }
 
-// 应用中间函数
+// Apply 应用中间函数
 func (ws *WebsocketSchedule) Apply(fns ...WsFn) (err error) {
 	for _, fn := range fns {
 		select {
@@ -180,7 +180,7 @@ func (ws *WebsocketSchedule) daemon(ctxCancelFn context.CancelFunc) {
 	}
 }
 
-// 结束守护协程
+// StopDaemon 结束守护协程
 func (ws *WebsocketSchedule) StopDaemon() {
 	close(ws.daemonStopCh)
 }
@@ -201,7 +201,7 @@ func (ws *WebsocketSchedule) dataSender() {
 	}
 }
 
-// 向客户端发送数据
+// SendData 向客户端发送数据
 func (ws *WebsocketSchedule) SendData(p []byte) {
 	select {
 	case <-ws.Done():
@@ -210,7 +210,7 @@ func (ws *WebsocketSchedule) SendData(p []byte) {
 	}
 }
 
-// 发送终止信号给Pty
+// SayGoodbyeToPty 发送终止信号给Pty
 func (ws *WebsocketSchedule) SayGoodbyeToPty() {
 	if ws.pty == nil {
 		return
@@ -252,10 +252,10 @@ const (
 	wsOpExamRunning         // 考试进行中（用于主动告诉用户正在进行考试）
 )
 
-// ws处理函数 - any指向未解析的原数据
+// WsOperationHandler ws处理函数 - any指向未解析的原数据
 type WsOperationHandler func(ws *WebsocketSchedule, any jsoniter.Any) (err error)
 
-// 给客户端发送消息 - 利用原有的消息构建框架
+// SendMsg 给客户端发送消息 - 利用原有的消息构建框架
 func (ws *WebsocketSchedule) SendMsg(result msg.Result) (err error) {
 	data, err := jsoniter.Marshal(&WebsocketMessage{
 		Op:   wsOpMsg,
@@ -272,12 +272,12 @@ func (ws *WebsocketSchedule) SendMsg(result msg.Result) (err error) {
 // websocket处理函数映射
 var wsOperationsMapper = make(map[wsOperation]WsOperationHandler)
 
-// 注册websocket链接操作
+// RegisterWebsocketOperation 注册websocket链接操作
 func RegisterWebsocketOperation(op wsOperation, handler WsOperationHandler) {
 	wsOperationsMapper[op] = handler
 }
 
-// 向客户端发起鉴权请求
+// RequireClientAuth 向客户端发起鉴权请求
 func (ws *WebsocketSchedule) RequireClientAuth() {
 	data, _ := jsoniter.Marshal(&WebsocketMessage{
 		Op:   wsOpRequireAuth,

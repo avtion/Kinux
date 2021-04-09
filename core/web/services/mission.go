@@ -19,7 +19,7 @@ func init() {
 	RegisterWebsocketOperation(wsOpMissionApply, missionApply)
 }
 
-// 任务状态
+// MissionStatus 任务状态
 type MissionStatus = int
 
 const (
@@ -33,7 +33,7 @@ const (
 
 var _ = [...]MissionStatus{MissionStatusStop, MissionStatusPending, MissionStatusWorking, MissionStatusDone}
 
-// 业务层的任务结构体, 用于响应
+// Mission 业务层的任务结构体, 用于响应
 type Mission struct {
 	ID     uint          `json:"id"`
 	Name   string        `json:"name"`
@@ -42,13 +42,13 @@ type Mission struct {
 	Status MissionStatus `json:"status"`
 }
 
-// 批量获取任务信息
+// ListMissions 批量获取任务信息
 // Deprecated: 删除命名空间
 func ListMissions(_ context.Context, _ *models.Account, _ string, _ []string, _, _ int) (res []*Mission, err error) {
 	return []*Mission{}, errors.New("deprecated: 删除命名空间")
 }
 
-// 获取任务信息
+// ListMissionsV2 获取任务信息
 func ListMissionsV2(c *gin.Context, lessonID uint, page, size int) (res []*Mission, err error) {
 	ac, err := GetAccountFromCtx(c)
 	if err != nil {
@@ -105,7 +105,7 @@ func ListMissionsV2(c *gin.Context, lessonID uint, page, size int) (res []*Missi
 	return
 }
 
-// 根据Deployment的状态获取对应任务的状态
+// GetDeploymentStatusForMission 根据Deployment的状态获取对应任务的状态
 func GetDeploymentStatusForMission(ctx context.Context, namespace string, l *labelMaker) (
 	res map[uint]MissionStatus, err error) {
 	if l == nil {
@@ -142,7 +142,7 @@ func GetDeploymentStatusForMission(ctx context.Context, namespace string, l *lab
 	return
 }
 
-// 任务操作
+// MissionOperation 任务操作
 type MissionOperation = uint
 
 const (
@@ -151,7 +151,7 @@ const (
 	MissionDelete                  // 删除
 )
 
-// 用户账号与任务绑定操作
+// AccountMissionOpera 用户账号与任务绑定操作
 func AccountMissionOpera(ctx context.Context, ac *models.Account,
 	targetMission uint, operation MissionOperation) (err error) {
 	defer func() {
@@ -184,7 +184,7 @@ func AccountMissionOpera(ctx context.Context, ac *models.Account,
 	return
 }
 
-// 获取任务允许的容器名列表
+// ListMissionAllowedContainersNames 获取任务允许的容器名列表
 func ListMissionAllowedContainersNames(ctx context.Context, missionID uint) (
 	res []string, err error) {
 	mission, err := models.GetMission(ctx, missionID)
@@ -205,7 +205,7 @@ func ListMissionAllowedContainersNames(ctx context.Context, missionID uint) (
 	return
 }
 
-// 获取任务的实验文档
+// GetMissionGuide 获取任务的实验文档
 func GetMissionGuide(ctx context.Context, missionID uint) (res string, err error) {
 	mission, err := models.GetMission(ctx, missionID)
 	if err != nil {

@@ -11,7 +11,7 @@ import (
 	"k8s.io/client-go/tools/remotecommand"
 )
 
-// 用于终端的websocket装饰器
+// WsPtyWrapper 用于终端的websocket装饰器
 type WsPtyWrapper struct {
 	ws       *WebsocketSchedule
 	reader   io.Reader
@@ -33,7 +33,7 @@ type WsPtyWrapperOption = func(w *WsPtyWrapper)
 
 var _ k8s.PtyHandler = (*WsPtyWrapper)(nil)
 
-// 初始化终端装饰器
+// InitPtyWrapper 初始化终端装饰器
 func (ws *WebsocketSchedule) InitPtyWrapper(opts ...WsPtyWrapperOption) *WsPtyWrapper {
 	// 埋点 - 终止上一个Pty终端
 	ws.SayGoodbyeToPty()
@@ -96,7 +96,7 @@ func (pw *WsPtyWrapper) Write(p []byte) (n int, err error) {
 	return len(p), nil
 }
 
-// 实现 remotecommand.TerminalSizeQueue 接口
+// Next 实现 remotecommand.TerminalSizeQueue 接口
 func (pw *WsPtyWrapper) Next() *remotecommand.TerminalSize {
 	select {
 	case size := <-pw.sizeChan:
@@ -112,7 +112,7 @@ func (pw *WsPtyWrapper) Close() (err error) {
 	return nil
 }
 
-// 组合多个Pty装饰器
+// CombineWsPtyWrapperOptions 组合多个Pty装饰器
 func CombineWsPtyWrapperOptions(wrappers ...WsPtyWrapperOption) WsPtyWrapperOption {
 	return func(w *WsPtyWrapper) {
 		for _, fn := range wrappers {
@@ -123,14 +123,14 @@ func CombineWsPtyWrapperOptions(wrappers ...WsPtyWrapperOption) WsPtyWrapperOpti
 	}
 }
 
-// 设置pty的元数据
+// SetWsPtyMetaDataOption 设置pty的元数据
 func SetWsPtyMetaDataOption(metaData PtyMeta) WsPtyWrapperOption {
 	return func(w *WsPtyWrapper) {
 		w.metaData = metaData
 	}
 }
 
-// 元数据
+// PtyMeta 元数据
 type PtyMeta interface {
 	GetType() MetaType
 	StrFormat() string
@@ -143,7 +143,7 @@ const (
 	ExamMetaType
 )
 
-// 实验元数据
+// MissionMeta 实验元数据
 type MissionMeta struct {
 	Mission   *models.Mission
 	Container string
@@ -159,7 +159,7 @@ func (mm *MissionMeta) StrFormat() string {
 	return fmt.Sprintf("实验: %s(%d)", mm.Mission.Name, mm.Mission.ID)
 }
 
-// 创建新的实验元数据
+// NewMissionMeta 创建新的实验元数据
 func NewMissionMeta(ms *models.Mission, container string) PtyMeta {
 	return &MissionMeta{
 		Mission:   ms,
@@ -167,7 +167,7 @@ func NewMissionMeta(ms *models.Mission, container string) PtyMeta {
 	}
 }
 
-// 考试元数据
+// ExamMeta 考试元数据
 type ExamMeta struct {
 	Exam      *models.Exam
 	Mission   *models.Mission
@@ -184,7 +184,7 @@ func (em *ExamMeta) StrFormat() string {
 	return fmt.Sprintf("考试: %s-%s(%d)", em.Exam.Name, em.Mission.Name, em.Mission.ID)
 }
 
-// 创建新的考试元数据
+// NewExamMeta 创建新的考试元数据
 func NewExamMeta(ex *models.Exam, ms *models.Mission, container string) PtyMeta {
 	return &ExamMeta{
 		Exam:      ex,

@@ -15,7 +15,7 @@ import (
 
 type mcOpt func(mc *MissionController) error
 
-// 任务控制器
+// MissionController 任务控制器
 type MissionController struct {
 	ctx     context.Context
 	Ac      *models.Account
@@ -29,13 +29,13 @@ type MissionController struct {
 	dpSelector labels.Set
 }
 
-// 创建任务控制器
+// NewMissionController 创建任务控制器
 func NewMissionController(ctx context.Context) (mc *MissionController) {
 	mc = &MissionController{ctx: ctx}
 	return
 }
 
-// 设置任务执行用户
+// SetAc 设置任务执行用户
 func (mc *MissionController) SetAc(ac *models.Account) *MissionController {
 	if ac == nil {
 		return mc
@@ -44,7 +44,7 @@ func (mc *MissionController) SetAc(ac *models.Account) *MissionController {
 	return mc
 }
 
-// 设置考试
+// SetExam 设置考试
 func (mc *MissionController) SetExam(e *models.Exam) *MissionController {
 	if e == nil || e.ID == 0 {
 		return mc
@@ -53,7 +53,7 @@ func (mc *MissionController) SetExam(e *models.Exam) *MissionController {
 	return mc
 }
 
-// 设置任务
+// SetMission 设置任务
 func (mc *MissionController) SetMission(m *models.Mission) *MissionController {
 	if m == nil {
 		return mc
@@ -62,7 +62,7 @@ func (mc *MissionController) SetMission(m *models.Mission) *MissionController {
 	return mc.getDpCfg().parseDpCfg().fixNamespace().generateSelector(nil).applySelector()
 }
 
-// 创建新的Deployment
+// NewDeployment 创建新的Deployment
 func (mc *MissionController) NewDeployment() (err error) {
 	defer func() {
 		if err != nil {
@@ -92,12 +92,12 @@ func (mc *MissionController) NewDeployment() (err error) {
 	return mc.exec()
 }
 
-// 清除用户正在进行的Deployment
+// ClearAllMission 清除用户正在进行的Deployment
 func (mc *MissionController) ClearAllMission() (err error) {
 	return mc.destroyDeployment(missionLabel, deploymentLabel, examLabel)
 }
 
-// 删除用户指定的dp
+// DestroyDeployment 删除用户指定的dp
 func (mc *MissionController) DestroyDeployment() (err error) {
 	if mc.Mission == nil || mc.Mission.ID == 0 {
 		return errors.New("无法删除用户指定的任务: 任务信息未初始化")
@@ -272,7 +272,7 @@ func (mc *MissionController) applySelector() *MissionController {
 	return mc
 }
 
-// 特殊对外的方法, 用于在测试环境生成并应用K8S Deployment节点选择器
+// GenerateAndApplyNodeSelector 特殊对外的方法, 用于在测试环境生成并应用K8S Deployment节点选择器
 func (mc *MissionController) GenerateAndApplyNodeSelector(cpu string) *MissionController {
 	mc.appendOpt(func(mc *MissionController) error {
 		if mc.dpCfg == nil {
@@ -298,7 +298,7 @@ func (mc *MissionController) fixNamespace(pass ...bool) *MissionController {
 	return mc
 }
 
-// 获取POD列表
+// GetPods 获取POD列表
 func (mc *MissionController) GetPods() (p *coreV1.PodList, err error) {
 	// 初始化控制器配置
 	mc.getDpCfg().parseDpCfg().generateAndApplyDpName().generateSelector(nil).applySelector().fixNamespace()
@@ -308,7 +308,7 @@ func (mc *MissionController) GetPods() (p *coreV1.PodList, err error) {
 	return k8s.GetPods(mc.ctx, mc.dpCfg.GetNamespace(), mc.dpSelector)
 }
 
-// 重置任务的容器（即删除POD）
+// ResetMission 重置任务的容器（即删除POD）
 func (mc *MissionController) ResetMission(ns string) (err error) {
 	pods, err := mc.GetPods()
 	if err != nil {
@@ -328,7 +328,7 @@ func (mc *MissionController) ResetMission(ns string) (err error) {
 	return
 }
 
-// 监视Deployment
+// WatchDeploymentToReady 监视Deployment
 func (mc *MissionController) WatchDeploymentToReady(ns string) (resCh <-chan error) {
 	if ns == "" {
 		ns = k8s.GetDefaultNS()

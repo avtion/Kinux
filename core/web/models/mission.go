@@ -16,11 +16,11 @@ func init() {
 }
 
 var (
-	// Deployment不存在
+	// ErrMissionDeploymentNotExist Deployment不存在
 	ErrMissionDeploymentNotExist = errors.New("mission deployment not exist")
 )
 
-// 任务
+// Mission 任务
 type Mission struct {
 	gorm.Model
 
@@ -42,10 +42,10 @@ type Mission struct {
 	VNCPort      string // VNC目标接口
 }
 
-// 任务构造选项
+// MissionBuildOpt 任务构造选项
 type MissionBuildOpt func(m *Mission) (err error)
 
-// 任务构造器
+// MissionBuilder 任务构造器
 func MissionBuilder(_ context.Context, name string, dp *Deployment, opts ...MissionBuildOpt) (m *Mission, err error) {
 	if dp == nil || dp.ID == 0 {
 		return nil, ErrMissionDeploymentNotExist
@@ -66,7 +66,7 @@ func MissionBuilder(_ context.Context, name string, dp *Deployment, opts ...Miss
 	return
 }
 
-// 启用VNC远程桌面
+// MissionOptVnc 启用VNC远程桌面
 func MissionOptVnc(container, port string) MissionBuildOpt {
 	return func(m *Mission) (err error) {
 		m.VNCEnable = true
@@ -76,7 +76,7 @@ func MissionOptVnc(container, port string) MissionBuildOpt {
 	}
 }
 
-// 任务描述
+// MissionOptDesc 任务描述
 func MissionOptDesc(desc string) MissionBuildOpt {
 	return func(m *Mission) (err error) {
 		m.Desc = desc
@@ -84,7 +84,7 @@ func MissionOptDesc(desc string) MissionBuildOpt {
 	}
 }
 
-// 任务Deployment
+// MissionOptDeployment 任务Deployment
 func MissionOptDeployment(cmd, execC string, whiteListC []string) MissionBuildOpt {
 	return func(m *Mission) (err error) {
 		if len(whiteListC) > 0 {
@@ -104,7 +104,7 @@ func MissionOptDeployment(cmd, execC string, whiteListC []string) MissionBuildOp
 	}
 }
 
-// 任务分数
+// MissionOptTotal 任务分数
 func MissionOptTotal(total uint) MissionBuildOpt {
 	return func(m *Mission) (err error) {
 		m.Total = total
@@ -112,7 +112,7 @@ func MissionOptTotal(total uint) MissionBuildOpt {
 	}
 }
 
-// 任务创建或更新内部实现
+// CreateOrUpdate 任务创建或更新内部实现
 func (m *Mission) CreateOrUpdate(ctx context.Context) (err error) {
 	db := GetGlobalDB().WithContext(ctx)
 	if err = db.Transaction(func(tx *gorm.DB) error {
@@ -139,7 +139,7 @@ func (m *Mission) CreateOrUpdate(ctx context.Context) (err error) {
 	return
 }
 
-// 创建并更新任务
+// CrateOrUpdateMission 创建并更新任务
 func CrateOrUpdateMission(ctx context.Context, name string, dp *Deployment, opts ...MissionBuildOpt) (m *Mission, err error) {
 	m, err = MissionBuilder(ctx, name, dp, opts...)
 	if err != nil {
@@ -151,7 +151,7 @@ func CrateOrUpdateMission(ctx context.Context, name string, dp *Deployment, opts
 	return
 }
 
-// 批量查询任务
+// ListMissions 批量查询任务
 func ListMissions(ctx context.Context, name string, builder *PageBuilder) (ms []*Mission, err error) {
 	db := GetGlobalDB().WithContext(ctx)
 	if name != "" {
@@ -164,14 +164,14 @@ func ListMissions(ctx context.Context, name string, builder *PageBuilder) (ms []
 	return
 }
 
-// 根据ID获取任务
+// GetMission 根据ID获取任务
 func GetMission(ctx context.Context, id uint) (ms *Mission, err error) {
 	ms = new(Mission)
 	err = GetGlobalDB().WithContext(ctx).First(ms, id).Error
 	return
 }
 
-// 校验容器是否在白名单内
+// IsContainerAllowed 校验容器是否在白名单内
 func (m *Mission) IsContainerAllowed(container string) (res bool) {
 	if strings.ContainsRune(container, ';') {
 		return false
@@ -185,12 +185,12 @@ func (m *Mission) IsContainerAllowed(container string) (res bool) {
 	return false
 }
 
-// TODO CMD的分割
+// GetCommand TODO CMD的分割
 func (m *Mission) GetCommand() (cmd []string) {
 	return []string{m.Command}
 }
 
-// 根据mission的deployment获取可用的容器
+// ListAllowedContainers 根据mission的deployment获取可用的容器
 func (m *Mission) ListAllowedContainers(ctx context.Context) (res []v1.Container, err error) {
 	if m.Deployment == 0 {
 		err = errors.New("任务不存在deployment")
@@ -217,7 +217,7 @@ func (m *Mission) ListAllowedContainers(ctx context.Context) (res []v1.Container
 	return
 }
 
-// 获取任务名字的映射
+// GetMissionsNameMapper 获取任务名字的映射
 func GetMissionsNameMapper(ctx context.Context, id ...uint) (res map[uint]string, err error) {
 	type api struct {
 		ID   uint
@@ -240,7 +240,7 @@ func GetMissionsNameMapper(ctx context.Context, id ...uint) (res map[uint]string
 	return
 }
 
-// 统计实验数量
+// CountMissions 统计实验数量
 func CountMissions(ctx context.Context, name string) (res int64, err error) {
 	db := GetGlobalDB().WithContext(ctx).Model(new(Mission))
 	if name != "" {
@@ -250,7 +250,7 @@ func CountMissions(ctx context.Context, name string) (res int64, err error) {
 	return
 }
 
-// 删除任务
+// DeleteMission 删除任务
 func DeleteMission(ctx context.Context, id uint) (err error) {
 	if id == 0 {
 		return errors.New("id为空")
@@ -261,7 +261,7 @@ func DeleteMission(ctx context.Context, id uint) (err error) {
 	return
 }
 
-// 创建任务
+// AddMission 创建任务
 func AddMission(ctx context.Context, name string, dp uint, opts ...MissionBuildOpt) (err error) {
 	deployment, err := GetDeployment(ctx, dp)
 	if err != nil {
@@ -274,7 +274,7 @@ func AddMission(ctx context.Context, name string, dp uint, opts ...MissionBuildO
 	return GetGlobalDB().WithContext(ctx).Create(m).Error
 }
 
-// 修改任务
+// EditMission 修改任务
 func EditMission(ctx context.Context, id uint, name string, dp uint, opts ...MissionBuildOpt) (err error) {
 	if id == 0 {
 		return errors.New("id为空")
@@ -288,21 +288,21 @@ func EditMission(ctx context.Context, id uint, name string, dp uint, opts ...Mis
 		return
 	}
 	m.ID = id
-	return GetGlobalDB().WithContext(ctx).Save(m).Error
+	return GetGlobalDB().WithContext(ctx).Select("*").Omit("guide").Updates(m).Error
 }
 
-// 修改任务的文档
+// UpdateMissionGuide 修改任务的文档
 func UpdateMissionGuide(ctx context.Context, id uint, text string) (err error) {
 	return GetGlobalDB().WithContext(ctx).Model(new(Mission)).Where("id = ?", id).Update("guide", text).Error
 }
 
-// 批量获取实验
+// GetMissions 批量获取实验
 func GetMissions(ctx context.Context, fns ...func(db *gorm.DB) *gorm.DB) (res []*Mission, err error) {
 	err = GetGlobalDB().WithContext(ctx).Scopes(fns...).Find(&res).Error
 	return
 }
 
-// 删除钩子
+// BeforeDelete 删除钩子
 func (m *Mission) BeforeDelete(tx *gorm.DB) (err error) {
 	return tx.Unscoped().Delete(new(MissionCheckpoints), "mission = ?", m.ID).Error
 }
