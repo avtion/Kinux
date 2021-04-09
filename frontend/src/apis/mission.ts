@@ -85,7 +85,7 @@ export enum missionStatus {
   Pending, // 正在启动
   Working, // 正在运行
   Done, // 已经完成
-  Block // 阻塞
+  Block, // 阻塞
 }
 
 // 任务列表
