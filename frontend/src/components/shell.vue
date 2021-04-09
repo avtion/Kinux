@@ -9,7 +9,7 @@
       <!-- 按钮组 -->
       <template #extra>
         <!-- 容器切换 -->
-        <a-dropdown>
+        <a-dropdown :disabled="containerLoading">
           <template #overlay>
             <a-menu @click="changeContainer">
               <a-menu-item
@@ -27,10 +27,16 @@
         <a-divider type="vertical" />
         <!-- 容器管理 -->
         <a-button-group>
-          <a-button type="danger" @click="comfirmToResetContainer"
+          <a-button
+            type="danger"
+            @click="comfirmToResetContainer"
+            :loading="resetButtonLoading"
             >重置环境</a-button
           >
-          <a-button type="primary" @click="comfirmToShutdownMission"
+          <a-button
+            type="primary"
+            @click="comfirmToShutdownMission"
+            :disabled="resetButtonLoading"
             >关闭环境</a-button
           >
           <a-button type="default" @click="comfirmToLeave">返回</a-button>
@@ -261,8 +267,10 @@ export default defineComponent({
     const changeContainer = ({ item, key, keyPath }) => {
       selectContainer.value = containersNames.value[key]
     }
-    watch(selectContainer, (newValue) => {
+    const containerLoading = ref<boolean>(false) // 容器是否在加载
+    watch(selectContainer, (newValue, oldValue) => {
       console.log('当前选择的新容器', selectContainer.value)
+      containerLoading.value = true
 
       // 初始化函数
       const fn = () => {
@@ -280,6 +288,7 @@ export default defineComponent({
           } else {
             ws.send(JSON.stringify(msg))
           }
+          containerLoading.value = false
         }, 1000)
       }
 
@@ -290,7 +299,16 @@ export default defineComponent({
           fn()
         })
       } else {
-        fn()
+        if (oldValue !== '') {
+          // 如果容器是切换的则先关闭链接
+          // 并等待一秒，避免太快了导致容器还没完全关闭
+          shutdownPtyConn(ws)
+          setTimeout(() => {
+            fn()
+          }, 1 * 1000)
+        } else {
+          fn()
+        }
       }
     })
 
@@ -318,6 +336,7 @@ export default defineComponent({
       })
 
     // 重置实验
+    const resetButtonLoading = ref<boolean>(false)
     const comfirmToResetContainer = () => {
       Modal.confirm({
         title: '确定要重置实验容器吗?',
@@ -333,10 +352,13 @@ export default defineComponent({
               id: props.mission,
             },
           }
+          resetButtonLoading.value = true
           ws.sendWithCallback(
             JSON.stringify(msg),
             WebsocketOperation.ContainersDone,
             (ws) => {
+              ter.reset()
+              resetButtonLoading.value = false
               connectToPOD(
                 ws,
                 props.lesson,
@@ -347,7 +369,6 @@ export default defineComponent({
               setTimeout(() => {
                 fitAddon.fit()
               }, 1)
-              ter.clear()
             },
             true
           )
@@ -455,6 +476,12 @@ export default defineComponent({
       // 标签
       currentTab,
       tabHandler,
+
+      // 重置按钮是否正在加载
+      resetButtonLoading,
+
+      // 容器是否在加载
+      containerLoading,
     }
   },
 })
