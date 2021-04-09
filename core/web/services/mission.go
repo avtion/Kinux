@@ -251,14 +251,19 @@ func missionResetRegister(ws *WebsocketSchedule, any jsoniter.Any) (err error) {
 	if err = <-errCh; err != nil {
 		return
 	}
-	data, err := jsoniter.Marshal(&WebsocketMessage{
-		Op:   wsOpContainersDone,
-		Data: nil,
-	})
-	if err != nil {
-		return
-	}
-	ws.SendData(data)
+
+	go func() {
+		// 这里让程序等1秒避免容器没准备好
+		<-time.After(1 * time.Second)
+		data, err := jsoniter.Marshal(&WebsocketMessage{
+			Op:   wsOpContainersDone,
+			Data: nil,
+		})
+		if err != nil {
+			return
+		}
+		ws.SendData(data)
+	}()
 	return
 }
 
