@@ -108,7 +108,8 @@ func (pw *WsPtyWrapper) Next() *remotecommand.TerminalSize {
 
 func (pw *WsPtyWrapper) Close() (err error) {
 	pw.cancelFn()
-	pw.ws.SayGoodbyeToPty()
+	//pw.ws.SayGoodbyeToPty()
+	pw.ws.pty = nil
 	return nil
 }
 
