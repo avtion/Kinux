@@ -1,4 +1,4 @@
-//  Client 用于与目标POD中的Container建立连接
+// Package k8s Client 用于与目标POD中的Container建立连接
 package k8s
 
 import (
@@ -21,18 +21,18 @@ type PtyHandler interface {
 	remotecommand.TerminalSizeQueue // 调整终端大小
 }
 
-// Pod建立连接
+// ConnectToPod Pod建立连接
 func ConnectToPod(_ context.Context, p *coreV1.Pod, container string, pty PtyHandler, cmd []string,
 	options ...clientReqOption) (err error) {
 	// 关闭pty连接
 	defer func() {
 		logrus.Debug("pty被释放")
 		// TODO 暂时修复切换容器导致的exit
-		//_ = pty.Close()
+		_ = pty.Close()
 	}()
 
 	// 设置默认容器
-	if len(container) == 0 {
+	if container == "" {
 		if len(p.Spec.Containers) > 0 {
 			container = p.Spec.Containers[0].Name
 		} else {
