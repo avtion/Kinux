@@ -8,7 +8,28 @@
           padding: '12px',
         }"
       >
+        <!-- 筛选栏 -->
+        <div>
+          <!-- 广播 -->
+          <a-button
+            @click="
+              openSendMsgModal({
+                id: 0,
+                username: '',
+                created_at: '',
+                is_pty: false,
+                pty_meta_data: '',
+              })
+            "
+            >广播</a-button
+          >
+          <a-divider type="vertical" />
+          <!-- 刷新数据 -->
+          <a-button @click="getListData">刷新</a-button>
+        </div>
+
         <!-- 表格 -->
+        <a-divider />
         <a-table
           :columns="columns"
           :data-source="listData"
@@ -111,12 +132,12 @@ const columns = [
     slots: { customRender: 'pty' },
   },
   {
-    title: '终端数据',
+    title: '实验信息',
     dataIndex: 'pty_meta_data',
     key: 'pty_meta_data',
   },
   {
-    title: '创建时间',
+    title: '登陆时间',
     dataIndex: 'created_at',
     key: 'created_at',
   },
@@ -221,6 +242,9 @@ export default defineComponent({
       sendMsgModalAfterClose,
       openSendMsgModal,
       forceLogout,
+
+      // 获取当前链接信息
+      getListData,
     }
   },
 })
