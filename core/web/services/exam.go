@@ -9,7 +9,7 @@ import (
 	"k8s.io/apimachinery/pkg/labels"
 )
 
-// 考试列表查询结果
+// ExamListResult 考试列表查询结果
 type ExamListResult struct {
 	ID         uint       `json:"id"`
 	Name       string     `json:"name"`
@@ -21,7 +21,7 @@ type ExamListResult struct {
 	Missions   []*Mission `json:"missions"`
 }
 
-// 查询考试列表
+// ListExams 查询考试列表
 func ListExams(ctx context.Context, ac *models.Account, page, size int) (res []*ExamListResult, err error) {
 	exams, err := models.ListExams(ctx, models.NewPageBuilder(page, size).Build)
 	if err != nil {
@@ -150,7 +150,7 @@ func getDeploymentStatusForExam(ctx context.Context, namespace string, l *labelM
 	return
 }
 
-// 考试状态
+// ExamStatus 考试状态
 type ExamStatus uint
 
 const (
@@ -160,7 +160,7 @@ const (
 	ESFinish              // 考试已经结束
 )
 
-// 获取考试的状态
+// GetExamStatus 获取考试的状态
 func GetExamStatus(ctx context.Context, ac uint, exam uint) (res ExamStatus) {
 	_eWatcher, isExist := ExamWatchers.Load(ac)
 	if isExist {
@@ -181,10 +181,10 @@ func GetExamStatus(ctx context.Context, ac uint, exam uint) (res ExamStatus) {
 	}
 }
 
-// 查找考试中需要完成的检查点
-func GetAllTodoCheckpointsForExam(ctx context.Context, ac, exam, mission uint, containers ...string) (cps []*models.Checkpoint, err error) {
+// GetAllTodoCheckpointsForExam 查找考试中需要完成的检查点
+func GetAllTodoCheckpointsForExam(ctx context.Context, ac, lesson, exam, mission uint, containers ...string) (cps []*models.Checkpoint, err error) {
 	// TODO 支持自定义考试考点
 	// 默认为实验的考点
-	cps, err = models.FindAllTodoMissionCheckpoints(ctx, ac, exam, mission, containers...)
+	cps, err = models.FindAllTodoMissionCheckpoints(ctx, ac, lesson, exam, mission, containers...)
 	return
 }

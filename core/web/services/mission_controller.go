@@ -21,6 +21,7 @@ type MissionController struct {
 	Ac      *models.Account
 	Mission *models.Mission
 	Exam    *models.Exam
+	Lesson  *models.Lesson
 	opts    []mcOpt
 
 	// 容器部署配置
@@ -50,6 +51,15 @@ func (mc *MissionController) SetExam(e *models.Exam) *MissionController {
 		return mc
 	}
 	mc.Exam = e
+	return mc
+}
+
+// SetLesson  设置课程
+func (mc *MissionController) SetLesson(l *models.Lesson) *MissionController {
+	if l == nil || l.ID == 0 {
+		return mc
+	}
+	mc.Lesson = l
 	return mc
 }
 
@@ -94,7 +104,7 @@ func (mc *MissionController) NewDeployment() (err error) {
 
 // ClearAllMission 清除用户正在进行的Deployment
 func (mc *MissionController) ClearAllMission() (err error) {
-	return mc.destroyDeployment(missionLabel, deploymentLabel, examLabel)
+	return mc.destroyDeployment(missionLabel, deploymentLabel, examLabel, lessonLabel)
 }
 
 // DestroyDeployment 删除用户指定的dp
@@ -241,6 +251,9 @@ func (mc *MissionController) generateSelector(other map[string]string) *MissionC
 		}
 		if mc.Exam != nil {
 			l.WithExam(mc.Exam.ID)
+		}
+		if mc.Lesson != nil {
+			l.WithLesson(mc.Lesson.ID)
 		}
 		if mc.Mission != nil && mc.Mission.Deployment != 0 {
 			l.WithDeployment(mc.Mission.Deployment)

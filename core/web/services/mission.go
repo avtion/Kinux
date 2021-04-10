@@ -73,7 +73,8 @@ func ListMissionsV2(c *gin.Context, lessonID uint, page, size int) (res []*Missi
 		return
 	}
 
-	dpStatusMapper, err := GetDeploymentStatusForMission(c, "", NewLabelMarker().WithAccount(ac.ID))
+	dpStatusMapper, err := GetDeploymentStatusForMission(c, "",
+		NewLabelMarker().WithAccount(ac.ID).WithLesson(lesson.ID))
 	if err != nil {
 		return
 	}
@@ -87,7 +88,7 @@ func ListMissionsV2(c *gin.Context, lessonID uint, page, size int) (res []*Missi
 
 		// 查询任务是否已经完成
 		var cps []*models.Checkpoint
-		cps, err = models.FindAllTodoMissionCheckpoints(c, ac.ID, 0, mission.ID)
+		cps, err = models.FindAllTodoMissionCheckpoints(c, ac.ID, lesson.ID, 0, mission.ID)
 		if err != nil {
 			return
 		}
@@ -281,13 +282,18 @@ func missionApply(ws *WebsocketSchedule, any jsoniter.Any) (err error) {
 
 	// 获取任务信息
 	missionRaw := &struct {
-		ID   string `json:"id"`
-		Exam string `json:"exam"`
+		ID     string `json:"id"`
+		Exam   string `json:"exam"`
+		Lesson string `json:"lesson"`
 	}{}
 	any.Get("data").ToVal(missionRaw)
-	if cast.ToInt(missionRaw.ID) == 0 {
-		return errors.New("目标任务为空")
+	if cast.ToInt(missionRaw.Lesson) == 0 {
+		return errors.New("目标课程为空")
 	}
+
+	// 课程ID
+	var lessonID = cast.ToUint(missionRaw.Lesson)
+
 	mission, err := models.GetMission(ws.Context, cast.ToUint(missionRaw.ID))
 	if err != nil {
 		return
@@ -300,10 +306,19 @@ func missionApply(ws *WebsocketSchedule, any jsoniter.Any) (err error) {
 		if err != nil {
 			return
 		}
+		lessonID = exam.Lesson
+	}
+	if lessonID == 0 {
+		return errors.New("目标课程为空")
+	}
+	lesson, err := models.GetLesson(ws.Context, lessonID)
+	if err != nil {
+		return
 	}
 
 	// 初始化
-	mc := NewMissionController(ws).SetAc(ws.Account).SetExam(exam).SetMission(mission)
+	mc := NewMissionController(ws).SetAc(ws.Account).SetLesson(
+		lesson).SetExam(exam).SetMission(mission)
 
 	// 启动监听
 	errCh := mc.WatchDeploymentToReady("")

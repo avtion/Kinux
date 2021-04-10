@@ -12,7 +12,7 @@ import (
 	"strings"
 )
 
-// 获取实验相关的检查点
+// ListMissionCheckpoints 获取实验相关的检查点
 func ListMissionCheckpoints(c *gin.Context) {
 	params := &struct {
 		Page, Size int
@@ -80,7 +80,7 @@ func ListMissionCheckpoints(c *gin.Context) {
 	c.JSON(http.StatusOK, msg.BuildSuccess(res))
 }
 
-// 统计实验相关检查点
+// CountMissionCheckpoints 统计实验相关检查点
 func CountMissionCheckpoints(c *gin.Context) {
 	params := &struct {
 		MissionID  uint
@@ -97,7 +97,7 @@ func CountMissionCheckpoints(c *gin.Context) {
 	c.JSON(http.StatusOK, msg.BuildSuccess(res))
 }
 
-// 获取实验相关检查点已占比例
+// GetMissionCheckpointsPercent 获取实验相关检查点已占比例
 func GetMissionCheckpointsPercent(c *gin.Context) {
 	id := cast.ToUint(c.Param("id"))
 	res, err := models.CountMissionCheckpointPercent(c, id)
@@ -108,7 +108,7 @@ func GetMissionCheckpointsPercent(c *gin.Context) {
 	c.JSON(http.StatusOK, msg.BuildSuccess(res))
 }
 
-// 新增实验检查点
+// AddMissionCheckpoint 新增实验检查点
 func AddMissionCheckpoint(c *gin.Context) {
 	params := &struct {
 		Mission         uint   `json:"mission" binding:"required" `
@@ -137,7 +137,7 @@ func AddMissionCheckpoint(c *gin.Context) {
 	c.JSON(http.StatusOK, msg.BuildSuccess("监测点添加成功"))
 }
 
-// 修改实验检查点
+// EditMissionCheckpoint 修改实验检查点
 func EditMissionCheckpoint(c *gin.Context) {
 	params := &struct {
 		ID              uint   `json:"id"  binding:"required"`
@@ -167,7 +167,7 @@ func EditMissionCheckpoint(c *gin.Context) {
 	c.JSON(http.StatusOK, msg.BuildSuccess("监测点修改成功"))
 }
 
-// 删除实验监测点
+// DeleteMissionCheckpoint 删除实验监测点
 func DeleteMissionCheckpoint(c *gin.Context) {
 	id := cast.ToUint(c.Param("id"))
 	if err := models.DeleteMissionCheckpoint(c, id); err != nil {
@@ -177,6 +177,7 @@ func DeleteMissionCheckpoint(c *gin.Context) {
 	c.JSON(http.StatusOK, msg.BuildSuccess("监测点删除成功"))
 }
 
+// MissionCheckpointWithRaw 实验考点数据
 type MissionCheckpointWithRaw struct {
 	ID              uint   `json:"id"`
 	Mission         uint   `json:"mission"`
@@ -191,7 +192,7 @@ type MissionCheckpointWithRaw struct {
 	CpMethod        uint   `json:"cp_method"`
 }
 
-// 获取实验的检查点
+// GetCheckpoints 获取实验的检查点
 func GetCheckpoints(c *gin.Context) {
 	params := &struct {
 		Exam    uint `json:"exam"`
@@ -254,7 +255,7 @@ func GetCheckpoints(c *gin.Context) {
 	c.JSON(http.StatusOK, msg.BuildSuccess(res))
 }
 
-// 获取需要完成的检查点
+// GetTodoCheckpointIDs 获取需要完成的检查点
 func GetTodoCheckpointIDs(c *gin.Context) {
 	params := &struct {
 		Exam    uint `json:"exam"`
@@ -268,9 +269,19 @@ func GetTodoCheckpointIDs(c *gin.Context) {
 		c.AbortWithStatusJSON(http.StatusOK, msg.BuildFailed(err))
 		return
 	}
+	// 实验
+	var examID uint
+	exam, _err := models.GetExam(c, params.Exam)
+	if _err == nil && exam != nil {
+		examID = exam.ID
+	}
 
 	// 找到需要需要完成的检查点
-	mcp, err := models.FindAllTodoMissionCheckpointsV2(c, ac.ID, params.Exam, params.Mission)
+	mcp, err := models.FindAllTodoMissionCheckpointsV2(c, ac.ID, examID, params.Exam, params.Mission)
+	if err != nil {
+		c.AbortWithStatusJSON(http.StatusOK, msg.BuildFailed(err))
+		return
+	}
 	var res = make([]*MissionCheckpointWithRaw, 0, len(mcp))
 	for _, v := range mcp {
 		res = append(res, &MissionCheckpointWithRaw{

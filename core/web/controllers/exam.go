@@ -514,7 +514,7 @@ func ListExamMissionsForAccount(c *gin.Context) {
 		return
 	}
 	dpStatusMapper, err := services.GetDeploymentStatusForMission(c, "",
-		services.NewLabelMarker().WithAccount(ac.ID).WithExam(params.Exam))
+		services.NewLabelMarker().WithAccount(ac.ID).WithExam(params.Exam).WithLesson(exam.Lesson))
 	if err != nil {
 		return
 	}
@@ -535,7 +535,7 @@ func ListExamMissionsForAccount(c *gin.Context) {
 
 		// 检查是否已经完成对应的任务点
 		var cps []*models.Checkpoint
-		cps, err = services.GetAllTodoCheckpointsForExam(c, ac.ID, v.Exam, v.Mission)
+		cps, err = services.GetAllTodoCheckpointsForExam(c, ac.ID, exam.Lesson, v.Exam, v.Mission)
 		if err != nil {
 			c.AbortWithStatusJSON(http.StatusOK, msg.BuildFailed(err))
 			return

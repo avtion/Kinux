@@ -20,7 +20,7 @@ type Score struct {
 	Container  string `gorm:"not null"`
 }
 
-// 获取用户所有已经完成考点的检查点ID
+// FindAllAccountFinishScoreCpIDs 获取用户所有已经完成考点的检查点ID
 func FindAllAccountFinishScoreCpIDs(ctx context.Context, account, exam, mission uint, containers ...string) (
 	cpIDs []uint, err error) {
 	db := GetGlobalDB().WithContext(ctx).Model(new(Score)).Where(&Score{
@@ -35,11 +35,12 @@ func FindAllAccountFinishScoreCpIDs(ctx context.Context, account, exam, mission 
 	return
 }
 
-// 获取用户所有已经完成考点的成绩点
-func FindAllAccountFinishScores(ctx context.Context, account, exam, mission uint, containers ...string) (
+// FindAllAccountFinishScores 获取用户所有已经完成考点的成绩点
+func FindAllAccountFinishScores(ctx context.Context, account, lesson, exam, mission uint, containers ...string) (
 	score []*Score, err error) {
 	db := GetGlobalDB().WithContext(ctx).Model(new(Score)).Where(&Score{
 		Account: account,
+		Lesson:  lesson,
 		Mission: mission,
 		Exam:    exam,
 	})

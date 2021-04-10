@@ -106,13 +106,13 @@ func missionPtyRegisterV2(ws *WebsocketSchedule, any jsoniter.Any) (err error) {
 	// 挂载考点
 	var cps []*models.Checkpoint
 	if exam.ID == 0 {
-		cps, err = models.FindAllTodoMissionCheckpoints(ws.Context, ws.Account.ID, 0, mission.ID, c.Name)
+		cps, err = models.FindAllTodoMissionCheckpoints(ws.Context, ws.Account.ID, lesson.ID, 0, mission.ID, c.Name)
 		if err != nil {
 			return
 		}
 	} else {
 		// 支持考试的考点加载
-		cps, err = GetAllTodoCheckpointsForExam(ws.Context, ws.Account.ID, exam.ID, missionID, c.Name)
+		cps, err = GetAllTodoCheckpointsForExam(ws.Context, ws.Account.ID, exam.Lesson, exam.ID, missionID, c.Name)
 		// TODO 支持自定义考点加载
 	}
 	if err != nil {

@@ -11,6 +11,7 @@ const (
 	missionLabel    = "mission-id"
 	deploymentLabel = "deployment-id"
 	examLabel       = "exam-id"
+	lessonLabel     = "lesson-id"
 )
 
 // labels标签生成器
@@ -18,7 +19,7 @@ type labelMaker struct {
 	raw labels.Set
 }
 
-// 创建标签生成器
+// NewLabelMarker 创建标签生成器
 func NewLabelMarker(size ...int) *labelMaker {
 	if len(size) > 0 && size[0] > 0 {
 		return &labelMaker{
@@ -30,7 +31,7 @@ func NewLabelMarker(size ...int) *labelMaker {
 	}
 }
 
-// 执行生成方法
+// Do 执行生成方法
 func (l *labelMaker) Do() labels.Set {
 	if l.raw == nil {
 		return labels.Set{}
@@ -38,9 +39,8 @@ func (l *labelMaker) Do() labels.Set {
 	return l.raw
 }
 
-/*
-	方法
-*/
+// 方法
+
 func (l *labelMaker) With(k, v interface{}) *labelMaker {
 	l.raw[cast.ToString(k)] = l.raw[cast.ToString(v)]
 	return l
@@ -65,4 +65,8 @@ func (l *labelMaker) WithDeployment(id interface{}) *labelMaker {
 
 func (l *labelMaker) WithExam(id interface{}) *labelMaker {
 	return l.WithString(examLabel, cast.ToString(id))
+}
+
+func (l *labelMaker) WithLesson(id interface{}) *labelMaker {
+	return l.WithString(lessonLabel, cast.ToString(id))
 }
