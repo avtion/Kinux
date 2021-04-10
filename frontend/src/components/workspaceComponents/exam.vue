@@ -157,6 +157,8 @@ export default {
           return '开始考试'
         case examStatus.ESRunning:
           return '正在考试'
+        case examStatus.ESPassTime:
+          return '不在考试时间内'
       }
     }
 
@@ -170,6 +172,10 @@ export default {
           })
           return
         case examStatus.ESRunning:
+          router.push({
+            name: 'examMissionSelector',
+            params: { exam: item.id },
+          })
           return
         case examStatus.ESNotStart:
           Modal.confirm({
@@ -205,6 +211,12 @@ export default {
                 .catch((err) => {})
             },
             onCancel() {},
+          })
+          return
+        case examStatus.ESPassTime:
+          notification.open({
+            message: '提醒',
+            description: '该场考试未开始或已经结束',
           })
           return
       }
