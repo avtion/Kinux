@@ -7,7 +7,7 @@ import (
 	"net/http"
 )
 
-// Websocket处理器
+// WebSocketHandlerV1 Websocket处理器
 func WebSocketHandlerV1(c *gin.Context) {
 	_, err := services.NewWebsocketSchedule(c)
 	if err != nil {
@@ -16,13 +16,13 @@ func WebSocketHandlerV1(c *gin.Context) {
 	}
 }
 
-// 获取当前活跃状态的会话
+// ListLiveWebsocket 获取当前活跃状态的会话
 func ListLiveWebsocket(c *gin.Context) {
 	res := services.ListScheduleCenterInfo(c)
 	c.JSON(http.StatusOK, msg.BuildSuccess(res))
 }
 
-// 向目标Websocket链接发送消息
+// SendMessageToTargetWs 向目标Websocket链接发送消息
 func SendMessageToTargetWs(c *gin.Context) {
 	params := &struct {
 		TargetID int    `json:"target_id"`
@@ -40,7 +40,7 @@ func SendMessageToTargetWs(c *gin.Context) {
 	c.JSON(http.StatusOK, msg.BuildSuccess("消息发送成功"))
 }
 
-// 强制目标Websocket链接登出
+// ForceTargetLogout 强制目标Websocket链接登出
 func ForceTargetLogout(c *gin.Context) {
 	params := &struct {
 		TargetID int `json:"target_id"`

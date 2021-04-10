@@ -1,4 +1,4 @@
-// Deployment 用于根据用户ID和JobID创建对应的Deployment
+// Package k8s Deployment 用于根据用户ID和JobID创建对应的Deployment
 // 总体流程：根据AccountID检查用户已经有正在使用的Deployment，销毁其他正在工作的Deployment之后根据JobID获取对应的
 // Deployment信息来创建新的Deployment
 package k8s
@@ -20,7 +20,7 @@ type DeploymentOption func(d *appV1.Deployment) (err error)
 // 删除规则：直至Deployment所有资源被释放后才释放Deployment
 var deletePolicy = metaV1.DeletePropagationForeground
 
-// 创建新的Deployment
+// NewDeployment 创建新的Deployment
 func NewDeployment(ctx context.Context, dp *appV1.Deployment, s labels.Set, opts ...DeploymentOption) (err error) {
 	if dp == nil {
 		return errors.New("deployment config is nil")
@@ -107,7 +107,7 @@ func ListDeployments(ctx context.Context, ns string, s labels.Set) (dps *appV1.D
 	return
 }
 
-// 监听Deployment
+// WatchDeploymentsToReady 监听Deployment
 func WatchDeploymentsToReady(ctx context.Context, ns string, s labels.Set, errCh chan<- error) {
 	w, err := clientSet.AppsV1().Deployments(ns).Watch(ctx, metaV1.ListOptions{
 		LabelSelector: s.String(),
