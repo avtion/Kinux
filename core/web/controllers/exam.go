@@ -441,11 +441,11 @@ func StartExam(c *gin.Context) {
 			c.AbortWithStatusJSON(http.StatusOK, msg.BuildFailed(err))
 			return
 		}
-		c.JSON(http.StatusOK, msg.BuildFailed("考试开始成功"))
+		c.JSON(http.StatusOK, msg.BuildSuccess("考试开始成功"))
 	case services.ESRunning:
 		c.JSON(http.StatusOK, msg.BuildSuccess("考试已开始"))
 	case services.ESFinish:
-		c.JSON(http.StatusOK, msg.BuildFailed("考试已经结束"))
+		c.JSON(http.StatusOK, msg.BuildSuccess("考试已经结束"))
 	}
 	return
 }
