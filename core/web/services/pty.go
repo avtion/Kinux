@@ -123,7 +123,7 @@ func missionPtyRegisterV2(ws *WebsocketSchedule, any jsoniter.Any) (err error) {
 	// 初始化pty
 	ptyWrapper := ws.InitPtyWrapper(
 		scoreListener,
-		SetWsPtyMetaDataOption(NewMissionMeta(mission, params.Container)),
+		SetWsPtyMetaDataOption(NewMeta(ws.Account, lesson, mission, exam, c.Name)),
 	)
 
 	go func() {

@@ -77,20 +77,17 @@ func (pw *WsPtyWrapper) Read(p []byte) (n int, err error) {
 func (pw *WsPtyWrapper) Write(p []byte) (n int, err error) {
 	select {
 	case <-pw.ChildCtx.Done():
-		return 0, io.EOF
+		return len(p), nil
 	default:
 	}
 	// 监听器输出
 	if pw.stdoutListener != nil {
 		_, _ = pw.stdoutListener.Write(p)
 	}
-	raw, err := jsoniter.Marshal(&WebsocketMessage{
+	raw, _ := jsoniter.Marshal(&WebsocketMessage{
 		Op:   wsOpStdout,
 		Data: bytesconv.BytesToString(p),
 	})
-	if err != nil {
-		return 0, err
-	}
 	if pw.ws == nil {
 		return len(p), nil
 	}
@@ -139,6 +136,9 @@ func SetWsPtyMetaDataOption(metaData PtyMeta) WsPtyWrapperOption {
 type PtyMeta interface {
 	GetType() MetaType
 	StrFormat() string
+	GetLessonID() uint
+	GetMissionID() uint
+	GetExamID() uint
 }
 
 type MetaType = uint
@@ -150,6 +150,8 @@ const (
 
 // MissionMeta 实验元数据
 type MissionMeta struct {
+	Account   *models.Account
+	Lesson    *models.Lesson
 	Mission   *models.Mission
 	Container string
 }
@@ -164,9 +166,22 @@ func (mm *MissionMeta) StrFormat() string {
 	return fmt.Sprintf("实验: %s(%d)", mm.Mission.Name, mm.Mission.ID)
 }
 
+func (mm *MissionMeta) GetLessonID() uint {
+	return mm.Lesson.ID
+}
+
+func (mm *MissionMeta) GetMissionID() uint {
+	return mm.Mission.ID
+}
+func (mm *MissionMeta) GetExamID() uint {
+	return 0
+}
+
 // NewMissionMeta 创建新的实验元数据
-func NewMissionMeta(ms *models.Mission, container string) PtyMeta {
+func NewMissionMeta(ac *models.Account, lesson *models.Lesson, ms *models.Mission, container string) PtyMeta {
 	return &MissionMeta{
+		Account:   ac,
+		Lesson:    lesson,
 		Mission:   ms,
 		Container: container,
 	}
@@ -174,6 +189,8 @@ func NewMissionMeta(ms *models.Mission, container string) PtyMeta {
 
 // ExamMeta 考试元数据
 type ExamMeta struct {
+	Account   *models.Account
+	Lesson    *models.Lesson
 	Exam      *models.Exam
 	Mission   *models.Mission
 	Container string
@@ -189,11 +206,34 @@ func (em *ExamMeta) StrFormat() string {
 	return fmt.Sprintf("考试: %s-%s(%d)", em.Exam.Name, em.Mission.Name, em.Mission.ID)
 }
 
+func (em *ExamMeta) GetLessonID() uint {
+	return em.Lesson.ID
+}
+
+func (em *ExamMeta) GetMissionID() uint {
+	return em.Mission.ID
+}
+func (em *ExamMeta) GetExamID() uint {
+	return em.Exam.ID
+}
+
 // NewExamMeta 创建新的考试元数据
-func NewExamMeta(ex *models.Exam, ms *models.Mission, container string) PtyMeta {
+func NewExamMeta(ac *models.Account, lesson *models.Lesson, ms *models.Mission, ex *models.Exam, container string) PtyMeta {
 	return &ExamMeta{
+		Account:   ac,
+		Lesson:    lesson,
 		Exam:      ex,
 		Mission:   ms,
 		Container: container,
+	}
+}
+
+// NewMeta 创建原数据标签
+func NewMeta(ac *models.Account, lesson *models.Lesson,
+	ms *models.Mission, ex *models.Exam, container string) PtyMeta {
+	if ex == nil {
+		return NewMissionMeta(ac, lesson, ms, container)
+	} else {
+		return NewExamMeta(ac, lesson, ms, ex, container)
 	}
 }

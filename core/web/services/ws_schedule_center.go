@@ -2,15 +2,19 @@ package services
 
 import (
 	"Kinux/core/web/msg"
+	"Kinux/tools/bytesconv"
 	"context"
 	"errors"
 	jsoniter "github.com/json-iterator/go"
 	"github.com/sirupsen/logrus"
+	"github.com/spf13/cast"
+	"io"
 	"sync"
 )
 
 func init() {
 	RegisterWebsocketOperation(wsOpAttachOtherWsWriter, AttachTargetWs)
+	RegisterWebsocketOperation(wsOpStopAttachOtherWsWriter, StopAttachTargetWs)
 }
 
 /* Websocket调度器中心 */
@@ -47,6 +51,10 @@ type ScheduleCenterListResult struct {
 	CreatedAt   string `json:"created_at"`
 	IsPty       bool   `json:"is_pty"`
 	PtyMetaData string `json:"pty_meta_data"`
+
+	Lesson  uint `json:"lesson"`
+	Mission uint `json:"mission"`
+	Exam    uint `json:"exam"`
 }
 
 // ListScheduleCenterInfo 获取Websocket链接信息
@@ -64,6 +72,25 @@ func ListScheduleCenterInfo(_ context.Context) (res []*ScheduleCenterListResult)
 					return ws.pty.metaData.StrFormat()
 				}
 				return "无终端活动"
+			}(),
+
+			Lesson: func() uint {
+				if ws.pty != nil {
+					return ws.pty.metaData.GetLessonID()
+				}
+				return 0
+			}(),
+			Mission: func() uint {
+				if ws.pty != nil {
+					return ws.pty.metaData.GetMissionID()
+				}
+				return 0
+			}(),
+			Exam: func() uint {
+				if ws.pty != nil {
+					return ws.pty.metaData.GetExamID()
+				}
+				return 0
 			}(),
 		})
 		return true
@@ -85,12 +112,16 @@ func SendMessageToTargetWs(_ context.Context, id int, text string) (err error) {
 func AttachTargetWs(ws *WebsocketSchedule, any jsoniter.Any) (err error) {
 	// 解析数据
 	params := &struct {
-		TargetID int `json:"target_id"`
+		TargetID string `json:"target_id"`
 	}{}
 	any.Get("data").ToVal(params)
+	var target = cast.ToInt(params.TargetID)
+	if target == 0 {
+		return TargetWebsocketNotExistErr
+	}
 
 	// 获取目标Websocket链接
-	_ws, isExist := scheduleCenter.Load(params.TargetID)
+	_ws, isExist := scheduleCenter.Load(target)
 	if !isExist {
 		return TargetWebsocketNotExistErr
 	}
@@ -101,9 +132,27 @@ func AttachTargetWs(ws *WebsocketSchedule, any jsoniter.Any) (err error) {
 	}
 
 	// 初始化Pty装饰器
-	targetWs.pty.stdoutListener = ws.InitPtyWrapper(func(w *WsPtyWrapper) {
+	ws.pty = ws.InitPtyWrapper(func(w *WsPtyWrapper) {
 		w.metaData = targetWs.pty.metaData
 	})
+	if targetWs.pty.stdoutListener != nil {
+		targetWs.pty.stdoutListener = io.MultiWriter(targetWs.pty.stdoutListener, ws.pty)
+	} else {
+		targetWs.pty.stdoutListener = ws.pty
+	}
+	_, _ = ws.pty.Write(bytesconv.StringToBytes("连接成功"))
+	return
+}
+
+// StopAttachTargetWs 侵入目标Websocket链接的终端
+func StopAttachTargetWs(ws *WebsocketSchedule, _ jsoniter.Any) (err error) {
+	if ws.pty == nil {
+		return
+	}
+	// 直接抛弃掉Pty
+	_ = ws.pty.Close()
+	ws.pty.ws = nil
+	ws.pty = nil
 	return
 }
 

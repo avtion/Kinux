@@ -106,10 +106,6 @@ func NewScoreListener(account *models.Account, lesson *models.Lesson, exam *mode
 					continue
 				}
 				delete(callbackMap, line)
-				// 如果没有考点需要监听则直接退出
-				if len(callbackMap) == 0 {
-					return
-				}
 			} else {
 				for k := range callbackMap {
 					diffs := dmp.DiffMain(line, k, false)

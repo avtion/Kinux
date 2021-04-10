@@ -250,6 +250,9 @@ const (
 	wsOpAttachOtherWsWriter // 侵入其他Websocket链接
 	wsOpLeaveExam           // 退出考试
 	wsOpExamRunning         // 考试进行中（用于主动告诉用户正在进行考试）
+
+	// 2021/04/11
+	wsOpStopAttachOtherWsWriter // 停止侵入其他Websocket链接
 )
 
 // WsOperationHandler ws处理函数 - any指向未解析的原数据
