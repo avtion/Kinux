@@ -49,7 +49,6 @@ func v2Router() initFunc {
 		ms := v2WithAuth.Group("/ms")
 		{
 			ms.GET("/", controllers.ListMissionsV2)
-
 		}
 
 	}
