@@ -11,10 +11,10 @@ import (
 	"time"
 )
 
-// 考试监控者 uint -> ExamWatcher
+// ExamWatchers 考试监控者 uint -> ExamWatcher
 var ExamWatchers sync.Map
 
-// 监控实例
+// ExamWatcher 监控实例
 type ExamWatcher struct {
 	ELog           *models.ExamLog
 	ManualFinishCh chan struct{}
@@ -22,7 +22,7 @@ type ExamWatcher struct {
 	StartedAt      time.Time
 }
 
-// 考试监考者
+// NewExamWatcher 考试监考者
 func NewExamWatcher(ctx context.Context, ac, examID uint) (err error) {
 	eWatcher, isExist := ExamWatchers.LoadAndDelete(ac)
 	if isExist {
@@ -158,12 +158,12 @@ func leaveExam(_ context.Context, ac uint) {
 
 	data, _ := jsoniter.Marshal(&WebsocketMessage{
 		Op:   wsOpLeaveExam,
-		Data: "退出考试",
+		Data: "考试结束",
 	})
 	ws.SendData(data)
 }
 
-// 获取考试剩余时间
+// GetLeftTime 获取考试剩余时间
 func GetLeftTime(_ context.Context, ac uint) (res time.Duration, err error) {
 	// 如果
 	_ew, isExist := ExamWatchers.Load(ac)
@@ -174,7 +174,7 @@ func GetLeftTime(_ context.Context, ac uint) (res time.Duration, err error) {
 	return ew.RestTime - time.Now().Sub(ew.StartedAt), nil
 }
 
-// 获取考试的信息
+// GetExamInfo 获取考试的信息
 func GetExamInfo(ctx context.Context, ac uint) (res *models.Exam, err error) {
 	// 如果
 	_ew, isExist := ExamWatchers.Load(ac)
@@ -185,7 +185,7 @@ func GetExamInfo(ctx context.Context, ac uint) (res *models.Exam, err error) {
 	return models.GetExam(ctx, ew.ELog.Exam)
 }
 
-// 实验进行中信息
+// ExamRunningInfo 实验进行中信息
 type ExamRunningInfo struct {
 	Account  uint          `json:"account"`   // 用户ID
 	ExamID   uint          `json:"exam_id"`   // 实验ID
@@ -193,7 +193,7 @@ type ExamRunningInfo struct {
 	LeftTime time.Duration `json:"left_time"` // 剩余时间
 }
 
-// 创建实验进行中信息
+// NewExamRunningInfo 创建实验进行中信息
 func NewExamRunningInfo(ew *ExamWatcher) (res ExamRunningInfo) {
 	exam, _ := models.GetExam(context.Background(), ew.ELog.Exam)
 	res = ExamRunningInfo{
@@ -203,4 +203,24 @@ func NewExamRunningInfo(ew *ExamWatcher) (res ExamRunningInfo) {
 		LeftTime: ew.RestTime - time.Now().Sub(ew.StartedAt),
 	}
 	return
+}
+
+// InitExamWatcher 初始化考试监考者
+func InitExamWatcher(ctx context.Context) {
+	defer logrus.Info("考试监考者初始完毕")
+	// 从数据库查找没有结束时间的考试记录并恢复监考者
+	var eLogs []*models.ExamLog
+	if err := models.GetGlobalDB().WithContext(ctx).Model(new(models.ExamLog)).Where(
+		"end_at = ?", time.Time{}).Find(&eLogs).Error; err != nil {
+		logrus.WithField("err", err).Error("初始化考试监考者失败")
+		return
+	}
+	if len(eLogs) == 0 {
+		return
+	}
+	for _, v := range eLogs {
+		if err := NewExamWatcher(ctx, v.Account, v.Exam); err != nil {
+			logrus.WithField("err", err).Error("初始化考试监考者失败")
+		}
+	}
 }

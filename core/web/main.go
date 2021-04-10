@@ -6,6 +6,7 @@ package web
 
 import (
 	"Kinux/core/web/routers"
+	"Kinux/core/web/services"
 	"Kinux/tools/cfg"
 	"context"
 	"github.com/gin-gonic/gin"
@@ -20,7 +21,7 @@ import (
 // Web服务关闭通道
 var shutDownNotify = make(chan struct{})
 
-// 初始化Web服务
+// InitWebService 初始化Web服务
 func InitWebService() {
 	logrus.Info(cfg.DefaultConfig.Web.Enable)
 	if !cfg.DefaultConfig.Web.Enable {
@@ -32,6 +33,9 @@ func InitWebService() {
 		logrus.Error(err)
 		return
 	}
+
+	// 初始化监考
+	services.InitExamWatcher(context.Background())
 	return
 }
 
