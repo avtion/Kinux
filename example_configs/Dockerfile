@@ -15,6 +15,6 @@ RUN yum -y install nano \
                    python3 \
                    nmap \
                    lsof \
-                   bash-completion \
+                   bash-completion
 
 CMD ["tail", "-f", "/dev/null"]
