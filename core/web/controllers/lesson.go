@@ -318,7 +318,7 @@ func ListDepartmentLesson(c *gin.Context) {
 	var res = make([]*resType, 0, params.Size)
 	if err := models.GetGlobalDB().WithContext(c).Model(new(models.LessonDepartment)).Joins(
 		"left join lessons ON lesson_departments.lesson = lessons.id",
-	).Select("lesson_departments.id as id, lessons.desc as desc, lessons.name as name").Where(
+	).Select("lessons.id as id, lessons.desc as desc, lessons.name as name").Where(
 		"lesson_departments.department = ?", params.Department).Scopes(
 		models.NewPageBuilder(params.Page, params.Size).Build,
 	).Scan(&res).Error; err != nil {
