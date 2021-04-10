@@ -9,7 +9,7 @@
       <!-- 按钮组 -->
       <template #extra>
         <!-- 容器切换 -->
-        <a-dropdown :disabled="containerLoading">
+        <a-dropdown :disabled="containerLoading || resetButtonLoading">
           <template #overlay>
             <a-menu @click="changeContainer">
               <a-menu-item
@@ -46,8 +46,8 @@
       <template #footer>
         <a-tabs defaultActiveKey="ter" @change="tabHandler">
           <a-tab-pane key="ter" tab="实验终端" />
-          <a-tab-pane key="doc" tab="实验文档" />
-          <a-tab-pane key="checkpoint" tab="考点" />
+          <a-tab-pane key="doc" tab="实验文档" :disabled="isExam" />
+          <a-tab-pane key="checkpoint" tab="考点状态" />
         </a-tabs>
       </template>
       <!-- 描述 -->
@@ -82,10 +82,65 @@
       ></v-md-editor>
     </div>
 
-    <div
-      class="w-full h-4/5 mt-2 p-3"
-      v-show="currentTab === 'checkpoint'"
-    ></div>
+    <!-- 考点 -->
+    <div class="w-full h-4/5 mt-2 p-3" v-show="currentTab === 'checkpoint'">
+      <div class="bg-white rounded p-8">
+        <div class="text-right">
+          <a-button type="primary" :loading="isCpsLoading" @click="refreshCps"
+            >更新考点状态</a-button
+          >
+        </div>
+        <a-divider>状态</a-divider>
+        <!-- 折叠面板 -->
+        <a-collapse v-model:activeKey="opened">
+          <a-collapse-panel
+            v-for="(v, k) in cps"
+            :key="k + ''"
+            :header="`容器: ${v.container_name}`"
+            :disabled="true"
+          >
+            <a-list
+              :data-source="v.data"
+              item-layout="vertical"
+              :bordered="true"
+            >
+              <template #renderItem="{ item }">
+                <a-list-item>
+                  <!-- 顶部 -->
+                  <a-list-item-meta :description="`分数占比 ${item.percent}%`">
+                    <template #title>
+                      <a>{{ item.cp_name }}</a>
+                    </template>
+                    <template #avatar>
+                      <a-avatar
+                        :style="{
+                          backgroundColor: item.is_done ? '#10B981' : '#1F2937',
+                        }"
+                        ><template #icon>
+                          <div v-if="item.is_done">
+                            <CheckOutlined class="align-middle" />
+                          </div>
+                          <div v-else>
+                            <LoadingOutlined class="align-middle" />
+                          </div> </template
+                      ></a-avatar>
+                    </template>
+                  </a-list-item-meta>
+                  <!-- 描述 -->
+                  <div v-if="!isExam">
+                    <a-alert
+                      :message="`目标指令: ${item.cp_command}`"
+                    ></a-alert>
+                  </div>
+
+                  <div class="mt-2">{{ item.cp_desc }}</div>
+                </a-list-item>
+              </template>
+            </a-list>
+          </a-collapse-panel>
+        </a-collapse>
+      </div>
+    </div>
   </div>
 </template>
 
@@ -99,6 +154,7 @@ import {
   createVNode,
   watch,
   onUnmounted,
+  computed,
 } from 'vue'
 
 // vue-router
@@ -108,7 +164,7 @@ import { useRouter } from 'vue-router'
 import 'xterm/css/xterm.css'
 import { Terminal, ITheme } from 'xterm'
 import { WebLinksAddon } from 'xterm-addon-web-links'
-import { FitAddon } from 'xterm-addon-fit'
+import { FitAddon, ITerminalDimensions } from 'xterm-addon-fit'
 const defaultTheme: ITheme = {
   background: '#1F2937',
   foreground: '#F3F4F6',
@@ -132,12 +188,15 @@ const defaultTheme: ITheme = {
 }
 
 // antd
-import { Modal, notification } from 'ant-design-vue'
+import { Modal, notification, message } from 'ant-design-vue'
 import {
   ExclamationCircleOutlined,
   WarningOutlined,
   DownOutlined,
   CodeSandboxOutlined,
+  CheckOutlined,
+  LoadingOutlined,
+  SmileOutlined,
 } from '@ant-design/icons-vue'
 
 // websocket
@@ -152,9 +211,21 @@ import App from '@/App.vue'
 import { mission } from '@/apis/mission'
 import { BaseResponse, defaultClient } from '@/apis/request'
 import { useRequest } from 'vue-request'
+import { Checkpoint, missionCheckpointRes } from '@/apis/checkpoint'
+
+// 图标生成
+import Avatars from '@dicebear/avatars'
+import sprites from '@dicebear/avatars-initials-sprites'
 
 export default defineComponent({
-  components: { App, CodeSandboxOutlined, DownOutlined },
+  components: {
+    App,
+    CodeSandboxOutlined,
+    DownOutlined,
+    CheckOutlined,
+    LoadingOutlined,
+    SmileOutlined,
+  },
   name: 'shell',
   props: {
     mission: String,
@@ -168,6 +239,7 @@ export default defineComponent({
     // 路由
     const router = useRouter()
 
+    // 退出实验环境
     const leaveShell = (examID = '') => {
       if (examID !== '') {
         router.push({
@@ -176,7 +248,7 @@ export default defineComponent({
         })
         return
       }
-      router.push({ name: 'workspace' })
+      router.push({ name: 'missionSelector', params: { lesson: props.lesson } })
       return
     }
 
@@ -450,8 +522,59 @@ export default defineComponent({
 
     // 当前tab
     const currentTab = ref<string>('ter')
+    let _size
     const tabHandler = (activeKey) => {
+      // 修复切换面板时导致终端自闭
+      if (activeKey === 'ter') {
+        const size = _size
+        const msg: WebsocketMessage = {
+          op: WebsocketOperation.Resize,
+          data: size,
+        }
+        if (ws.readyState !== WebSocket.OPEN) {
+          ws.waitQueue.push((_ws) => {
+            ws.send(JSON.stringify(msg))
+          })
+        } else {
+          ws.send(JSON.stringify(msg))
+        }
+      } else {
+        _size = fitAddon.proposeDimensions()
+      }
       currentTab.value = activeKey
+    }
+
+    // 获取当前实验的考点
+    const cp = new Checkpoint(
+      Number(props.lesson),
+      Number(props.mission),
+      Number(props.exam)
+    )
+    const { data: cps, run: refreshCps, loading: isCpsLoading } = useRequest(
+      cp.Get,
+      {
+        formatResult: (res) => {
+          message.success('考点状态更新成功')
+          return <missionCheckpointRes[]>res
+        },
+      }
+    )
+    const opened = computed(() => {
+      if (cps.value === undefined) {
+        return <string[]>[]
+      }
+      return cps.value.map((i, index) => {
+        return index + ''
+      })
+    })
+
+    // 序号
+    const numberCreator = new Avatars(sprites, {
+      dataUri: true,
+      background: '#1D4ED8',
+    })
+    const numberCreatorFn = (str: any): string => {
+      return numberCreator.create(str + '')
     }
 
     return {
@@ -482,6 +605,13 @@ export default defineComponent({
 
       // 容器是否在加载
       containerLoading,
+
+      // 考点
+      cps,
+      refreshCps,
+      isCpsLoading,
+      opened,
+      numberCreatorFn,
     }
   },
 })
