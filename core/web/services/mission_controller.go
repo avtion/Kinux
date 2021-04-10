@@ -251,6 +251,8 @@ func (mc *MissionController) generateSelector(other map[string]string) *MissionC
 		}
 		if mc.Exam != nil {
 			l.WithExam(mc.Exam.ID)
+		} else {
+			l.WithExam(0)
 		}
 		if mc.Lesson != nil {
 			l.WithLesson(mc.Lesson.ID)

@@ -74,7 +74,7 @@ func ListMissionsV2(c *gin.Context, lessonID uint, page, size int) (res []*Missi
 	}
 
 	dpStatusMapper, err := GetDeploymentStatusForMission(c, "",
-		NewLabelMarker().WithAccount(ac.ID).WithLesson(lesson.ID))
+		NewLabelMarker().WithAccount(ac.ID).WithLesson(lesson.ID).WithExam(0))
 	if err != nil {
 		return
 	}
@@ -287,9 +287,6 @@ func missionApply(ws *WebsocketSchedule, any jsoniter.Any) (err error) {
 		Lesson string `json:"lesson"`
 	}{}
 	any.Get("data").ToVal(missionRaw)
-	if cast.ToInt(missionRaw.Lesson) == 0 {
-		return errors.New("目标课程为空")
-	}
 
 	// 课程ID
 	var lessonID = cast.ToUint(missionRaw.Lesson)
@@ -331,6 +328,9 @@ func missionApply(ws *WebsocketSchedule, any jsoniter.Any) (err error) {
 	if err = <-errCh; err != nil {
 		return
 	}
+
+	// 防止K8S通知太快导致容器未完成部署
+	<-time.After(1 * time.Second)
 	data, err := jsoniter.Marshal(&WebsocketMessage{
 		Op:   wsOpContainersDone,
 		Data: nil,
