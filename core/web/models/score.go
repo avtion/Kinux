@@ -9,7 +9,7 @@ func init() {
 	migrateQueue = append(migrateQueue, new(Score))
 }
 
-// 检查点成绩
+// Score 检查点成绩
 type Score struct {
 	gorm.Model
 	Account    uint   `gorm:"not null;uniqueIndex:score_unique_index"`
@@ -17,7 +17,7 @@ type Score struct {
 	Exam       uint   `gorm:"not null;uniqueIndex:score_unique_index"`
 	Mission    uint   `gorm:"not null;uniqueIndex:score_unique_index"`
 	Checkpoint uint   `gorm:"not null;uniqueIndex:score_unique_index"`
-	Container  string `gorm:"not null"`
+	Container  string `gorm:"not null;uniqueIndex:score_unique_index"`
 }
 
 // FindAllAccountFinishScoreCpIDs 获取用户所有已经完成考点的检查点ID

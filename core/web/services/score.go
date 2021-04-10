@@ -9,7 +9,7 @@ import (
 	"gorm.io/gorm"
 )
 
-// 成绩监听器
+// NewScoreListener 成绩监听器
 func NewScoreListener(account *models.Account, lesson *models.Lesson, exam *models.Exam, mc *models.Mission,
 	container string, cps ...*models.Checkpoint) (opt WsPtyWrapperOption) {
 	// 校验参数
@@ -43,10 +43,7 @@ func NewScoreListener(account *models.Account, lesson *models.Lesson, exam *mode
 	// 回调函数
 	newCallbackFn := func(cp *models.Checkpoint) func(w *WsPtyWrapper) (err error) {
 		return func(w *WsPtyWrapper) (err error) {
-			if err = w.ws.SendMsg(msg.BuildSuccess(fmt.Sprintf("考点已完成: %s", cp.Name))); err != nil {
-				return
-			}
-			return models.GetGlobalDB().WithContext(w.ChildCtx).Create(&models.Score{
+			if err = models.GetGlobalDB().WithContext(w.ChildCtx).Create(&models.Score{
 				Model:      gorm.Model{},
 				Account:    account.ID,
 				Lesson:     lesson.ID,
@@ -54,7 +51,11 @@ func NewScoreListener(account *models.Account, lesson *models.Lesson, exam *mode
 				Mission:    mc.ID,
 				Checkpoint: cp.ID,
 				Container:  container,
-			}).Error
+			}).Error; err != nil {
+				_ = w.ws.SendMsg(msg.BuildFailed(fmt.Sprintf("考点检验失败: %s", err)))
+				return
+			}
+			return w.ws.SendMsg(msg.BuildSuccess(fmt.Sprintf("考点已完成: %s", cp.Name)))
 		}
 	}
 
