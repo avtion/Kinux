@@ -280,7 +280,7 @@ const checkpointsOptionsAPI = (params?: string) => {
 
 const containersOptionsAPI = (params: number) => {
   return defaultClient.get<BaseResponse>(
-    paths.deployment.listContainers + params + '/'
+    paths.ms.listContainersNames + params + '/'
   )
 }
 
