@@ -95,6 +95,11 @@ export enum WebsocketOperation {
   ShutdownPty, // 关闭终端链接（即向终端发送 EndOfTransmission）
   ResetContainers, // 重置容器
   ContainersDone, // 容器重置成功
+
+  // 2021/03/30
+  AttachOtherWsWriter, // 侵入其他Websocket链接
+  LeaveExam, // 退出考试
+  ExamRunning, // 考试进行中（用于主动告诉用户正在进行考试）
 }
 
 // 后端消息处理器，用于处理接收的数据
