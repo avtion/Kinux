@@ -13,7 +13,7 @@ import (
 	"time"
 )
 
-// list
+// ListExams list
 func ListExams(c *gin.Context) {
 	params := &struct {
 		Page, Size int
@@ -70,7 +70,7 @@ func ListExams(c *gin.Context) {
 	c.JSON(http.StatusOK, msg.BuildSuccess(res))
 }
 
-// count
+// CountExams count
 func CountExams(c *gin.Context) {
 	params := &struct {
 		Lesson uint
@@ -87,7 +87,7 @@ func CountExams(c *gin.Context) {
 	c.JSON(http.StatusOK, msg.BuildSuccess(res))
 }
 
-// delete
+// DeleteExam delete
 func DeleteExam(c *gin.Context) {
 	id := cast.ToUint(c.Param("id"))
 	if err := models.DeleteExam(c, id); err != nil {
@@ -97,7 +97,7 @@ func DeleteExam(c *gin.Context) {
 	c.JSON(http.StatusOK, msg.BuildSuccess("实验删除成功"))
 }
 
-// add
+// AddExam add
 func AddExam(c *gin.Context) {
 	params := &struct {
 		Name       string `json:"name" binding:"required"`
@@ -128,7 +128,7 @@ func AddExam(c *gin.Context) {
 	}
 }
 
-// edit
+// EditExam edit
 func EditExam(c *gin.Context) {
 	params := &struct {
 		ID         uint   `json:"id" binding:"required"`
@@ -161,7 +161,7 @@ func EditExam(c *gin.Context) {
 	}
 }
 
-// list
+// ListExamMissions list
 func ListExamMissions(c *gin.Context) {
 	params := &struct {
 		Page, Size int
@@ -211,7 +211,7 @@ func ListExamMissions(c *gin.Context) {
 	c.JSON(http.StatusOK, msg.BuildSuccess(res))
 }
 
-// count
+// CountExamMissions count
 func CountExamMissions(c *gin.Context) {
 	params := &struct {
 		Exam    uint
@@ -228,7 +228,7 @@ func CountExamMissions(c *gin.Context) {
 	c.JSON(http.StatusOK, msg.BuildSuccess(res))
 }
 
-// delete
+// DeleteExamMission delete
 func DeleteExamMission(c *gin.Context) {
 	if err := models.DeleteExamMission(c, cast.ToUint(c.Param("id"))); err != nil {
 		c.AbortWithStatusJSON(http.StatusOK, msg.BuildFailed(err))
@@ -237,7 +237,7 @@ func DeleteExamMission(c *gin.Context) {
 	c.JSON(http.StatusOK, msg.BuildSuccess("考试实验删除成功"))
 }
 
-// add
+// AddExamMission add
 func AddExamMission(c *gin.Context) {
 	params := &struct {
 		Exam     uint `json:"exam" binding:"required"`
@@ -264,7 +264,7 @@ func AddExamMission(c *gin.Context) {
 	c.JSON(http.StatusOK, msg.BuildSuccess("创建成功"))
 }
 
-// edit
+// EditExamMission edit
 func EditExamMission(c *gin.Context) {
 	params := &struct {
 		ID       uint `json:"id" binding:"required"`
@@ -290,7 +290,7 @@ func EditExamMission(c *gin.Context) {
 	c.JSON(http.StatusOK, msg.BuildSuccess("修改成功"))
 }
 
-// 获取考试实验已经使用的比例
+// GetExamMissionUsedPercent 获取考试实验已经使用的比例
 func GetExamMissionUsedPercent(c *gin.Context) {
 	res, err := models.GetExamMissionsUsedPercent(c, cast.ToUint(c.Param("id")))
 	if err != nil {
@@ -300,7 +300,7 @@ func GetExamMissionUsedPercent(c *gin.Context) {
 	c.JSON(http.StatusOK, msg.BuildSuccess(res))
 }
 
-// 根据班级获取对应的考试
+// ListExamByDepartment 根据班级获取对应的考试
 func ListExamByDepartment(c *gin.Context) {
 	params := &struct {
 		Dp uint
@@ -396,7 +396,7 @@ func ListExamByDepartment(c *gin.Context) {
 	c.JSON(http.StatusOK, msg.BuildSuccess(res))
 }
 
-// 确定考试状态（用户在开始考试之前先检查全局考试状态）
+// CheckinExamStatus 确定考试状态（用户在开始考试之前先检查全局考试状态）
 func CheckinExamStatus(c *gin.Context) {
 	// 检查用户是否处于考试状态
 	ac, err := services.GetAccountFromCtx(c)
@@ -414,7 +414,7 @@ func CheckinExamStatus(c *gin.Context) {
 	c.JSON(http.StatusOK, msg.BuildSuccess(nil))
 }
 
-// 开始考试
+// StartExam 开始考试
 func StartExam(c *gin.Context) {
 	params := &struct {
 		ExamID uint
@@ -450,7 +450,7 @@ func StartExam(c *gin.Context) {
 	return
 }
 
-// 用户获取考试实验
+// ListExamMissionsForAccount 用户获取考试实验
 func ListExamMissionsForAccount(c *gin.Context) {
 	params := &struct {
 		Exam uint
