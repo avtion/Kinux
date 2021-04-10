@@ -5,12 +5,14 @@ export enum examStatus {
   ESNotStart = 1, // 未开始
   ESRunning, // 正在进行
   ESFinish, // 考试结束
+  ESPassTime, // 考试未开始或已经结束
 }
 
 // API接口
 const apiPath = {
   list: '/v1/exam/dp/',
   check: '/v1/exam/check/',
+  start: '/v1/exam/start/',
 }
 
 // 考试进行时
@@ -38,7 +40,20 @@ export class exam {
   }
 
   // 开始实验
-  startExam(): Promise<void> {
-    return new Promise((resolve, reject) => {})
+  startExam(examID: number) {
+    return new Promise((resolve, reject) => {
+      defaultClient
+        .get(apiPath.start, {
+          params: {
+            exam: examID,
+          },
+        })
+        .then((res) => {
+          resolve(res)
+        })
+        .catch((err) => {
+          reject(err)
+        })
+    })
   }
 }
