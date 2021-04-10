@@ -169,9 +169,12 @@ func GetExamStatus(ctx context.Context, ac uint, exam uint) (res ExamStatus) {
 			return ESRunning
 		}
 	}
-	eLog := new(models.ExamLog)
+	eLog := &models.ExamLog{
+		Account: ac,
+		Exam:    exam,
+	}
 	if err := models.GetGlobalDB().WithContext(ctx).Where(
-		"account = ? AND examID = ?", eLog.Account, eLog.Exam).First(eLog).Error; err != nil {
+		"account = ? AND exam = ?", eLog.Account, eLog.Exam).First(eLog).Error; err != nil {
 		return ESNotStart
 	}
 	if eLog.EndAt.IsZero() {
