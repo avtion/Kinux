@@ -61,6 +61,7 @@ import {
 // vue-request
 import { useRequest } from 'vue-request'
 import { BaseResponse, defaultClient } from '@/apis/request'
+import { exam } from '@/apis/exam'
 
 export default {
   setup(props, ctx) {
@@ -167,6 +168,11 @@ export default {
     const descCreator = (item: examMission): string => {
       return `> 成绩占比: ${item.percent}%`
     }
+
+    // 启动实验
+    new exam().startExam(examID).then((res) => {
+      console.log(res)
+    })
 
     return {
       MissionHandler,
