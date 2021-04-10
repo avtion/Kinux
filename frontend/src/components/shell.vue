@@ -228,9 +228,18 @@ export default defineComponent({
   },
   name: 'shell',
   props: {
-    mission: String,
-    exam: String,
-    lesson: String,
+    mission: {
+      type: String,
+      default: '',
+    },
+    exam: {
+      type: String,
+      default: '',
+    },
+    lesson: {
+      type: String,
+      default: '',
+    },
   },
   setup(props, ctx) {
     // 从上下文中获取对象
@@ -538,8 +547,11 @@ export default defineComponent({
         } else {
           ws.send(JSON.stringify(msg))
         }
+        _size = {}
       } else {
-        _size = fitAddon.proposeDimensions()
+        if (_size === undefined || _size == {}) {
+          _size = fitAddon.proposeDimensions()
+        }
       }
       currentTab.value = activeKey
     }
