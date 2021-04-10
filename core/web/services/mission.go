@@ -234,25 +234,30 @@ func missionResetRegister(ws *WebsocketSchedule, any jsoniter.Any) (err error) {
 		return
 	}
 
-	ctx, cancel := context.WithTimeout(ws.Context, 5*time.Minute)
-	defer cancel()
-
-	mc := NewMissionController(ctx).SetAc(ws.Account).SetMission(mission)
-
-	// 启动监听
-	errCh := mc.WatchDeploymentToReady("")
-
-	// 删除所有的可用POD
-	if err = mc.ResetMission(""); err != nil {
-		return
-	}
-
-	// 等待dp状态更新
-	if err = <-errCh; err != nil {
-		return
-	}
-
+	// 使用协程处理重置终端操作避免websocket连接发生阻塞
 	go func() {
+		ctx, cancel := context.WithTimeout(ws.Context, 2*time.Minute)
+		defer cancel()
+
+		mc := NewMissionController(ctx).SetAc(ws.Account).SetMission(mission)
+
+		// 启动监听
+		errCh := mc.WatchDeploymentToReady("")
+
+		// 删除所有的可用POD
+		if err = mc.ResetMission(""); err != nil {
+			return
+		}
+		select {
+		case _err := <-errCh:
+			if _err != nil {
+				logrus.WithField("重置容器失败", _err)
+				return
+			}
+		case <-ctx.Done():
+			logrus.WithField("重置容器超时", ctx.Err())
+			return
+		}
 		// 这里让程序等1秒避免容器没准备好
 		<-time.After(1 * time.Second)
 		data, err := jsoniter.Marshal(&WebsocketMessage{
