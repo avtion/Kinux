@@ -190,6 +190,7 @@ type MissionCheckpointWithRaw struct {
 	CpDesc          string `json:"cp_desc"`
 	CpCommand       string `json:"cp_command"`
 	CpMethod        uint   `json:"cp_method"`
+	IsDone          bool   `json:"is_done"`
 }
 
 // GetCheckpoints 获取实验的检查点
@@ -197,10 +198,18 @@ func GetCheckpoints(c *gin.Context) {
 	params := &struct {
 		Exam    uint `json:"exam"`
 		Mission uint `json:"mission"`
+		Lesson  uint `json:"lesson"`
 	}{
 		Exam:    cast.ToUint(c.DefaultQuery("exam", "0")),
 		Mission: cast.ToUint(c.DefaultQuery("mission", "0")),
+		Lesson:  cast.ToUint(c.DefaultQuery("lesson", "0")),
 	}
+	ac, err := services.GetAccountFromCtx(c)
+	if err != nil {
+		c.AbortWithStatusJSON(http.StatusOK, msg.BuildFailed(err))
+		return
+	}
+
 	// TODO 支持考试自定义考点查询
 	// 首先获取全部的检查点
 	mcs, err := models.FindAllMissionCheckpoints(c, params.Mission)
@@ -224,14 +233,45 @@ func GetCheckpoints(c *gin.Context) {
 		cpsMapping[cps[k].ID] = cps[k]
 	}
 
+	// 找到需要需要完成的检查点
+	mcp, err := models.FindAllTodoMissionCheckpointsV2(c, ac.ID, params.Lesson, params.Exam, params.Mission)
+	if err != nil {
+		c.AbortWithStatusJSON(http.StatusOK, msg.BuildFailed(err))
+		return
+	}
+	// map[容器名]map[检查点ID]struct{}
+	var mcpMapping = make(map[string]map[uint]struct{})
+	for _, v := range mcp {
+		if _, isExist := mcpMapping[v.TargetContainer]; !isExist {
+			mcpMapping[v.TargetContainer] = make(map[uint]struct{})
+		}
+		mcpMapping[v.TargetContainer][v.ID] = struct{}{}
+	}
+
 	// 结果
-	var res = make([]*MissionCheckpointWithRaw, 0, len(mcs))
+	type resType struct {
+		ContainerName string                      `json:"container_name"`
+		Data          []*MissionCheckpointWithRaw `json:"data"`
+	}
+	var res = make([]*resType, 0)
+	var resMapping = make(map[string]*resType, 0)
 	for _, v := range mcs {
 		cp, isExist := cpsMapping[v.CheckPoint]
 		if !isExist {
 			continue
 		}
-		res = append(res, &MissionCheckpointWithRaw{
+		var _res *resType
+		_res, isExist = resMapping[v.TargetContainer]
+		if !isExist {
+			_res = &resType{
+				ContainerName: v.TargetContainer,
+				Data:          make([]*MissionCheckpointWithRaw, 0),
+			}
+			res = append(res, _res)
+			resMapping[v.TargetContainer] = _res
+		}
+
+		_res.Data = append(_res.Data, &MissionCheckpointWithRaw{
 			ID:              v.ID,
 			Mission:         v.Mission,
 			CheckPoint:      v.CheckPoint,
@@ -250,54 +290,16 @@ func GetCheckpoints(c *gin.Context) {
 				}
 			}(),
 			CpMethod: cp.Method,
+			// TODO 应该反着过来查询
+			IsDone: func() bool {
+				if _, isExist := mcpMapping[v.TargetContainer]; isExist {
+					if _, isExist := mcpMapping[v.TargetContainer][v.ID]; isExist {
+						return false
+					}
+				}
+				return true
+			}(),
 		})
 	}
-	c.JSON(http.StatusOK, msg.BuildSuccess(res))
-}
-
-// GetTodoCheckpointIDs 获取需要完成的检查点
-func GetTodoCheckpointIDs(c *gin.Context) {
-	params := &struct {
-		Exam    uint `json:"exam"`
-		Mission uint `json:"mission"`
-	}{
-		Exam:    cast.ToUint(c.DefaultQuery("exam", "0")),
-		Mission: cast.ToUint(c.DefaultQuery("mission", "0")),
-	}
-	ac, err := services.GetAccountFromCtx(c)
-	if err != nil {
-		c.AbortWithStatusJSON(http.StatusOK, msg.BuildFailed(err))
-		return
-	}
-	// 实验
-	var examID uint
-	exam, _err := models.GetExam(c, params.Exam)
-	if _err == nil && exam != nil {
-		examID = exam.ID
-	}
-
-	// 找到需要需要完成的检查点
-	mcp, err := models.FindAllTodoMissionCheckpointsV2(c, ac.ID, examID, params.Exam, params.Mission)
-	if err != nil {
-		c.AbortWithStatusJSON(http.StatusOK, msg.BuildFailed(err))
-		return
-	}
-	var res = make([]*MissionCheckpointWithRaw, 0, len(mcp))
-	for _, v := range mcp {
-		res = append(res, &MissionCheckpointWithRaw{
-			ID:              v.ID,
-			Mission:         v.Mission,
-			CheckPoint:      v.CheckPoint,
-			Percent:         v.Percent,
-			Priority:        v.Priority,
-			TargetContainer: v.TargetContainer,
-			CheckpointID:    v.CheckPoint,
-			CpName:          "",
-			CpDesc:          "",
-			CpCommand:       "",
-			CpMethod:        0,
-		})
-	}
-
 	c.JSON(http.StatusOK, msg.BuildSuccess(res))
 }
