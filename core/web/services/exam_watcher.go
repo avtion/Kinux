@@ -39,12 +39,12 @@ func NewExamWatcher(ctx context.Context, ac, examID uint) (err error) {
 		EndAt:   time.Time{},
 	}
 	_err := models.GetGlobalDB().WithContext(ctx).Where(
-		"account = ? AND examID = ?", eLog.Account, eLog.Exam).First(eLog).Error
+		"account = ? AND exam = ?", eLog.Account, eLog.Exam).First(eLog).Error
 	if errors.Is(_err, gorm.ErrRecordNotFound) {
 		if err = models.GetGlobalDB().WithContext(ctx).Create(eLog).Error; err != nil {
 			logrus.WithFields(logrus.Fields{
-				"ac":     ac,
-				"examID": examID,
+				"ac":   ac,
+				"exam": examID,
 			}).Error(err)
 			return
 		}
@@ -91,26 +91,33 @@ func NewExamWatcher(ctx context.Context, ac, examID uint) (err error) {
 
 		ctx = context.Background()
 		finishT := time.NewTimer(ew.RestTime)
-		tickerT := time.NewTicker(5 * time.Minute)
+		tickerT := time.NewTicker(1 * time.Minute)
 		defer func() {
 			finishT.Stop()
 			tickerT.Stop()
 		}()
 
+		// 检查用户Websocket是否在线并主动发送时间校验信息
+		var sendExamInfoToAccountFn = func() {
+			_ws, _isExist := scheduleCenter.Load(int(ac))
+			if _isExist {
+				ws := _ws.(*WebsocketSchedule)
+				raw, __err := jsoniter.Marshal(&WebsocketMessage{
+					Op:   wsOpExamRunning,
+					Data: NewExamRunningInfo(ew),
+				})
+				if __err == nil {
+					ws.SendData(raw)
+				}
+			}
+		}
+		sendExamInfoToAccountFn()
+
 		for {
 			select {
 			case <-tickerT.C:
 				// 检查用户Websocket是否在线并主动发送时间校验信息
-				if _ws, isExist := scheduleCenter.Load(ac); isExist {
-					ws := _ws.(*WebsocketSchedule)
-					raw, _err := jsoniter.Marshal(&WebsocketMessage{
-						Op:   wsOpExamRunning,
-						Data: NewExamRunningInfo(ew),
-					})
-					if _err == nil {
-						ws.SendData(raw)
-					}
-				}
+				sendExamInfoToAccountFn()
 
 				// 定时脉冲用于记录TickAt
 				if _err := models.GetGlobalDB().WithContext(ctx).Model(eLog).Update(
@@ -150,7 +157,7 @@ func finishExam(ctx context.Context, eLogID uint) {
 
 // 退出考试
 func leaveExam(_ context.Context, ac uint) {
-	_ws, isExist := scheduleCenter.Load(ac)
+	_ws, isExist := scheduleCenter.Load(int(ac))
 	if !isExist {
 		return
 	}
@@ -196,11 +203,12 @@ type ExamRunningInfo struct {
 // NewExamRunningInfo 创建实验进行中信息
 func NewExamRunningInfo(ew *ExamWatcher) (res ExamRunningInfo) {
 	exam, _ := models.GetExam(context.Background(), ew.ELog.Exam)
+	leftTime := ew.RestTime - time.Now().Sub(ew.StartedAt)
 	res = ExamRunningInfo{
 		Account:  ew.ELog.Account,
 		ExamID:   exam.ID,
 		ExamName: exam.Name,
-		LeftTime: ew.RestTime - time.Now().Sub(ew.StartedAt),
+		LeftTime: leftTime,
 	}
 	return
 }
