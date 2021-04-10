@@ -128,6 +128,7 @@ function messageHandler(this: WebSocketConn, ev: MessageEvent): any {
     case WebsocketOperation.RequireAuth:
       store.commit('ClearJWT')
       routers.push('/')
+      this.close()
       break
 
     // 刷新JWT密钥
