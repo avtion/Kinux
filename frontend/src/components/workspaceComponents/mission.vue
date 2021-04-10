@@ -147,6 +147,7 @@ export default {
         op: WebsocketOperation.MissionApply,
         data: {
           id: missionID,
+          lesson: lessonID + '',
         },
       }
       const fn = (ws: WebSocketConn) => {
