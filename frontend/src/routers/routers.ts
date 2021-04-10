@@ -22,6 +22,8 @@ import MissionSelector from '@/components/workspaceComponents/mission.vue'
 import ExamSelector from '@/components/workspaceComponents/exam.vue'
 import ExamMissionSelector from '@/components/workspaceComponents/examMission.vue'
 
+import shellWatcherComponents from '@/components/shellWatcher.vue' // 终端监控
+
 const workspaceChild = [
   {
     path: '/dashboard/lesson',
@@ -121,6 +123,12 @@ const routes = [
         path: 'admin/lesson',
         name: 'lessonManager',
         component: lessonManagerComponents,
+        props: true,
+      },
+      {
+        path: 'admin/watcher',
+        name: 'shellWatcher',
+        component: shellWatcherComponents,
         props: true,
       },
     ],

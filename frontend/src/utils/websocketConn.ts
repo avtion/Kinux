@@ -102,10 +102,11 @@ export enum WebsocketOperation {
   ResetContainers, // 重置容器
   ContainersDone, // 容器重置成功
 
-  // 2021/03/30
+  // 2021/04/11
   AttachOtherWsWriter, // 侵入其他Websocket链接
   LeaveExam, // 退出考试
   ExamRunning, // 考试进行中（用于主动告诉用户正在进行考试）
+  StopAttachOtherWsWriter, // 停止侵入其他Websocket链接
 }
 
 const examInfoKey = '__examTips'

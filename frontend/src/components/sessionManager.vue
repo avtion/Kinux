@@ -18,6 +18,9 @@
                 username: '',
                 created_at: '',
                 is_pty: false,
+                lesson: 0,
+                mission: 0,
+                exam: 0,
                 pty_meta_data: '',
               })
             "
@@ -48,7 +51,10 @@
           <!-- 编辑框 -->
           <template #operation="{ record }">
             <a-button-group size="small">
-              <a-button type="primary" :disabled="!record.is_pty"
+              <a-button
+                type="primary"
+                :disabled="!record.is_pty"
+                @click="gotoWatcher(record)"
                 >终端监控</a-button
               >
               <a-button type="primary" @click="openSendMsgModal(record)"
@@ -156,6 +162,10 @@ type ListResult = {
   created_at: string
   is_pty: boolean
   pty_meta_data: string
+
+  lesson: number
+  mission: number
+  exam: number
 }
 
 type ListResults = ListResult[]
@@ -192,6 +202,7 @@ export default defineComponent({
     } = useRequest(listDataAPI, {
       defaultParams: [<ListParams>{}],
       formatResult: (res): ListResults => {
+        console.log(res)
         return res.data.Data
       },
     })
@@ -229,6 +240,19 @@ export default defineComponent({
       manual: true,
     })
 
+    // 前往监控
+    const gotoWatcher = (item: ListResult) => {
+      routers.push({
+        name: 'shellWatcher',
+        params: {
+          mission: item.mission + '',
+          exam: item.exam + '',
+          lesson: item.lesson + '',
+          target: Number(item.id),
+        },
+      })
+    }
+
     // 当前管理界面的管理类型
     return {
       listData,
@@ -245,6 +269,9 @@ export default defineComponent({
 
       // 获取当前链接信息
       getListData,
+
+      // 跳转至监控
+      gotoWatcher,
     }
   },
 })
