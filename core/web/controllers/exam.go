@@ -389,7 +389,13 @@ func ListExamByDepartment(c *gin.Context) {
 			LessonName:    l.Name,
 			LessonDesc:    l.Desc,
 
-			ExamStatus: services.GetExamStatus(c, ac.ID, v.ID),
+			ExamStatus: func() services.ExamStatus {
+				now := time.Now()
+				if now.Before(v.BeginAt) || now.After(v.EndAt) {
+					return services.ESPassTime
+				}
+				return services.GetExamStatus(c, ac.ID, v.ID)
+			}(),
 		})
 	}
 

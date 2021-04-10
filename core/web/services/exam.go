@@ -158,6 +158,7 @@ const (
 	ESNotStart            // 考试未开始
 	ESRunning             // 正在考试
 	ESFinish              // 考试已经结束
+	ESPassTime            // 未开始或过时
 )
 
 // GetExamStatus 获取考试的状态
