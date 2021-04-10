@@ -91,6 +91,9 @@ func (pw *WsPtyWrapper) Write(p []byte) (n int, err error) {
 	if err != nil {
 		return 0, err
 	}
+	if pw.ws == nil {
+		return len(p), nil
+	}
 
 	pw.ws.SendData(raw)
 	return len(p), nil
