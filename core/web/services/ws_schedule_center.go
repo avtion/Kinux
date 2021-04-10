@@ -5,6 +5,7 @@ import (
 	"context"
 	"errors"
 	jsoniter "github.com/json-iterator/go"
+	"github.com/sirupsen/logrus"
 	"sync"
 )
 
@@ -115,4 +116,17 @@ func ForceTargetLogout(_ context.Context, id int) (err error) {
 	ws, _ := _ws.(*WebsocketSchedule)
 	ws.RequireClientAuth()
 	return
+}
+
+// BroadcastMessage 广播消息
+func BroadcastMessage(_ context.Context, text string) (err error) {
+	var _res = msg.BuildSuccess(text)
+	scheduleCenter.Range(func(key, value interface{}) bool {
+		ws, _ := value.(*WebsocketSchedule)
+		if err := ws.SendMsg(_res); err != nil {
+			logrus.WithField("err", err).Error("广播消息失败")
+		}
+		return true
+	})
+	return nil
 }

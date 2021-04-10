@@ -32,7 +32,12 @@ func SendMessageToTargetWs(c *gin.Context) {
 		c.AbortWithStatusJSON(http.StatusOK, msg.BuildFailed(err))
 		return
 	}
-	err := services.SendMessageToTargetWs(c, params.TargetID, params.Text)
+	var err error
+	if params.TargetID == 0 {
+		err = services.BroadcastMessage(c, params.Text)
+	} else {
+		err = services.SendMessageToTargetWs(c, params.TargetID, params.Text)
+	}
 	if err != nil {
 		c.AbortWithStatusJSON(http.StatusOK, msg.BuildFailed(err))
 		return
