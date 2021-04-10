@@ -4,6 +4,7 @@ import { notification } from 'ant-design-vue'
 import { store } from '@/store/store'
 import routers from '@/routers/routers'
 import { Token } from '@api/user'
+import { examRunningInfo } from '@api/exam'
 
 // 后端默认路由
 export const DefaultBackendWebsocketRoute = 'ws://127.0.0.1:9001/v1/ws/'
@@ -139,6 +140,15 @@ function messageHandler(this: WebSocketConn, ev: MessageEvent): any {
     // 刷新JWT密钥
     case WebsocketOperation.RefreshToken:
       new Token(msg.data['token'], msg.data['ttl']).UpdateToken()
+      break
+
+    // 退出考试
+    case WebsocketOperation.LeaveExam:
+      break
+
+    // 考试进行中
+    case WebsocketOperation.ExamRunning:
+      console.log(<examRunningInfo>msg.data)
       break
 
     default:

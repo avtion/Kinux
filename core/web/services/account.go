@@ -25,7 +25,7 @@ func init() {
 	RegisterWebsocketOperation(wsOpAuth, JWTRegister)
 }
 
-// 登陆账号
+// LoginAccount 登陆账号
 func LoginAccount(c *gin.Context, username, password string) (ac *models.Account, err error) {
 	ac = &models.Account{Username: username}
 	if err = ac.Verify(c, password); err != nil {
@@ -42,7 +42,7 @@ func LoginAccount(c *gin.Context, username, password string) (ac *models.Account
 	return
 }
 
-// 从上下文中获取用户账户
+// GetAccountFromCtx 从上下文中获取用户账户
 func GetAccountFromCtx(c *gin.Context) (ac *models.Account, err error) {
 	_u, isExist := c.Get(middlewares.TokenIdentityKey)
 	if !isExist {
@@ -58,7 +58,7 @@ func GetAccountFromCtx(c *gin.Context) (ac *models.Account, err error) {
 	return
 }
 
-// websocket的JWT鉴权处理器注册器
+// JWTRegister websocket的JWT鉴权处理器注册器
 func JWTRegister(ws *WebsocketSchedule, any jsoniter.Any) (err error) {
 	rawToken := any.Get("data").ToString()
 	if strings.TrimSpace(rawToken) == "" {
@@ -144,6 +144,20 @@ func JWTRegister(ws *WebsocketSchedule, any jsoniter.Any) (err error) {
 				sendNewTokenFn()
 			}
 		}
+	}()
+
+	// 鉴权完毕之后检查一下用户是否有正在进行的考试
+	go func() {
+		_ew, isExist := ExamWatchers.Load(ws.Account.ID)
+		if !isExist {
+			return
+		}
+		ew, _ := _ew.(*ExamWatcher)
+		raw, _ := jsoniter.Marshal(&WebsocketMessage{
+			Op:   wsOpExamRunning,
+			Data: NewExamRunningInfo(ew),
+		})
+		ws.SendData(raw)
 	}()
 
 	return
