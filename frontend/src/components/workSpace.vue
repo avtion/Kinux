@@ -8,52 +8,31 @@
       :breadcrumb="{ routes }"
       sub-title=""
     >
-      <!-- 底部菜单 -->
-      <!-- <template #footer>
-        <a-tabs :default-active-key="headerTypeOption">
-          <a-tab-pane key="1" tab="实验" />
-          <a-tab-pane key="2" tab="考试" />
-        </a-tabs>
-      </template> -->
-
       <!-- 主内容 -->
-      <a-row type="flex">
-        <!-- 左侧头像欢迎面板 -->
-        <a-col :span="12">
-          <div class="page-header-content">
-            <div class="avatar">
-              <a-avatar size="large" :src="avatar" />
-            </div>
-            <div class="content">
-              <div class="content-title">
-                {{
-                  profile.realName == '' ? profile.username : profile.realName
-                }}
-                <span class="welcome-text">欢迎</span>
-              </div>
-              <div>{{ profile.role }} ｜ {{ profile.department }}</div>
-            </div>
+      <a-row>
+        <a-space :size="30">
+          
+          <!-- 头像 -->
+          <div class="avatar">
+            <a-avatar size="large" :src="avatar" />
           </div>
-        </a-col>
 
-        <!-- 右侧统计面板 -->
-        <a-col :span="4" class="stat-item">
-          <a-statistic title="项目进度" :value="78" class="demo-class">
-            <template #suffix>
-              <span> / 100</span>
-            </template>
+          <!-- 用户名 -->
+          <a-statistic
+            title="用户名"
+            :value="
+              profile.realName == '' ? profile.username : profile.realName
+            "
+          >
           </a-statistic>
-        </a-col>
-        <a-col :span="4" class="stat-item">
-          <a-statistic title="班级排名" :value="1" class="demo-class">
-            <template #suffix>
-              <span> / 100</span>
-            </template>
-          </a-statistic>
-        </a-col>
-        <a-col :span="4" class="stat-item">
-          <a-statistic title="综合评价" value="S+" />
-        </a-col>
+          <a-divider type="vertical" />
+          <!-- 班级 -->
+          <a-statistic title="班级" :value="profile.department"> </a-statistic>
+
+          <a-divider type="vertical" />
+          <!-- 用户类型 -->
+          <a-statistic title="用户类型" :value="profile.role"> </a-statistic>
+        </a-space>
       </a-row>
     </a-page-header>
 
@@ -138,34 +117,11 @@ export default {
   .welcome-text {
     display: none;
   }
+}
 
-  .avatar {
-    flex: 0 1 72px;
-
-    & > span {
-      display: block;
-      width: 72px;
-      height: 72px;
-      border-radius: 72px;
-    }
-  }
-
-  .content {
-    position: relative;
-    top: 4px;
-    flex: 1 1 auto;
-    margin-left: 24px;
-    color: rgba(0, 0, 0, 0.85);
-    line-height: 22px;
-
-    .content-title {
-      margin-bottom: 12px;
-      color: rgba(0, 0, 0, 0.85);
-      font-weight: 500;
-      font-size: 20px;
-      line-height: 28px;
-    }
-  }
+.avatar {
+  text-align: center;
+  vertical-align: middle;
 }
 
 .stat-item {
