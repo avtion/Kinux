@@ -77,7 +77,7 @@
                   </a-list-item-meta>
                   <!-- 操作 -->
                   <template #actions>
-                    <a-button>查询 </a-button>
+                    <a-button @click="jumpToExamScore(item.id)">查询 </a-button>
                   </template>
                 </a-list-item>
               </template>
@@ -266,6 +266,14 @@ export default defineComponent({
         params: { lessonID: lessonSelect.value, missionID: missionID },
       })
     }
+
+    // 跳转至实验成绩查询
+    const jumpToExamScore = (examID: number) => {
+      router.push({
+        name: 'exScore',
+        params: { lessonID: lessonSelect.value, examID: examID },
+      })
+    }
     return {
       activeKey,
 
@@ -284,6 +292,7 @@ export default defineComponent({
 
       // 跳转
       jumpToMissionScore,
+      jumpToExamScore,
     }
   },
 })
