@@ -1,5 +1,5 @@
 import { BaseResponse, defaultClient } from '@api/request'
-import { AxiosResponse } from '_axios@0.21.1@axios'
+import { AxiosResponse } from 'axios'
 
 export type missionCheckpointMetaData = {
   id: number // 实验考点ID
