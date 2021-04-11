@@ -38,12 +38,8 @@ func FindAllAccountFinishScoreCpIDs(ctx context.Context, account, exam, mission 
 // FindAllAccountFinishScores 获取用户所有已经完成考点的成绩点
 func FindAllAccountFinishScores(ctx context.Context, account, lesson, exam, mission uint, containers ...string) (
 	score []*Score, err error) {
-	db := GetGlobalDB().WithContext(ctx).Model(new(Score)).Where(&Score{
-		Account: account,
-		Lesson:  lesson,
-		Mission: mission,
-		Exam:    exam,
-	})
+	db := GetGlobalDB().WithContext(ctx).Model(new(Score)).Where(
+		"account = ? AND lesson = ? AND exam = ? AND mission = ?", account, lesson, exam, mission)
 	if len(containers) > 0 {
 		db = db.Where("container IN ?", containers)
 	}
