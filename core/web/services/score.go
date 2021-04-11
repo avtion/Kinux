@@ -137,6 +137,8 @@ type ScoreItem struct {
 	IsFinish        bool   `json:"is_finish"`        // 是否未完成
 	FinishTime      int64  `json:"finish_time"`      // 完成时间
 	TargetContainer string `json:"target_container"` // 目标容器
+	CheckpointName  string `json:"checkpoint_name"`  // 考点名称
+	CheckpointDesc  string `json:"checkpoint_desc"`  // 考点描述
 }
 
 // MissionScore 实验成绩
@@ -146,8 +148,9 @@ type MissionScore struct {
 	MissionDesc        string       `json:"mission_desc"`         // 实验描述
 	FinishScoreCounter uint         `json:"finish_score_counter"` // 完成考点数量
 	AllScoreCounter    uint         `json:"all_score_counter"`    // 全部考点数量
-	Score              uint         `json:"score"`                // 成绩
+	Score              float64      `json:"score"`                // 成绩
 	ScoreDetails       []*ScoreItem `json:"score_details"`        // 成绩详情
+	Total              uint         `json:"total"`                // 总分
 }
 
 // ExamScore 考试成绩
@@ -157,7 +160,7 @@ type ExamScore struct {
 	ExamDesc      string          `json:"exam_desc"`      // 考试描述
 	ExamBeginAt   int64           `json:"exam_begin_at"`  // 用户开始考试的时间
 	ExamEndAt     int64           `json:"exam_end_at"`    // 用户结束考试的时间
-	Score         uint            `json:"score"`          // 用户的成绩
+	Score         float64         `json:"score"`          // 用户的成绩
 	MissionScores []*MissionScore `json:"mission_scores"` // 实验详情
 }
 
@@ -198,12 +201,26 @@ func GetMissionScore(c *gin.Context, accountID, lessonID, missionID, examID uint
 	}
 
 	// 找到实验所有的考点
-	allCps, err := models.FindAllMissionCheckpoints(c, mission.ID)
+	allMCps, err := models.FindAllMissionCheckpoints(c, mission.ID)
 	if err != nil {
 		return
 	}
-	if res.AllScoreCounter = uint(len(allCps)); res.AllScoreCounter == 0 {
+	if res.AllScoreCounter = uint(len(allMCps)); res.AllScoreCounter == 0 {
 		return
+	}
+
+	// 考点信息
+	var cpIDs = make([]uint, 0, len(allMCps))
+	for _, v := range allMCps {
+		cpIDs = append(cpIDs, v.CheckPoint)
+	}
+	cps, err := models.FindCheckpoints(c, cpIDs...)
+	if err != nil {
+		return
+	}
+	var cpsMapping = make(map[uint]*models.Checkpoint, len(cps))
+	for k, v := range cps {
+		cpsMapping[v.ID] = cps[k]
 	}
 
 	// 找到已经完成的成绩
@@ -220,15 +237,17 @@ func GetMissionScore(c *gin.Context, accountID, lessonID, missionID, examID uint
 	}
 	res.FinishScoreCounter = uint(len(finishScores))
 
-	for _, cp := range allCps {
+	for _, cp := range allMCps {
 		// 找到对应的成绩
 		var (
 			_score     *models.Score
 			isCpFinish bool
 		)
 		if _, isExist := finishScoresMapping[cp.TargetContainer]; isExist {
-			_score, isCpFinish = finishScoresMapping[cp.TargetContainer][cp.ID]
+			_score, isCpFinish = finishScoresMapping[cp.TargetContainer][cp.CheckPoint]
 		}
+
+		_cp, _ := cpsMapping[cp.CheckPoint]
 
 		// 生成详情结果
 		var item = &ScoreItem{
@@ -242,10 +261,13 @@ func GetMissionScore(c *gin.Context, accountID, lessonID, missionID, examID uint
 				return 0
 			}(),
 			TargetContainer: cp.TargetContainer,
+			CheckpointName:  _cp.Name,
+			CheckpointDesc:  _cp.Desc,
 		}
 
 		// 添加成绩
-		res.Score += mission.Total * cp.Percent
+		res.Score += float64(mission.Total) * (float64(cp.Percent) / 100)
+		res.Total = mission.Total
 
 		// 追加结果
 		res.ScoreDetails = append(res.ScoreDetails, item)
@@ -306,7 +328,7 @@ func GetExamScore(c *gin.Context, accountID, lessonID, examID uint) (res *ExamSc
 		}
 
 		// 按照比例加入考试成绩结果
-		res.Score += ms.Score * v.Percent
+		res.Score += ms.Score * (float64(v.Percent) / 100)
 
 		// 追加结果
 		res.MissionScores = append(res.MissionScores, ms)
@@ -319,12 +341,28 @@ func GetExamScore(c *gin.Context, accountID, lessonID, examID uint) (res *ExamSc
 type MissionScoreForAdmin struct {
 	*MissionScore
 	Pos uint `json:"pos"` // 排名
+
+	ID           uint   `json:"id"`
+	Role         uint   `json:"role"`
+	Profile      uint   `json:"profile"`
+	Username     string `json:"username"`
+	RealName     string `json:"real_name"`
+	Department   string `json:"department"`
+	DepartmentId uint   `json:"department_id"`
 }
 
 // ExamScoreForAdmin 班级级别考试成绩
 type ExamScoreForAdmin struct {
 	*ExamScore
 	Pos uint `json:"pos"` // 排名
+
+	ID           uint   `json:"id"`
+	Role         uint   `json:"role"`
+	Profile      uint   `json:"profile"`
+	Username     string `json:"username"`
+	RealName     string `json:"real_name"`
+	Department   string `json:"department"`
+	DepartmentId uint   `json:"department_id"`
 }
 
 // GetMissionScoreForAdmin 管理员获取实验成绩
@@ -352,6 +390,14 @@ func GetMissionScoreForAdmin(c *gin.Context, department, lessonID, missionID uin
 		res = append(res, &MissionScoreForAdmin{
 			MissionScore: ms,
 			Pos:          0,
+
+			ID:           ac.ID,
+			Role:         ac.Role,
+			Profile:      ac.Profile,
+			Username:     ac.Username,
+			RealName:     ac.RealName,
+			Department:   ac.Department,
+			DepartmentId: ac.DepartmentId,
 		})
 	}
 
@@ -390,6 +436,14 @@ func GetExamScoreForAdmin(c *gin.Context, department, lessonID, examID uint) (
 		res = append(res, &ExamScoreForAdmin{
 			ExamScore: es,
 			Pos:       0,
+
+			ID:           ac.ID,
+			Role:         ac.Role,
+			Profile:      ac.Profile,
+			Username:     ac.Username,
+			RealName:     ac.RealName,
+			Department:   ac.Department,
+			DepartmentId: ac.DepartmentId,
 		})
 	}
 
