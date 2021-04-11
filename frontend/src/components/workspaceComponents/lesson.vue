@@ -1,23 +1,23 @@
 <template>
   <a-card title="课程选择" :bordered="false" :loading="isProjectDataLoading">
     <a-list :data-source="departmentLessonData">
-      <template #renderItem="{ item }">
+      <template #renderItem="{ item, index }">
         <a-list-item>
-          <a
-            @click="junmpToMission(item.id)"
-            class="container mx-auto bg-gray-50 h-auto w-full p-4 space-y-1 rounded-lg hover:bg-gray-200 shadow"
-          >
-            <div class="block font-extrabold font-sans relative">
-              <div class="inline-block text-blue-400 text-2xl">|</div>
-              <div class="inline-block ml-2 text-gray-700 text-lg">
-                {{ item.name }}
-              </div>
-              <div class="inline-block absolute inset-y-0 right-0">></div>
-            </div>
-            <div class="block text-sm pr-8 leading-relaxed h-auto line-clamp-3">
-              {{ item.desc }}
-            </div>
-          </a>
+          <!-- 元数据 -->
+          <a-list-item-meta :description="item.desc">
+            <!-- 标题 -->
+            <template #title>
+              <span class="font-semibold">{{ item.name }}</span>
+            </template>
+            <!-- 头像 -->
+            <template #avatar>
+              <a-avatar :src="numberCreatorFn(index + 1)" />
+            </template>
+          </a-list-item-meta>
+          <!-- 操作 -->
+          <template #actions>
+            <a-button @click="junmpToMission(item.id)">进入课程 </a-button>
+          </template>
         </a-list-item>
       </template>
     </a-list>
@@ -44,6 +44,10 @@ import { Profile } from '@/store/interfaces'
 
 // 当前考试状态
 import { examInfo } from '@api/exam'
+
+// 图标生成
+import Avatars from '@dicebear/avatars'
+import sprites from '@dicebear/avatars-initials-sprites'
 
 const apiPath = {
   list: '/v2/dl/list',
@@ -107,10 +111,20 @@ export default {
       router.push({ name: 'missionSelector', params: { lesson: lesson } })
     }
 
+    // 序号
+    const numberCreator = new Avatars(sprites, {
+      dataUri: true,
+      background: '#3B82F6',
+    })
+    const numberCreatorFn = (str: any): string => {
+      return numberCreator.create(str + '')
+    }
+
     return {
       isProjectDataLoading: false,
       departmentLessonData,
       junmpToMission,
+      numberCreatorFn,
     }
   },
 }
