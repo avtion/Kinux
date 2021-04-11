@@ -24,6 +24,11 @@ import ExamMissionSelector from '@/components/workspaceComponents/examMission.vu
 
 import shellWatcherComponents from '@/components/shellWatcher.vue' // 终端监控
 
+// 查询成绩
+import stuScore from '@/components/score/student.vue'
+import teaScore from '@/components/score/teacher.vue'
+
+// 实验相关
 const workspaceChild = [
   {
     path: '/dashboard/lesson',
@@ -44,6 +49,22 @@ const workspaceChild = [
     path: '/dashboard/exam/mission/:exam',
     name: 'examMissionSelector',
     component: ExamMissionSelector,
+  },
+]
+
+// 成绩查询
+const score = [
+  // 学生查询成绩
+  {
+    path: '/dashboard/score/stu',
+    name: 'stuScore',
+    component: stuScore,
+  },
+  // 老师查询成绩
+  {
+    path: '/dashboard/score/teacher',
+    name: 'teaScore',
+    component: teaScore,
   },
 ]
 
@@ -131,6 +152,7 @@ const routes = [
         component: shellWatcherComponents,
         props: true,
       },
+      ...score,
     ],
   },
 ]

@@ -23,13 +23,17 @@
           <FundOutlined class="align-middle" />
           <span class="align-middle">在线考试</span>
         </a-menu-item>
-        <a-menu-item key="">
-          <FundOutlined class="align-middle" />
-          <span class="align-middle">考试成绩查询</span>
-        </a-menu-item>
         <a-menu-item key="profile">
           <UserOutlined class="align-middle" />
           <span class="align-middle">个人资料</span>
+        </a-menu-item>
+        <a-menu-item key="stuScore">
+          <BarChartOutlined class="align-middle" />
+          <span class="align-middle">个人成绩查询</span>
+        </a-menu-item>
+        <a-menu-item key="teaScore">
+          <DotChartOutlined class="align-middle" />
+          <span class="align-middle">系统成绩查询</span>
         </a-menu-item>
         <a-menu-item key="departmentManager">
           <DatabaseOutlined class="align-middle" />
@@ -137,6 +141,8 @@ import {
   DropboxOutlined,
   DingtalkOutlined,
   DeploymentUnitOutlined,
+  BarChartOutlined,
+  DotChartOutlined,
 } from '@ant-design/icons-vue'
 
 // websocket
@@ -167,6 +173,8 @@ export default defineComponent({
     DropboxOutlined,
     DingtalkOutlined,
     DeploymentUnitOutlined,
+    BarChartOutlined,
+    DotChartOutlined,
   },
   setup() {
     // logo
@@ -280,7 +288,7 @@ export default defineComponent({
   line-height: 64px;
   display: inline-block;
   margin-left: 10px;
-  /deep/ .ant-statistic-content {
+  :deep(.ant-statistic-content) {
     // height: 100%;
     vertical-align: middle;
   }
