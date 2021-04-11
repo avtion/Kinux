@@ -27,6 +27,8 @@ import shellWatcherComponents from '@/components/shellWatcher.vue' // 终端监�
 // 查询成绩
 import stuScore from '@/components/score/student.vue'
 import teaScore from '@/components/score/teacher.vue'
+import ex from '@/components/score/ex.vue'
+import ms from '@/components/score/ms.vue'
 
 // 实验相关
 const workspaceChild = [
@@ -65,6 +67,18 @@ const score = [
     path: '/dashboard/score/teacher',
     name: 'teaScore',
     component: teaScore,
+  },
+  {
+    path: '/dashboard/score/ex',
+    name: 'exScore',
+    component: ex,
+    props: true,
+  },
+  {
+    path: '/dashboard/score/ms',
+    name: 'msScore',
+    component: ms,
+    props: true,
   },
 ]
 
