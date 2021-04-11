@@ -155,13 +155,17 @@ type MissionScore struct {
 
 // ExamScore 考试成绩
 type ExamScore struct {
-	ExamID        uint            `json:"exam_id"`        // 考试ID
-	ExamName      string          `json:"exam_name"`      // 考试名
-	ExamDesc      string          `json:"exam_desc"`      // 考试描述
-	ExamBeginAt   int64           `json:"exam_begin_at"`  // 用户开始考试的时间
-	ExamEndAt     int64           `json:"exam_end_at"`    // 用户结束考试的时间
-	Score         float64         `json:"score"`          // 用户的成绩
-	MissionScores []*MissionScore `json:"mission_scores"` // 实验详情
+	ExamID        uint    `json:"exam_id"`       // 考试ID
+	ExamName      string  `json:"exam_name"`     // 考试名
+	ExamDesc      string  `json:"exam_desc"`     // 考试描述
+	ExamBeginAt   int64   `json:"exam_begin_at"` // 用户开始考试的时间
+	ExamEndAt     int64   `json:"exam_end_at"`   // 用户结束考试的时间
+	Score         float64 `json:"score"`         // 用户的成绩
+	MissionScores []*struct {
+		*MissionScore
+		Percent uint `json:"percent"`
+	} `json:"mission_scores"` // 实验详情
+	Total uint `json:"total"` // 考试总成绩
 }
 
 // GetMissionScore 获取实验成绩
@@ -266,7 +270,9 @@ func GetMissionScore(c *gin.Context, accountID, lessonID, missionID, examID uint
 		}
 
 		// 添加成绩
-		res.Score += float64(mission.Total) * (float64(cp.Percent) / 100)
+		if isCpFinish {
+			res.Score += float64(mission.Total) * (float64(cp.Percent) / 100)
+		}
 		res.Total = mission.Total
 
 		// 追加结果
@@ -310,13 +316,17 @@ func GetExamScore(c *gin.Context, accountID, lessonID, examID uint) (res *ExamSc
 
 	// 初始化结果
 	res = &ExamScore{
-		ExamID:        exam.ID,
-		ExamName:      exam.Name,
-		ExamDesc:      exam.Desc,
-		ExamBeginAt:   eLog.CreatedAt.Unix(),
-		ExamEndAt:     eLog.EndAt.Unix(),
-		Score:         0,
-		MissionScores: make([]*MissionScore, 0),
+		ExamID:      exam.ID,
+		ExamName:    exam.Name,
+		ExamDesc:    exam.Desc,
+		ExamBeginAt: eLog.CreatedAt.Unix(),
+		ExamEndAt:   eLog.EndAt.Unix(),
+		Score:       0,
+		MissionScores: make([]*struct {
+			*MissionScore
+			Percent uint `json:"percent"`
+		}, 0),
+		Total: exam.Total,
 	}
 
 	for _, v := range examMissions {
@@ -331,7 +341,13 @@ func GetExamScore(c *gin.Context, accountID, lessonID, examID uint) (res *ExamSc
 		res.Score += ms.Score * (float64(v.Percent) / 100)
 
 		// 追加结果
-		res.MissionScores = append(res.MissionScores, ms)
+		res.MissionScores = append(res.MissionScores, &struct {
+			*MissionScore
+			Percent uint `json:"percent"`
+		}{
+			MissionScore: ms,
+			Percent:      v.Percent,
+		})
 	}
 
 	return
