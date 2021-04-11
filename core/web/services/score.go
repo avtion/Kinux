@@ -4,9 +4,11 @@ import (
 	"Kinux/core/web/models"
 	"Kinux/core/web/msg"
 	"fmt"
+	"github.com/gin-gonic/gin"
 	"github.com/sergi/go-diff/diffmatchpatch"
 	"github.com/sirupsen/logrus"
 	"gorm.io/gorm"
+	"sort"
 )
 
 // NewScoreListener 成绩监听器
@@ -126,4 +128,277 @@ func NewScoreListener(account *models.Account, lesson *models.Lesson, exam *mode
 			}
 		}
 	})
+}
+
+// ScoreItem 成绩单项
+type ScoreItem struct {
+	CheckpointID    uint   `json:"checkpoint_id"`    // 考点ID
+	Percent         uint   `json:"percent"`          // 该考点所占成绩比例
+	IsFinish        bool   `json:"is_finish"`        // 是否未完成
+	FinishTime      int64  `json:"finish_time"`      // 完成时间
+	TargetContainer string `json:"target_container"` // 目标容器
+}
+
+// MissionScore 实验成绩
+type MissionScore struct {
+	MissionID          uint         `json:"mission_id"`           // 实验ID
+	MissionName        string       `json:"mission_name"`         // 实验名
+	MissionDesc        string       `json:"mission_desc"`         // 实验描述
+	FinishScoreCounter uint         `json:"finish_score_counter"` // 完成考点数量
+	AllScoreCounter    uint         `json:"all_score_counter"`    // 全部考点数量
+	Score              uint         `json:"score"`                // 成绩
+	ScoreDetails       []*ScoreItem `json:"score_details"`        // 成绩详情
+}
+
+// ExamScore 考试成绩
+type ExamScore struct {
+	ExamID        uint            `json:"exam_id"`        // 考试ID
+	ExamName      string          `json:"exam_name"`      // 考试名
+	ExamDesc      string          `json:"exam_desc"`      // 考试描述
+	ExamBeginAt   int64           `json:"exam_begin_at"`  // 用户开始考试的时间
+	ExamEndAt     int64           `json:"exam_end_at"`    // 用户结束考试的时间
+	Score         uint            `json:"score"`          // 用户的成绩
+	MissionScores []*MissionScore `json:"mission_scores"` // 实验详情
+}
+
+// GetMissionScore 获取实验成绩
+func GetMissionScore(c *gin.Context, accountID, lessonID, missionID, examID uint) (res *MissionScore, err error) {
+	// 获取用户信息
+	ac, err := models.GetAccountByID(c, int(accountID))
+	if err != nil {
+		return
+	}
+
+	// 获取课程信息
+	lesson, err := models.GetLesson(c, lessonID)
+	if err != nil {
+		return
+	}
+
+	// 获取实验信息
+	mission, err := models.GetMission(c, missionID)
+	if err != nil {
+		return
+	}
+
+	var exam = new(models.Exam)
+	if examID != 0 {
+		exam, _ = models.GetExam(c, examID)
+	}
+
+	// 初始化结果
+	res = &MissionScore{
+		MissionID:          mission.ID,
+		MissionName:        mission.Name,
+		MissionDesc:        mission.Desc,
+		FinishScoreCounter: 0,
+		AllScoreCounter:    0,
+		Score:              0,
+		ScoreDetails:       make([]*ScoreItem, 0),
+	}
+
+	// 找到实验所有的考点
+	allCps, err := models.FindAllMissionCheckpoints(c, mission.ID)
+	if err != nil {
+		return
+	}
+	if res.AllScoreCounter = uint(len(allCps)); res.AllScoreCounter == 0 {
+		return
+	}
+
+	// 找到已经完成的成绩
+	finishScores, err := models.FindAllAccountFinishScores(c, ac.ID, lesson.ID, exam.ID, mission.ID)
+	if err != nil {
+		return
+	}
+	var finishScoresMapping = make(map[string]map[uint]*models.Score) // map[容器名]map[考点ID]成绩
+	for k, v := range finishScores {
+		if _, isExist := finishScoresMapping[v.Container]; !isExist {
+			finishScoresMapping[v.Container] = make(map[uint]*models.Score)
+		}
+		finishScoresMapping[v.Container][v.Checkpoint] = finishScores[k]
+	}
+	res.FinishScoreCounter = uint(len(finishScores))
+
+	for _, cp := range allCps {
+		// 找到对应的成绩
+		var (
+			_score     *models.Score
+			isCpFinish bool
+		)
+		if _, isExist := finishScoresMapping[cp.TargetContainer]; isExist {
+			_score, isCpFinish = finishScoresMapping[cp.TargetContainer][cp.ID]
+		}
+
+		// 生成详情结果
+		var item = &ScoreItem{
+			CheckpointID: cp.ID,
+			Percent:      cp.Percent,
+			IsFinish:     isCpFinish,
+			FinishTime: func() int64 {
+				if isCpFinish {
+					return _score.CreatedAt.Unix()
+				}
+				return 0
+			}(),
+			TargetContainer: cp.TargetContainer,
+		}
+
+		// 添加成绩
+		res.Score += mission.Total * cp.Percent
+
+		// 追加结果
+		res.ScoreDetails = append(res.ScoreDetails, item)
+	}
+	return
+}
+
+// GetExamScore 获取考试成绩
+func GetExamScore(c *gin.Context, accountID, lessonID, examID uint) (res *ExamScore, err error) {
+	// 获取用户信息
+	ac, err := models.GetAccountByID(c, int(accountID))
+	if err != nil {
+		return
+	}
+
+	// 获取课程信息
+	lesson, err := models.GetLesson(c, lessonID)
+	if err != nil {
+		return
+	}
+
+	// 获取考试信息
+	exam, err := models.GetExam(c, examID)
+	if err != nil {
+		return
+	}
+
+	// 获取用户的考试信息
+	var eLog = new(models.ExamLog)
+	if err = models.GetGlobalDB().WithContext(c).Where(
+		"account = ? AND exam = ?", ac.ID, exam.ID).First(eLog).Error; err != nil {
+		return
+	}
+
+	// 考试的实验
+	examMissions, err := models.ListExamMissions(c, exam.ID, 0, nil)
+	if err != nil {
+		return
+	}
+
+	// 初始化结果
+	res = &ExamScore{
+		ExamID:        exam.ID,
+		ExamName:      exam.Name,
+		ExamDesc:      exam.Desc,
+		ExamBeginAt:   eLog.CreatedAt.Unix(),
+		ExamEndAt:     eLog.EndAt.Unix(),
+		Score:         0,
+		MissionScores: make([]*MissionScore, 0),
+	}
+
+	for _, v := range examMissions {
+		// 查询对应实验的成绩
+		var ms *MissionScore
+		ms, err = GetMissionScore(c, ac.ID, lesson.ID, v.ID, exam.ID)
+		if err != nil {
+			return
+		}
+
+		// 按照比例加入考试成绩结果
+		res.Score += ms.Score * v.Percent
+
+		// 追加结果
+		res.MissionScores = append(res.MissionScores, ms)
+	}
+
+	return
+}
+
+// MissionScoreForAdmin 班级级别实验成绩
+type MissionScoreForAdmin struct {
+	*MissionScore
+	Pos uint `json:"pos"` // 排名
+}
+
+// ExamScoreForAdmin 班级级别考试成绩
+type ExamScoreForAdmin struct {
+	*ExamScore
+	Pos uint `json:"pos"` // 排名
+}
+
+// GetMissionScoreForAdmin 管理员获取实验成绩
+func GetMissionScoreForAdmin(c *gin.Context, department, lessonID, missionID uint) (
+	res []*MissionScoreForAdmin, err error) {
+	// 查找班级所有成员
+	accounts, err := models.ListAccountsWithProfiles(c, nil, func(db *gorm.DB) *gorm.DB {
+		return db.Where("department_id = ?", department)
+	})
+	if err != nil {
+		return
+	}
+
+	// 初始化结果
+	res = make([]*MissionScoreForAdmin, 0)
+
+	// 逐个获取对应的课程成绩
+	for _, ac := range accounts {
+		// 查询成绩
+		var ms *MissionScore
+		ms, err = GetMissionScore(c, ac.ID, lessonID, missionID, 0)
+		if err != nil {
+			return
+		}
+		res = append(res, &MissionScoreForAdmin{
+			MissionScore: ms,
+			Pos:          0,
+		})
+	}
+
+	// 技术排名
+	sort.Slice(res, func(i, j int) bool {
+		return res[i].Score < res[j].Score
+	})
+	for k := range res {
+		res[k].Pos = uint(k + 1)
+	}
+	return
+}
+
+// GetExamScoreForAdmin 管理员获取考试成绩
+func GetExamScoreForAdmin(c *gin.Context, department, lessonID, examID uint) (
+	res []*ExamScoreForAdmin, err error) {
+	// 查找班级所有成员
+	accounts, err := models.ListAccountsWithProfiles(c, nil, func(db *gorm.DB) *gorm.DB {
+		return db.Where("department_id = ?", department)
+	})
+	if err != nil {
+		return
+	}
+
+	// 初始化结果
+	res = make([]*ExamScoreForAdmin, 0)
+
+	// 逐个获取对应的课程成绩
+	for _, ac := range accounts {
+		// 查询成绩
+		var es *ExamScore
+		es, err = GetExamScore(c, ac.ID, lessonID, examID)
+		if err != nil {
+			return
+		}
+		res = append(res, &ExamScoreForAdmin{
+			ExamScore: es,
+			Pos:       0,
+		})
+	}
+
+	// 技术排名
+	sort.Slice(res, func(i, j int) bool {
+		return res[i].Score < res[j].Score
+	})
+	for k := range res {
+		res[k].Pos = uint(k + 1)
+	}
+	return
 }

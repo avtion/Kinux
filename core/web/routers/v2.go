@@ -51,5 +51,11 @@ func v2Router() initFunc {
 			ms.GET("/", controllers.ListMissionsV2)
 		}
 
+		score := v2WithAuth.Group("/score")
+		{
+			score.GET("/mission/", controllers.GetMissionScore)
+			score.GET("/exam/", controllers.GetExamScore)
+		}
+
 	}
 }
