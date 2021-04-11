@@ -231,7 +231,7 @@ func NewExamMeta(ac *models.Account, lesson *models.Lesson, ms *models.Mission, 
 // NewMeta 创建原数据标签
 func NewMeta(ac *models.Account, lesson *models.Lesson,
 	ms *models.Mission, ex *models.Exam, container string) PtyMeta {
-	if ex == nil {
+	if ex == nil || ex.ID == 0 {
 		return NewMissionMeta(ac, lesson, ms, container)
 	} else {
 		return NewExamMeta(ac, lesson, ms, ex, container)
