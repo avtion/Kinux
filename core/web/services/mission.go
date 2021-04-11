@@ -259,8 +259,8 @@ func missionResetRegister(ws *WebsocketSchedule, any jsoniter.Any) (err error) {
 			logrus.WithField("重置容器超时", ctx.Err())
 			return
 		}
-		// 这里让程序等1秒避免容器没准备好
-		<-time.After(1 * time.Second)
+		// 这里让程序等3秒避免容器没准备好
+		<-time.After(3 * time.Second)
 		data, err := jsoniter.Marshal(&WebsocketMessage{
 			Op:   wsOpContainersDone,
 			Data: nil,
@@ -330,7 +330,7 @@ func missionApply(ws *WebsocketSchedule, any jsoniter.Any) (err error) {
 	}
 
 	// 防止K8S通知太快导致容器未完成部署
-	<-time.After(1 * time.Second)
+	<-time.After(3 * time.Second)
 	data, err := jsoniter.Marshal(&WebsocketMessage{
 		Op:   wsOpContainersDone,
 		Data: nil,
