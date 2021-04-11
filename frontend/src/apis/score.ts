@@ -26,7 +26,8 @@ export class Score {
           },
         })
         .then((res: AxiosResponse<BaseResponse>) => {
-          resolve(res.data.Data)
+          console.log(res)
+          resolve(<missionScore>res.data.Data)
         })
         .catch((err) => {
           reject(err)
@@ -34,9 +35,25 @@ export class Score {
     })
   }
 
-  //   GetExamScore(): Promise<> {
-  //     return new Promise((resolve, reject) => {})
-  //   }
+  // 获取考试成绩
+  GetExamScore = () => {
+    return new Promise((resolve: (res: ExamScore) => void, reject) => {
+      defaultClient
+        .get('/v2/score/exam/', {
+          params: {
+            dp: this.department,
+            lesson: this.lesson,
+            exam: this.exam,
+          },
+        })
+        .then((res: AxiosResponse<BaseResponse>) => {
+          resolve(<ExamScore>res.data.Data)
+        })
+        .catch((err) => {
+          reject(err)
+        })
+    })
+  }
 }
 
 export type ScoreDetail = {
@@ -57,5 +74,16 @@ export type missionScore = {
   all_score_counter: number
   score: number
   score_details: ScoreDetail[]
+  total: number
+}
+
+export interface ExamScore {
+  exam_id: number
+  exam_name: string
+  exam_desc: string
+  exam_begin_at: number
+  exam_end_at: number
+  score: number
+  mission_scores: missionScore[]
   total: number
 }
