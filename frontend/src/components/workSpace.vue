@@ -11,7 +11,7 @@
       <!-- 主内容 -->
       <a-row>
         <a-space :size="30">
-          
+          <div></div>
           <!-- 头像 -->
           <div class="avatar">
             <a-avatar size="large" :src="avatar" />
@@ -57,7 +57,7 @@ import { reactive, ref, inject } from 'vue'
 
 // 图标生成
 import Avatars from '@dicebear/avatars'
-import AvatarsSprites from '@dicebear/avatars-male-sprites'
+import AvatarsSprites from '@dicebear/avatars-avataaars-sprites'
 
 // websocket
 import { WebSocketConn } from '@/utils/websocketConn'

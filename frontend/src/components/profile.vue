@@ -122,7 +122,7 @@ import { useForm } from '@ant-design-vue/use'
 
 // 图标生成
 import Avatars from '@dicebear/avatars'
-import AvatarsSprites from '@dicebear/avatars-male-sprites'
+import AvatarsSprites from '@dicebear/avatars-avataaars-sprites'
 
 // store
 import { GetStore } from '@/store/store'
