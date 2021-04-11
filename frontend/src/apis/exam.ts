@@ -1,5 +1,6 @@
 import { BaseResponse, defaultClient } from '@api/request'
 
+import { ref } from 'vue'
 // 考试状态
 export enum examStatus {
   ESNotStart = 1, // 未开始
@@ -57,3 +58,6 @@ export class exam {
     })
   }
 }
+
+// 考试进行状态
+export const examInfo = ref<examRunningInfo>()

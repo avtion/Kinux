@@ -11,53 +11,57 @@
         v-model:selectedKeys="selectedKeys"
         @click="menuClickFn"
       >
-        <a-menu-item key="lessonSelector">
-          <AppstoreOutlined></AppstoreOutlined>
-          <span>在线实验</span>
+        <a-menu-item
+          key="lessonSelector"
+          class="menu"
+          :disabled="examLeftTime !== null"
+        >
+          <AppstoreOutlined class="align-middle" />
+          <span class="align-middle">在线实验</span>
         </a-menu-item>
         <a-menu-item key="examSelector">
-          <FundOutlined></FundOutlined>
-          <span>在线考试</span>
+          <FundOutlined class="align-middle" />
+          <span class="align-middle">在线考试</span>
         </a-menu-item>
         <a-menu-item key="">
-          <FundOutlined></FundOutlined>
-          <span>考试成绩查询</span>
+          <FundOutlined class="align-middle" />
+          <span class="align-middle">考试成绩查询</span>
         </a-menu-item>
         <a-menu-item key="profile">
-          <UserOutlined></UserOutlined>
-          <span>个人资料</span>
+          <UserOutlined class="align-middle" />
+          <span class="align-middle">个人资料</span>
         </a-menu-item>
         <a-menu-item key="departmentManager">
-          <DatabaseOutlined></DatabaseOutlined>
-          <span>系统班级管理</span>
+          <DatabaseOutlined class="align-middle" />
+          <span class="align-middle">系统班级管理</span>
         </a-menu-item>
         <a-menu-item key="AccountManager">
-          <EditOutlined></EditOutlined>
-          <span>系统用户管理</span>
+          <EditOutlined class="align-middle" />
+          <span class="align-middle">系统用户管理</span>
         </a-menu-item>
         <a-menu-item key="deploymentManager">
-          <FormOutlined></FormOutlined>
-          <span>实验容器配置</span>
+          <FormOutlined class="align-middle" />
+          <span class="align-middle">实验容器配置</span>
         </a-menu-item>
         <a-menu-item key="missionManager">
-          <CodepenOutlined></CodepenOutlined>
-          <span>系统实验管理</span>
+          <CodepenOutlined class="align-middle" />
+          <span class="align-middle">系统实验管理</span>
         </a-menu-item>
         <a-menu-item key="examManager">
-          <CodeSandboxOutlined></CodeSandboxOutlined>
-          <span>系统考试管理</span>
+          <CodeSandboxOutlined class="align-middle" />
+          <span class="align-middle">系统考试管理</span>
         </a-menu-item>
         <a-menu-item key="lessonManager">
-          <DropboxOutlined></DropboxOutlined>
-          <span>系统课程管理</span>
+          <DropboxOutlined class="align-middle" />
+          <span class="align-middle">系统课程管理</span>
         </a-menu-item>
         <a-menu-item key="session">
-          <DingtalkOutlined></DingtalkOutlined>
-          <span>教师会话管理</span>
+          <DingtalkOutlined class="align-middle" />
+          <span class="align-middle">教师会话管理</span>
         </a-menu-item>
         <a-menu-item key="checkpointManager">
-          <DeploymentUnitOutlined></DeploymentUnitOutlined>
-          <span>系统考点管理</span>
+          <DeploymentUnitOutlined class="align-middle" />
+          <span class="align-middle">系统考点管理</span>
         </a-menu-item>
       </a-menu>
     </a-layout-sider>
@@ -78,10 +82,19 @@
               @click="() => (collapsed = !collapsed)"
             />
           </a-col>
-          <a-col flex="auto"> </a-col>
+          <a-col flex="auto">
+            <div v-if="examLeftTime !== null">
+              <span class="inline-block">考试倒计时</span>
+              <a-statistic-countdown
+                :value="examLeftTime"
+                format="HH:mm:ss:SSS"
+                class="counter"
+              />
+            </div>
+          </a-col>
           <a-col flex="100px">
             <a-button @click="logout" shape="round">
-              <template #icon><UnlockOutlined /></template>
+              <template #icon><UnlockOutlined class="align-middle" /></template>
               注销
             </a-button>
           </a-col>
@@ -97,7 +110,7 @@
 
 <script lang="ts" type="module">
 // vue
-import { defineComponent, provide, ref, watch } from 'vue'
+import { defineComponent, provide, ref, watch, computed } from 'vue'
 
 // antd
 import { notification } from 'ant-design-vue'
@@ -131,6 +144,12 @@ import {
   WebSocketConn,
   DefaultBackendWebsocketRoute,
 } from '@/utils/websocketConn'
+
+// 时间处理
+import { moment } from '@/utils/time'
+
+// 考试状态
+import { examInfo } from '@api/exam'
 
 export default defineComponent({
   components: {
@@ -194,12 +213,26 @@ export default defineComponent({
       routers.push({ name: key })
     }
 
+    // 考试剩余时间
+    const examLeftTime = computed(() => {
+      if (examInfo.value == undefined) {
+        return null
+      }
+      return moment()
+        .add(moment.duration(Number(examInfo.value.left_time) / 1000000))
+        .valueOf()
+    })
+
     return {
       selectedKeys: [routers.currentRoute.value.name],
       collapsed: collapsed,
       logo: logo,
       logout,
       menuClickFn,
+
+      // 考试有关
+      examInfo,
+      examLeftTime,
     }
   },
 })
@@ -233,6 +266,23 @@ export default defineComponent({
     white-space: nowrap;
     text-decoration: none;
     background: #000c17;
+  }
+}
+
+.menu {
+  span {
+    vertical-align: middle;
+  }
+}
+
+.counter {
+  height: 100%;
+  line-height: 64px;
+  display: inline-block;
+  margin-left: 10px;
+  /deep/ .ant-statistic-content {
+    // height: 100%;
+    vertical-align: middle;
   }
 }
 </style>

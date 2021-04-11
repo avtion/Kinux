@@ -11,6 +11,9 @@ import { message } from 'ant-design-vue'
 // 时间处理
 import { moment } from '@/utils/time'
 
+// 考试状态
+import { examInfo } from '@api/exam'
+
 // 后端默认路由
 export const DefaultBackendWebsocketRoute = 'ws://127.0.0.1:9001/v1/ws/'
 
@@ -109,8 +112,6 @@ export enum WebsocketOperation {
   StopAttachOtherWsWriter, // 停止侵入其他Websocket链接
 }
 
-const examInfoKey = '__examTips'
-
 // 后端消息处理器，用于处理接收的数据
 function messageHandler(this: WebSocketConn, ev: MessageEvent): any {
   // 反序列化
@@ -152,9 +153,9 @@ function messageHandler(this: WebSocketConn, ev: MessageEvent): any {
 
     // 退出考试
     case WebsocketOperation.LeaveExam:
+      examInfo.value = undefined
       message.success({
         content: `考试结束`,
-        key: examInfoKey,
         duration: 5,
       })
       routers.push({
@@ -165,12 +166,7 @@ function messageHandler(this: WebSocketConn, ev: MessageEvent): any {
     // 考试进行中
     case WebsocketOperation.ExamRunning:
       const _res = <examRunningInfo>msg.data
-      const leftTime = moment.duration(Number(_res.left_time) / 1000000)
-      message.loading({
-        content: `${_res.exam_name}进行中[剩余 ${leftTime.humanize()}]`,
-        key: examInfoKey,
-        duration: 0,
-      })
+      examInfo.value = _res
       break
 
     default:

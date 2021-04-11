@@ -27,6 +27,7 @@
 <script lang="ts" type="module">
 // antd
 import { RightOutlined } from '@ant-design/icons-vue'
+import { message } from 'ant-design-vue'
 
 // vue-request
 import { useRequest } from 'vue-request'
@@ -40,6 +41,9 @@ import { useRouter } from 'vue-router'
 
 // vue-router
 import { Profile } from '@/store/interfaces'
+
+// 当前考试状态
+import { examInfo } from '@api/exam'
 
 const apiPath = {
   list: '/v2/dl/list',
@@ -93,6 +97,13 @@ export default {
 
     // 实验跳转
     const junmpToMission = (lesson: number) => {
+      if (examInfo.value !== undefined) {
+        message.error({
+          content: '处于考试状态下无法查看实验',
+          key: '__toMissionBlocker',
+        })
+        return
+      }
       router.push({ name: 'missionSelector', params: { lesson: lesson } })
     }
 
