@@ -86,7 +86,9 @@ import { useRequest } from 'vue-request'
 // 图标生成
 import Avatars from '@dicebear/avatars'
 import sprites from '@dicebear/avatars-initials-sprites'
-import router from '@/routers/routers'
+
+// vue-router
+import { useRouter } from 'vue-router'
 
 // 折线图
 import { LiquidChart, AreaChart } from '@opd/g2plot-vue'
@@ -107,6 +109,8 @@ export default defineComponent({
     },
   },
   setup(props, ctx) {
+    const router = useRouter()
+
     // 小标题实验名称
     const title = ref<string>('')
     // 分数
