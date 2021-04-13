@@ -54,6 +54,25 @@ export class Score {
         })
     })
   }
+
+  GetExamScoreForAdmin = () => {
+    return new Promise((resolve: (res: ExamScoreForAdmin[]) => void, reject) => {
+      defaultClient
+        .get('/v2/score/exam/', {
+          params: {
+            dp: this.department,
+            lesson: this.lesson,
+            exam: this.exam,
+          },
+        })
+        .then((res: AxiosResponse<BaseResponse>) => {
+          resolve(<ExamScoreForAdmin[]>res.data.Data)
+        })
+        .catch((err) => {
+          reject(err)
+        })
+    })
+  }
 }
 
 export type ScoreDetail = {
@@ -86,4 +105,23 @@ export interface ExamScore {
   score: number
   mission_scores: missionScore[]
   total: number
+}
+
+export interface ExamScoreForAdmin {
+  exam_id: number
+  exam_name: string
+  exam_desc: string
+  exam_begin_at: number
+  exam_end_at: number
+  score: number
+  mission_scores: missionScore[]
+  total: number
+  pos: number
+  id: number
+  role: number
+  profile: number
+  username: string
+  real_name: string
+  department: string
+  department_id: number
 }
