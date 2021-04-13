@@ -84,6 +84,10 @@ func NewWebsocketSchedule(c *gin.Context, fns ...WsFn) (ws *WebsocketSchedule, e
 
 		// 关闭监听者
 		ws.StopDaemon()
+
+		if ws.Account != nil {
+			scheduleCenter.Delete(int(ws.Account.ID))
+		}
 		return nil
 	})
 
