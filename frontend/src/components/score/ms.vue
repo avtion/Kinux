@@ -27,8 +27,9 @@
           <!-- 表格 -->
         </a-page-header>
         <a-divider>统计</a-divider>
+        <!-- 统计数据 -->
         <div
-          class="pl-10 pr-10 pt-10 h-1/4 bg-gray-50 rounded"
+          class="pl-10 pr-10 pt-10 bg-gray-50 rounded"
           v-if="scoreItems.length > 0"
         >
           <a-row>
