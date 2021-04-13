@@ -36,7 +36,7 @@
 
 <script lang="ts" type="module">
 // vue
-import { inject, onMounted } from 'vue'
+import { inject, onMounted, defineComponent } from 'vue'
 
 // apis
 import { missionStatus } from '@api/mission'
@@ -63,7 +63,7 @@ import { useRequest } from 'vue-request'
 import { BaseResponse, defaultClient } from '@/apis/request'
 import { exam } from '@/apis/exam'
 
-export default {
+export default defineComponent({
   setup(props, ctx) {
     const router = useRouter()
 
@@ -186,7 +186,7 @@ export default {
       descCreator,
     }
   },
-}
+})
 
 // 获取任务按钮的类型
 function GetMissionButtonType(t: number): string {
