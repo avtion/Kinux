@@ -123,6 +123,7 @@ func TestGetSQLiteDBInfo(t *testing.T) {
 	//	}
 	//}
 
+	// 可以通过 https://tableconvert.com/ 转换成markdown表格
 	const sheetName = "Sheet1"
 	var colNames = [...]string{"序号", "字段名", "类型", "是否为空", "是否为主键", "说明"}
 	var colsIndexMapping = map[int]string{
