@@ -3,6 +3,7 @@ module Kinux
 go 1.16
 
 require (
+	github.com/360EntSecGroup-Skylar/excelize/v2 v2.3.2 // indirect
 	github.com/Nerdmaster/terminal v0.12.1
 	github.com/appleboy/gin-jwt/v2 v2.6.4
 	github.com/casbin/casbin/v2 v2.19.4
