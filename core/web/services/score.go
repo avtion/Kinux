@@ -398,10 +398,9 @@ func GetMissionScoreForAdmin(c *gin.Context, department, lessonID, missionID uin
 	// 逐个获取对应的课程成绩
 	for _, ac := range accounts {
 		// 查询成绩
-		var ms *MissionScore
-		ms, err = GetMissionScore(c, ac.ID, lessonID, missionID, 0)
-		if err != nil {
-			return
+		ms, _err := GetMissionScore(c, ac.ID, lessonID, missionID, 0)
+		if _err != nil {
+			ms = new(MissionScore)
 		}
 		res = append(res, &MissionScoreForAdmin{
 			MissionScore: ms,
@@ -443,11 +442,9 @@ func GetExamScoreForAdmin(c *gin.Context, department, lessonID, examID uint) (
 
 	// 逐个获取对应的课程成绩
 	for _, ac := range accounts {
-		// 查询成绩
-		var es *ExamScore
-		es, err = GetExamScore(c, ac.ID, lessonID, examID)
-		if err != nil {
-			return
+		es, _err := GetExamScore(c, ac.ID, lessonID, examID)
+		if _err != nil {
+			es = new(ExamScore)
 		}
 		res = append(res, &ExamScoreForAdmin{
 			ExamScore: es,

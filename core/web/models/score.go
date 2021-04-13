@@ -8,7 +8,7 @@ import (
 )
 
 func init() {
-	migrateQueue = append(migrateQueue, new(Score))
+	migrateQueue = append(migrateQueue, new(Score), new(ScoresSaver))
 }
 
 // Score 检查点成绩
