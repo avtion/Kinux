@@ -35,11 +35,6 @@ type Mission struct {
 	ExecContainer      string // 默认执行的容器（默认为空并访问首个容器）
 	Command            string // WebShell执行的命令 TODO 支持shell脚本
 	WhiteListContainer string // 白名单容器（若为空则放行首个容器）
-
-	// VNC
-	VNCEnable    bool   // 启用VNC桌面访问
-	VNCContainer string // VNC目标容器
-	VNCPort      string // VNC目标接口
 }
 
 // MissionBuildOpt 任务构造选项
@@ -64,16 +59,6 @@ func MissionBuilder(_ context.Context, name string, dp *Deployment, opts ...Miss
 		return nil, ErrMissionDeploymentNotExist
 	}
 	return
-}
-
-// MissionOptVnc 启用VNC远程桌面
-func MissionOptVnc(container, port string) MissionBuildOpt {
-	return func(m *Mission) (err error) {
-		m.VNCEnable = true
-		m.VNCContainer = container
-		m.VNCPort = port
-		return
-	}
 }
 
 // MissionOptDesc 任务描述
