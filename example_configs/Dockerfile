@@ -16,7 +16,7 @@ RUN yum -y install nano \
                    lsof \
                    bash-completion
 
-RUN adduser -D kinux -u 1000
+RUN adduser -D kinux --uid 1000
 USER kinux
 
 CMD ["tail", "-f", "/dev/null"]
