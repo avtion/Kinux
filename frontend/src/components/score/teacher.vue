@@ -71,7 +71,7 @@
 </template>
 
 <script lang="ts" type="module">
-import { defineComponent, ref, watch } from 'vue'
+import { defineComponent, ref, watch, computed } from 'vue'
 
 import tex from '@/components/score/tex.vue'
 
@@ -88,7 +88,6 @@ enum missionOrExam {
 // vue-request
 import { useRequest } from 'vue-request'
 import { BaseResponse, defaultClient, paths } from '@/apis/request'
-import { computed } from '_vue@3.0.7@vue'
 
 type dpListResult = {
   id: number
