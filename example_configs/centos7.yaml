@@ -13,14 +13,18 @@ spec:
       labels:
         app: centos7
     spec:
+      securityContext:
+        runAsUser: 1000
+        runAsGroup: 1000
+        fsGroup: 1000
       nodeSelector:
         cpu: amd64
       containers:
         - name: centos
-          image: centos/tools
+          image: registry.cn-shenzhen.aliyuncs.com/avtion/kinux:0.1.2
           imagePullPolicy: IfNotPresent
-          command: ["tail","-f","/dev/null"]
-          resources:
-            limits:
-              memory: "128Mi"
-              cpu: "500m"
+          command: ["tail", "-f", "/dev/null"]
+        - name: centos2
+          image: registry.cn-shenzhen.aliyuncs.com/avtion/kinux:0.1.2
+          imagePullPolicy: IfNotPresent
+          command: ["tail", "-f", "/dev/null"]
