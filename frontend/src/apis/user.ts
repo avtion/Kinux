@@ -1,6 +1,6 @@
 import { defaultClient, paths, BaseResponse } from './request'
 import { store } from '../store/store'
-import { JWT, Profile } from '../store/interfaces'
+import { JWT, Profile, Role } from '../store/interfaces'
 import { AxiosResponse } from 'axios'
 
 export { Account }
@@ -40,6 +40,7 @@ class Account {
             department: resp.department,
             avatarSeed: resp.avatarSeed,
             dpID: resp.dpID,
+            roleID: <Role>Number(resp.roleID),
           })
 
           resolve(resp)
@@ -126,4 +127,6 @@ interface loginRespData {
   department: string
   avatarSeed: string
   dpID: string
+  roleID: string
 }
+
