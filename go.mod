@@ -25,6 +25,7 @@ require (
 	github.com/spf13/cast v1.3.0
 	github.com/spf13/viper v1.4.0
 	github.com/ugorji/go v1.2.1 // indirect
+	github.com/yanyiwu/gojieba v1.1.2 // indirect
 	golang.org/x/crypto v0.0.0-20201217014255-9d1352758620
 	golang.org/x/sys v0.0.0-20201214210602-f9fddec55a1e // indirect
 	golang.org/x/term v0.0.0-20201126162022-7de9c90e9dd1 // indirect

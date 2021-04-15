@@ -3,10 +3,16 @@ package web
 import (
 	"Kinux/core/k8s"
 	"Kinux/core/web/models"
+	"Kinux/tools/bytesconv"
 	"Kinux/tools/cfg"
+	"context"
 	"github.com/360EntSecGroup-Skylar/excelize/v2"
 	"github.com/spf13/cast"
 	"github.com/spf13/viper"
+	"github.com/yanyiwu/gojieba"
+	"os"
+	"path/filepath"
+	"strings"
 	"testing"
 	"time"
 )
@@ -82,6 +88,7 @@ func (c *colsInfo) Translate() *colsInfoTrans {
 	}
 }
 
+// 导出SQLite测试数据
 func TestGetSQLiteDBInfo(t *testing.T) {
 	// 先获取表名
 	rows, err := models.GetGlobalDB().Raw(
@@ -162,4 +169,60 @@ func TestGetSQLiteDBInfo(t *testing.T) {
 	if err = f.SaveAs("dbInfo.xlsx"); err != nil {
 		t.Fatal(err)
 	}
+}
+
+// 添加测试实验
+func TestAddMissions(t *testing.T) {
+	var basePath = filepath.Join("../../", "example_configs", "command")
+	// 查找命令行说明目录
+	entries, err := os.ReadDir(basePath)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	// 查找centos实验配置
+	dps, err := models.ListDeployment(context.Background(), "centos", nil)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(dps) == 0 {
+		t.Fatal("没有centos实验配置")
+	}
+	dp := dps[0]
+
+	containers, err := dp.ParseDeploymentContainerNames()
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	x := gojieba.NewJieba()
+	defer x.Free()
+
+	for _, f := range entries {
+		rawGuide, err := os.ReadFile(filepath.Join(basePath, f.Name()))
+		if err != nil {
+			t.Fatal(err)
+		}
+		missionName := strings.Split(f.Name(), ".")[0]
+		guide := bytesconv.BytesToString(rawGuide)
+
+		keywordsRaw := x.ExtractWithWeight(guide, 5)
+		kvs := make([]string, 0, len(keywordsRaw))
+		for _, v := range keywordsRaw {
+			kvs = append(kvs, v.Word)
+		}
+
+		if err = models.AddMission(context.Background(), missionName, dp.ID,
+			models.MissionOptDesc(strings.Join(kvs, " ")),
+			models.MissionOptTotal(100),
+			models.MissionOptDeployment("", containers[0], containers),
+			func(m *models.Mission) (err error) {
+				m.Guide = guide
+				return nil
+			},
+		); err != nil {
+			t.Fatal(err)
+		}
+	}
+	t.Log("实验导入成功")
 }
