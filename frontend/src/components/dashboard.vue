@@ -15,57 +15,58 @@
           key="lessonSelector"
           class="menu"
           :disabled="examLeftTime !== null"
+          v-if="!isAdmin"
         >
           <AppstoreOutlined class="align-middle" />
           <span class="align-middle">在线实验</span>
         </a-menu-item>
-        <a-menu-item key="examSelector">
-          <FundOutlined class="align-middle" />
+        <a-menu-item key="examSelector" v-if="!isAdmin">
+          <FundOutlined class="align-middle" v-if="!isAdmin" />
           <span class="align-middle">在线考试</span>
+        </a-menu-item>
+        <a-menu-item key="stuScore" v-if="!isAdmin">
+          <BarChartOutlined class="align-middle" />
+          <span class="align-middle">成绩查询</span>
         </a-menu-item>
         <a-menu-item key="profile">
           <UserOutlined class="align-middle" />
           <span class="align-middle">个人资料</span>
         </a-menu-item>
-        <a-menu-item key="stuScore">
-          <BarChartOutlined class="align-middle" />
-          <span class="align-middle">个人成绩查询</span>
-        </a-menu-item>
-        <a-menu-item key="teaScore">
-          <DotChartOutlined class="align-middle" />
-          <span class="align-middle">系统成绩查询</span>
-        </a-menu-item>
-        <a-menu-item key="departmentManager">
-          <DatabaseOutlined class="align-middle" />
-          <span class="align-middle">系统班级管理</span>
-        </a-menu-item>
-        <a-menu-item key="AccountManager">
+        <a-menu-item key="AccountManager" v-if="isAdmin">
           <EditOutlined class="align-middle" />
-          <span class="align-middle">系统用户管理</span>
+          <span class="align-middle">用户管理</span>
         </a-menu-item>
-        <a-menu-item key="deploymentManager">
-          <FormOutlined class="align-middle" />
-          <span class="align-middle">实验容器配置</span>
+        <a-menu-item key="departmentManager" v-if="isAdmin">
+          <DatabaseOutlined class="align-middle" />
+          <span class="align-middle">班级管理</span>
         </a-menu-item>
-        <a-menu-item key="missionManager">
-          <CodepenOutlined class="align-middle" />
-          <span class="align-middle">系统实验管理</span>
-        </a-menu-item>
-        <a-menu-item key="examManager">
-          <CodeSandboxOutlined class="align-middle" />
-          <span class="align-middle">系统考试管理</span>
-        </a-menu-item>
-        <a-menu-item key="lessonManager">
+        <a-menu-item key="lessonManager" v-if="isAdmin">
           <DropboxOutlined class="align-middle" />
-          <span class="align-middle">系统课程管理</span>
+          <span class="align-middle">课程管理</span>
         </a-menu-item>
-        <a-menu-item key="session">
-          <DingtalkOutlined class="align-middle" />
-          <span class="align-middle">教师会话管理</span>
+        <a-menu-item key="missionManager" v-if="isAdmin">
+          <CodepenOutlined class="align-middle" />
+          <span class="align-middle">实验管理</span>
         </a-menu-item>
-        <a-menu-item key="checkpointManager">
+        <a-menu-item key="checkpointManager" v-if="isAdmin">
           <DeploymentUnitOutlined class="align-middle" />
-          <span class="align-middle">系统考点管理</span>
+          <span class="align-middle">考点管理</span>
+        </a-menu-item>
+        <a-menu-item key="examManager" v-if="isAdmin">
+          <CodeSandboxOutlined class="align-middle" />
+          <span class="align-middle">考试管理</span>
+        </a-menu-item>
+        <a-menu-item key="teaScore" v-if="isAdmin">
+          <DotChartOutlined class="align-middle" />
+          <span class="align-middle">成绩查询</span>
+        </a-menu-item>
+        <a-menu-item key="session" v-if="isAdmin">
+          <DingtalkOutlined class="align-middle" />
+          <span class="align-middle">会话管理</span>
+        </a-menu-item>
+        <a-menu-item key="deploymentManager" v-if="isAdmin">
+          <FormOutlined class="align-middle" />
+          <span class="align-middle">容器配置</span>
         </a-menu-item>
       </a-menu>
     </a-layout-sider>
@@ -121,6 +122,7 @@ import { notification } from 'ant-design-vue'
 
 // store
 import { GetStore } from '@/store/store'
+import { Profile } from '@/store/interfaces'
 
 // vue-router
 import { useRouter } from 'vue-router'
@@ -156,6 +158,8 @@ import { moment } from '@/utils/time'
 
 // 考试状态
 import { examInfo } from '@api/exam'
+
+import { Role } from '@/store/interfaces'
 
 export default defineComponent({
   components: {
@@ -231,6 +235,16 @@ export default defineComponent({
         .valueOf()
     })
 
+    // 获取当前用户角色
+    const p: Profile = store.getters.GetProfile
+    const isTeacher = computed(() => {
+      return p.roleID === Role.RoleManager
+    })
+    const isAdmin = computed(() => {
+      return p.roleID == Role.RoleAdmin || isTeacher.value
+    })
+    console.log(isAdmin)
+
     return {
       selectedKeys: [routers.currentRoute.value.name],
       collapsed: collapsed,
@@ -241,6 +255,9 @@ export default defineComponent({
       // 考试有关
       examInfo,
       examLeftTime,
+
+      // 角色ID
+      isAdmin,
     }
   },
 })
