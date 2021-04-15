@@ -351,8 +351,8 @@ func listAccountsWithProfiles(ctx context.Context, builder *PageBuilder, filters
 							departments.name AS department, departments.id AS department_id, 
 							accounts.created_at, accounts.profile`
 	const JoinQuery = `accounts
-         JOIN profiles ON accounts.profile = profiles.id
-         JOIN departments ON profiles.department = departments.id`
+         LEFT JOIN profiles ON accounts.profile = profiles.id
+         LEFT JOIN departments ON profiles.department = departments.id`
 	db = GetGlobalDB().WithContext(ctx).Table("accounts").Select(selectQuery).Joins(JoinQuery).Scopes(filters...)
 	if builder != nil {
 		db = builder.Build(db)

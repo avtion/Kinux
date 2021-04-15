@@ -64,6 +64,7 @@ func LoginAccount(c *gin.Context) {
 		"department": dp.Name,
 		"avatarSeed": avatarSeed,
 		"dpID":       cast.ToString(dp.ID),
+		"roleID":     cast.ToString(ac.Role),
 	}))
 	return
 }
@@ -126,6 +127,10 @@ func ListAccounts(c *gin.Context) {
 		Role:       cast.ToUint(c.DefaultQuery("role", "0")),
 		Page:       cast.ToUint(c.DefaultQuery("page", "1")),
 		Size:       cast.ToUint(c.DefaultQuery("size", "10")),
+	}
+	// 教师不设置班级
+	if params.Role == models.RoleAdmin || params.Role == models.RoleManager {
+		params.Department = 0
 	}
 	data, err := models.ListAccountsWithProfiles(c,
 		models.NewPageBuilder(int(params.Page), int(params.Size)),
@@ -260,7 +265,7 @@ func DeleteAccount(c *gin.Context) {
 // 新增用户
 func AddAccount(c *gin.Context) {
 	params := &struct {
-		Department int    `json:"department" binding:"required"`
+		Department int    `json:"department"`
 		Role       int    `json:"role" binding:"required"`
 		Username   string `json:"username" binding:"required"`
 		Password   string `json:"password" binding:"required"`
