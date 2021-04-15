@@ -351,6 +351,7 @@ export default defineComponent({
 
     // 搜索按钮
     const onSearch = (value: string) => {
+      currentPage.value = 1
       getListData(getListParams())
     }
 
