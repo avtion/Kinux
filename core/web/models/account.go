@@ -419,8 +419,10 @@ func (p *Profile) Update(ctx context.Context) (err error) {
 	if p.ID == 0 {
 		return errors.New("id为空")
 	}
-	err = GetGlobalDB().WithContext(ctx).Model(new(Profile)).Select(
-		"real_name, department").Where("id = ?", p.ID).Updates(p).Error
+	err = GetGlobalDB().WithContext(ctx).Model(p).Select("real_name, department").Updates(map[string]interface{}{
+		"real_name":  p.RealName,
+		"department": p.Department,
+	}).Error
 	return
 }
 
