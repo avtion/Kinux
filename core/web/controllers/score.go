@@ -185,7 +185,7 @@ func QuickScoreSaverForAdmin(c *gin.Context) {
 	}
 	data, err := models.ListScoreSave(c, params.ScoreType, models.NewPageBuilder(params.Page, params.Size).Build,
 		func(db *gorm.DB) *gorm.DB {
-			return db.Select("id, raw_id, raw_name, raw_created_at")
+			return db.Select("id, raw_id, raw_name, raw_created_at, created_at")
 		},
 	)
 	if err != nil {
@@ -198,6 +198,7 @@ func QuickScoreSaverForAdmin(c *gin.Context) {
 		RawID        uint      `json:"raw_id"`
 		RawName      string    `json:"raw_name"`
 		RawCreatedAt time.Time `json:"raw_created_at"`
+		CreatedAt    time.Time `json:"created_at"`
 	}
 	var res = make([]*resType, 0, len(data))
 	for _, v := range data {
@@ -206,6 +207,7 @@ func QuickScoreSaverForAdmin(c *gin.Context) {
 			RawID:        v.RawID,
 			RawName:      v.RawName,
 			RawCreatedAt: v.RawCreatedAt,
+			CreatedAt:    v.CreatedAt,
 		})
 	}
 	c.JSON(http.StatusOK, msg.BuildSuccess(res))
@@ -219,7 +221,20 @@ func GetScoreSaversForAdmin(c *gin.Context) {
 		return
 	}
 	var data = new(models.ScoresSaver)
-	if err := models.GetGlobalDB().WithContext(c).Where("id = ?", id).First(&data); err != nil {
+	if err := models.GetGlobalDB().WithContext(c).Where("id = ?", id).First(&data).Error; err != nil {
+		c.AbortWithStatusJSON(http.StatusOK, msg.BuildFailed(err))
+		return
+	}
+
+	// 反序列化数据
+	var dataObj interface{}
+	switch data.ScoreType {
+	case models.ScoreTypeMission:
+		dataObj = make([]*services.MissionScoreForAdmin, 0)
+	case models.ScoreTypeExam:
+		dataObj = make([]*services.ExamScoreForAdmin, 0)
+	}
+	if err := jsoniter.Unmarshal(data.Data, &dataObj); err != nil {
 		c.AbortWithStatusJSON(http.StatusOK, msg.BuildFailed(err))
 		return
 	}
@@ -230,7 +245,7 @@ func GetScoreSaversForAdmin(c *gin.Context) {
 		RawID        uint                  `json:"raw_id"`         // 实验或考试的原ID
 		RawName      string                `json:"raw_name"`       // 实验或者考试原名
 		RawCreatedAt time.Time             `json:"raw_created_at"` // 实验或者考试的创建时间
-		Data         []byte                `json:"data"`
+		Data         interface{}           `json:"data"`
 	}
 
 	c.JSON(http.StatusOK, msg.BuildSuccess(&resType{
@@ -239,6 +254,6 @@ func GetScoreSaversForAdmin(c *gin.Context) {
 		RawID:        data.RawID,
 		RawName:      data.RawName,
 		RawCreatedAt: data.RawCreatedAt,
-		Data:         data.Data,
+		Data:         dataObj,
 	}))
 }
