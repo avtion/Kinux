@@ -55,15 +55,41 @@
               {{ item.name }}
             </a-select-option>
           </a-select>
-          <!-- 存档 -->
-          <a-button type="primary" v-show="isShowSaveButton">存档</a-button>
+
           <!-- 下载成绩 -->
-          <a-button type="primary"> 下载成绩 </a-button>
+          <a-button
+            type="primary"
+            :disabled="!isExamScoreShow && !isMissionScoreShow"
+          >
+            下载成绩
+          </a-button>
+          <!-- 存档 -->
+          <a-button type="default" v-show="isShowSaveButton">存档</a-button>
         </a-space>
         <a-divider>成绩</a-divider>
-        <!-- <a-empty :description="false" /> -->
+        <a-empty
+          :description="false"
+          v-show="!isExamScoreShow && !isMissionScoreShow"
+        />
+        <!-- 考试成绩 -->
         <div class="pl-5 pr-5">
-          <tex></tex>
+          <tex
+            v-if="isExamScoreShow"
+            :dp="dp"
+            :lesson="lesson"
+            :exam="targetID"
+            :isSaveMode="recordType === recordTypes.save"
+          ></tex>
+        </div>
+        <!-- 实验成绩查询 -->
+        <div class="pl-5 pr-5">
+          <tms
+            v-if="isMissionScoreShow"
+            :dp="dp"
+            :lesson="lesson"
+            :mission="targetID"
+            :isSaveMode="recordType === recordTypes.save"
+          ></tms>
         </div>
       </div>
     </div>
@@ -74,6 +100,7 @@
 import { defineComponent, ref, watch, computed } from 'vue'
 
 import tex from '@/components/score/tex.vue'
+import tms from '@/components/score/tms.vue'
 
 enum recordTypes {
   now = 1,
@@ -88,6 +115,7 @@ enum missionOrExam {
 // vue-request
 import { useRequest } from 'vue-request'
 import { BaseResponse, defaultClient, paths } from '@/apis/request'
+import { mission } from '@/apis/mission'
 
 type dpListResult = {
   id: number
@@ -111,6 +139,7 @@ type targetResult = {
 export default defineComponent({
   components: {
     tex,
+    tms,
   },
   setup(props) {
     const dp = ref<number>(),
@@ -292,8 +321,21 @@ export default defineComponent({
     })
 
     // 监听目标内容
-    watch(targetID, (newValue) => {
-      console.log(dp.value, lesson.value, targetID.value)
+    watch([dp, lesson, recordType, scoreType, targetID], () => {
+      if (targetID.value === undefined || targetID.value === 0) {
+        isExamScoreShow.value = false
+        isMissionScoreShow.value = false
+        return
+      }
+      switch (scoreType.value) {
+        case missionOrExam.exam:
+          isExamScoreShow.value = true
+          break
+        case missionOrExam.mission:
+          isMissionScoreShow.value = true
+          break
+        default:
+      }
     })
 
     // 是否显示存档按钮
@@ -304,6 +346,11 @@ export default defineComponent({
         targetID.value !== 0
       )
     })
+
+    // 是否显示考试成绩
+    const isExamScoreShow = ref<boolean>(false)
+    // 是否显示考试成绩
+    const isMissionScoreShow = ref<boolean>(false)
 
     return {
       // 记录类型
@@ -331,6 +378,11 @@ export default defineComponent({
 
       // 是否显示存档按钮
       isShowSaveButton,
+
+      // 是否显示考试成绩
+      isExamScoreShow,
+      // 是否显示实验成绩
+      isMissionScoreShow,
     }
   },
 })

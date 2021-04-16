@@ -2,7 +2,12 @@
   <!-- 班级考试成绩 -->
   <div class="w-full">
     <!-- 表格 -->
-    <a-table :dataSource="dataSource" :columns="columns" :pagination="false">
+    <a-table
+      :dataSource="dataSource"
+      :columns="columns"
+      :pagination="false"
+      rowKey="id"
+    >
       <template #time="{ text }">
         <span>{{
           text === 0 ? '未开始' : moment.unix(text).format('lll')
@@ -21,9 +26,9 @@ import { moment } from '@/utils/time'
 
 export default defineComponent({
   props: {
-    dp: { type: Number, default: 1 },
-    lesson: { type: Number, default: 1 },
-    exam: { type: Number, default: 1 },
+    dp: { type: Number, default: 0 },
+    lesson: { type: Number, default: 0 },
+    exam: { type: Number, default: 0 },
     isSaveMode: { type: Boolean, default: false },
   },
   setup(props) {
@@ -68,13 +73,11 @@ export default defineComponent({
         {
           title: '考试开始时间',
           dataIndex: 'exam_begin_at',
-          key: 'exam_begin_at',
           slots: { customRender: 'time' },
         },
         {
           title: '考试结束时间',
           dataIndex: 'exam_begin_at',
-          key: 'exam_begin_at',
           slots: { customRender: 'time' },
         },
       ],
