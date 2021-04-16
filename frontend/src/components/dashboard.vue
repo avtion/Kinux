@@ -243,7 +243,6 @@ export default defineComponent({
     const isAdmin = computed(() => {
       return p.roleID == Role.RoleAdmin || isTeacher.value
     })
-    console.log(isAdmin)
 
     return {
       selectedKeys: [routers.currentRoute.value.name],
