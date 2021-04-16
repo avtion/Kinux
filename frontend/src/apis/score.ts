@@ -1,5 +1,6 @@
 import { BaseResponse, defaultClient } from '@api/request'
 import { AxiosResponse } from 'axios'
+import { message } from 'ant-design-vue'
 
 export class Score {
   public department: number
@@ -96,6 +97,29 @@ export class Score {
             reject(err)
           })
       }
+    )
+  }
+
+  // 存档成绩
+  SaveScore = (scoreType: number, targetID: number) => {
+    defaultClient
+      .get('/v2/score/save/', {
+        params: {
+          dp: this.department,
+          lesson: this.lesson,
+          target: targetID,
+          type: scoreType,
+        },
+      })
+      .then((res) => {
+        message.info('成绩存档成功')
+      })
+  }
+
+  // 获取存档成绩
+  GetSaveScore = () => {
+    return new Promise<MissionScoreForAdmin[] | ExamScoreForAdmin[]>(
+      (resolve, reject) => {}
     )
   }
 }

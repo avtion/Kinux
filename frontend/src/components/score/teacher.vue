@@ -5,67 +5,84 @@
     <div class="w-full h-full p-5">
       <div class="w-full h-full bg-white rounded">
         <!-- 表单 -->
-        <a-space class="pt-5 pl-5">
-          <a-select placeholder="班级" style="width: 150px" v-model:value="dp">
-            <a-select-option
-              v-for="(item, index) in dpList"
-              :key="index"
-              :value="item.id"
+        <div class="pt-5 pl-5">
+          <a-space>
+            <a-select
+              placeholder="班级"
+              style="width: 150px"
+              v-model:value="dp"
             >
-              {{ item.name }}
-            </a-select-option>
-          </a-select>
-          <!-- 课程 -->
-          <a-select
-            placeholder="课程"
-            style="width: 150px"
-            v-model:value="lesson"
-          >
-            <a-select-option
-              v-for="(item, index) in lessonList"
-              :key="index"
-              :value="item.id"
+              <a-select-option
+                v-for="(item, index) in dpList"
+                :key="index"
+                :value="item.id"
+              >
+                {{ item.name }}
+              </a-select-option>
+            </a-select>
+            <!-- 课程 -->
+            <a-select
+              placeholder="课程"
+              style="width: 150px"
+              v-model:value="lesson"
             >
-              {{ item.name }}
-            </a-select-option>
-          </a-select>
-          <!-- 存档类型 -->
-          <a-select placeholder="记录类型" v-model:value="recordType">
-            <a-select-option :value="recordTypes.now">实时</a-select-option>
-            <a-select-option :value="recordTypes.save">存档</a-select-option>
-          </a-select>
-          <!-- 实验或者考试 -->
-          <a-select placeholder="实验/考试" v-model:value="scoreType">
-            <a-select-option :value="missionOrExam.mission"
-              >实验</a-select-option
+              <a-select-option
+                v-for="(item, index) in lessonList"
+                :key="index"
+                :value="item.id"
+              >
+                {{ item.name }}
+              </a-select-option>
+            </a-select>
+            <!-- 存档类型 -->
+            <a-select placeholder="记录类型" v-model:value="recordType">
+              <a-select-option :value="recordTypes.now">实时</a-select-option>
+              <a-select-option :value="recordTypes.save">存档</a-select-option>
+            </a-select>
+            <!-- 实验或者考试 -->
+            <a-select placeholder="实验/考试" v-model:value="scoreType">
+              <a-select-option :value="missionOrExam.mission"
+                >实验</a-select-option
+              >
+              <a-select-option :value="missionOrExam.exam"
+                >考试</a-select-option
+              >
+            </a-select>
+            <!-- 查询目标 -->
+            <a-select
+              placeholder="查询目标"
+              style="min-width: 250px"
+              v-model:value="targetID"
             >
-            <a-select-option :value="missionOrExam.exam">考试</a-select-option>
-          </a-select>
-          <!-- 查询目标 -->
-          <a-select
-            placeholder="查询目标"
-            style="width: 150px"
-            v-model:value="targetID"
-          >
-            <a-select-option
-              v-for="(item, index) in targets"
-              :key="index"
-              :value="item.id"
+              <a-select-option
+                v-for="(item, index) in targets"
+                :key="index"
+                :value="item.id"
+              >
+                {{ item.name }}
+              </a-select-option>
+            </a-select>
+          </a-space>
+        </div>
+        <div class="pt-5 pl-5">
+          <a-space>
+            <!-- 下载成绩 -->
+            <a-button
+              type="primary"
+              :disabled="!isExamScoreShow && !isMissionScoreShow"
             >
-              {{ item.name }}
-            </a-select-option>
-          </a-select>
-
-          <!-- 下载成绩 -->
-          <a-button
-            type="primary"
-            :disabled="!isExamScoreShow && !isMissionScoreShow"
-          >
-            下载成绩
-          </a-button>
-          <!-- 存档 -->
-          <a-button type="default" v-show="isShowSaveButton">存档</a-button>
-        </a-space>
+              下载成绩
+            </a-button>
+            <!-- 存档 -->
+            <a-button
+              type="default"
+              :disabled="!isShowSaveButton"
+              :loading="isSaveButtonLoading"
+              @click="saveScore"
+              >存档</a-button
+            >
+          </a-space>
+        </div>
         <a-divider>成绩</a-divider>
         <a-empty
           :description="false"
@@ -115,7 +132,10 @@ enum missionOrExam {
 // vue-request
 import { useRequest } from 'vue-request'
 import { BaseResponse, defaultClient, paths } from '@/apis/request'
-import { mission } from '@/apis/mission'
+import { Score } from '@/apis/score'
+
+// 时间处理
+import { moment } from '@/utils/time'
 
 type dpListResult = {
   id: number
@@ -276,15 +296,17 @@ export default defineComponent({
             id: number
             raw_id: number
             raw_name: string
+            created_at: string
           }
           const _res = <__listRes[]>res.data.Data
           const data = <targetResult[]>[]
           _res.forEach((v) => {
             data.push(<targetResult>{
               id: v.id,
-              name: v.raw_name,
+              name: `${v.raw_name}-${moment(v.created_at).format('lll')}`,
             })
           })
+          targets.value = data
         },
       }
     )
@@ -347,6 +369,17 @@ export default defineComponent({
       )
     })
 
+    // 成绩存档
+    const isSaveButtonLoading = ref<boolean>(false)
+
+    // 存档成绩
+    const saveScore = () => {
+      new Score(dp.value, lesson.value).SaveScore(
+        scoreType.value,
+        targetID.value
+      )
+    }
+
     // 是否显示考试成绩
     const isExamScoreShow = ref<boolean>(false)
     // 是否显示考试成绩
@@ -378,6 +411,12 @@ export default defineComponent({
 
       // 是否显示存档按钮
       isShowSaveButton,
+
+      // 存档按钮是否正在加载
+      isSaveButtonLoading,
+
+      // 存档成绩
+      saveScore,
 
       // 是否显示考试成绩
       isExamScoreShow,
