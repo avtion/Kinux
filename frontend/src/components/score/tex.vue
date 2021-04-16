@@ -35,12 +35,28 @@ export default defineComponent({
     console.log(props.lesson, props.exam, props.isSaveMode)
     const score = new Score(props.dp, props.lesson, props.exam)
     const scoreData = reactive<ExamScoreForAdmin[]>([])
-    const { run: getScoreData } = useRequest(score.GetExamScoreForAdmin, {
-      formatResult: (res) => {
+
+    // 兼容存档
+    let client = score.GetExamScoreForAdmin
+    if (props.isSaveMode) {
+      client = () => {
+        return new Promise<ExamScoreForAdmin[]>((resolve, reject) => {
+          score
+            .GetSaveScore(2, props.exam)
+            .then((res) => {
+              resolve(<ExamScoreForAdmin[]>res)
+            })
+            .catch((err) => {
+              reject(err)
+            })
+        })
+      }
+    }
+    const { run: getScoreData } = useRequest(client, {
+      formatResult: (res: ExamScoreForAdmin[]) => {
         res.forEach((v) => {
           scoreData.push(reactive(v))
         })
-        console.log(scoreData)
       },
     })
     return {

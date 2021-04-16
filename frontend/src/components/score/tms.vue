@@ -39,7 +39,24 @@ export default defineComponent({
     console.log(props.lesson, props.mission, props.isSaveMode)
     const score = new Score(props.dp, props.lesson, 0, props.mission)
     const scoreData = reactive<MissionScoreForAdmin[]>([])
-    const { run: getScoreData } = useRequest(score.GetMissionScoreForAdmin, {
+
+    // 兼容存档
+    let client = score.GetMissionScoreForAdmin
+    if (props.isSaveMode) {
+      client = () => {
+        return new Promise<MissionScoreForAdmin[]>((resolve, reject) => {
+          score
+            .GetSaveScore(1, props.mission)
+            .then((res) => {
+              resolve(<MissionScoreForAdmin[]>res)
+            })
+            .catch((err) => {
+              reject(err)
+            })
+        })
+      }
+    }
+    const { run: getScoreData } = useRequest(client, {
       formatResult: (res) => {
         res.forEach((v) => {
           scoreData.push(reactive(v))

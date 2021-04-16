@@ -117,9 +117,27 @@ export class Score {
   }
 
   // 获取存档成绩
-  GetSaveScore = () => {
+  GetSaveScore = (scoreType: number, targetID: number) => {
     return new Promise<MissionScoreForAdmin[] | ExamScoreForAdmin[]>(
-      (resolve, reject) => {}
+      (resolve, reject) => {
+        return defaultClient
+          .get(`/v2/score/save/${targetID}/`)
+          .then((res: AxiosResponse<BaseResponse>) => {
+            // 根据成绩类型判断返回的值
+            const _res: SaveResult = res.data.Data
+            switch (scoreType) {
+              case 1:
+                resolve(<MissionScoreForAdmin[]>_res.data)
+                break
+              case 2:
+                resolve(<ExamScoreForAdmin[]>_res.data)
+                break
+            }
+          })
+          .catch((err) => {
+            reject(err)
+          })
+      }
     )
   }
 }
@@ -192,4 +210,13 @@ export interface MissionScoreForAdmin {
   real_name: string
   department: string
   department_id: number
+}
+
+export interface SaveResult {
+  id: number
+  score_type: number
+  raw_id: number
+  raw_name: string
+  raw_created_at: Date
+  data: MissionScoreForAdmin[] | ExamScoreForAdmin[]
 }
