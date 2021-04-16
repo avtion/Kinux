@@ -4,6 +4,11 @@ import { notification } from 'ant-design-vue'
 import { store } from '@/store/store'
 import routers from '@/routers/routers'
 
+// 进度条
+import NProgress from 'nprogress'
+import 'nprogress/nprogress.css'
+NProgress.configure({ showSpinner: false })
+
 // 默认Axios配置
 export const DefaultAxiosConfig: AxiosRequestConfig = {
   baseURL: 'http://localhost:9001/',
@@ -111,6 +116,17 @@ defaultClient.interceptors.request.use(
     return cfg
   }
 )
+
+// 进度条
+defaultClient.interceptors.request.use((cfg) => {
+  NProgress.start()
+  return cfg
+})
+
+defaultClient.interceptors.response.use((resp) => {
+  NProgress.done()
+  return resp
+})
 
 // 路径
 export const paths: routePath = {
