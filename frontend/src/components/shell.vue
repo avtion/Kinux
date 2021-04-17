@@ -257,7 +257,7 @@ export default defineComponent({
         })
         return
       }
-      router.push({ name: 'missionSelector', params: { lesson: props.lesson } })
+      router.push({ name: 'lessonSelector' })
       return
     }
 
