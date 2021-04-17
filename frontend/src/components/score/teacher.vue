@@ -70,6 +70,7 @@
             <a-button
               type="primary"
               :disabled="!isExamScoreShow && !isMissionScoreShow"
+              @click="downloadExcel"
             >
               下载成绩
             </a-button>
@@ -116,6 +117,9 @@
 <script lang="ts" type="module">
 import { defineComponent, ref, watch, computed } from 'vue'
 
+// store
+import { GetStore } from '@/store/store'
+
 import tex from '@/components/score/tex.vue'
 import tms from '@/components/score/tms.vue'
 
@@ -136,6 +140,10 @@ import { Score } from '@/apis/score'
 
 // 时间处理
 import { moment } from '@/utils/time'
+
+import { message } from 'ant-design-vue'
+
+import { DefaultAxiosConfig } from '@/apis/request'
 
 type dpListResult = {
   id: number
@@ -162,6 +170,9 @@ export default defineComponent({
     tms,
   },
   setup(props) {
+    // vue相关变量
+    const store = GetStore()
+
     const dp = ref<number>(),
       lesson = ref<number>(),
       recordType = ref<recordTypes>(recordTypes.now),
@@ -385,6 +396,16 @@ export default defineComponent({
     // 是否显示考试成绩
     const isMissionScoreShow = ref<boolean>(false)
 
+    // 下载文件
+    const downloadExcel = () => {
+      const token = store.getters.GetJWTToken
+      window.open(
+        `${DefaultAxiosConfig.baseURL}v2/score/excel/${dp.value}/${lesson.value}/${recordType.value}/${scoreType.value}/${targetID.value}/?token=${token}`,
+        '_blank'
+      )
+      message.success('文件下载进行中')
+    }
+
     return {
       // 记录类型
       recordTypes,
@@ -422,6 +443,9 @@ export default defineComponent({
       isExamScoreShow,
       // 是否显示实验成绩
       isMissionScoreShow,
+
+      // 下载文件
+      downloadExcel,
     }
   },
 })
