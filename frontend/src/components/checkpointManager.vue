@@ -90,17 +90,17 @@
       :afterClose="clearForm"
     >
       <a-form>
-        <a-form-item label="检查点编号">
+        <a-form-item label="考点编号">
           <a-input
             v-model:value="formRef.ID"
             :disabled="true"
             style="width: 300px"
           />
         </a-form-item>
-        <a-form-item label="检查点名称">
+        <a-form-item label="考点名称">
           <a-input v-model:value="formRef.Name" style="width: 300px" />
         </a-form-item>
-        <a-form-item label="检查点描述">
+        <a-form-item label="考点描述">
           <a-input v-model:value="formRef.Desc" style="width: 300px" />
         </a-form-item>
         <a-form-item label="检测方式">
@@ -112,19 +112,13 @@
             >
           </a-select>
         </a-form-item>
-        <span>输入检测内容: </span>
+        <span>命令行检测内容: </span>
         <v-ace-editor
           v-model:value="formRef.In"
           lang="powershell"
           theme="github"
           style="height: 200px"
-        />
-        <span>输出检测内容: </span>
-        <v-ace-editor
-          v-model:value="formRef.Out"
-          lang="powershell"
-          theme="github"
-          style="height: 200px"
+          class="mt-1"
         />
       </a-form>
     </a-modal>
@@ -201,9 +195,9 @@ enum CheckpointMethod {
 }
 
 const CheckpointMethodMapper: Map<CheckpointMethod, string> = new Map([
-  [CheckpointMethod.MethodExec, '输入流'],
-  [CheckpointMethod.MethodStdout, '输出流'],
-  [CheckpointMethod.MethodTargetPort, '目标端口'],
+  [CheckpointMethod.MethodExec, '输入'],
+  [CheckpointMethod.MethodStdout, '输出'],
+  // [CheckpointMethod.MethodTargetPort, '目标端口'],
 ])
 
 type ListParams = {
@@ -351,7 +345,6 @@ export default defineComponent({
       Name: '',
       Desc: '',
       In: '',
-      Out: '',
       Method: CheckpointMethod.MethodExec,
     })
     const clearForm = () => {
@@ -360,7 +353,6 @@ export default defineComponent({
       formRef.Name = ''
       formRef.Desc = ''
       formRef.In = ''
-      formRef.Out = ''
       formRef.Method = CheckpointMethod.MethodExec
     }
 
@@ -372,7 +364,7 @@ export default defineComponent({
           Name: formRef.Name,
           Desc: formRef.Desc,
           In: formRef.In,
-          Out: formRef.Out,
+          Out: formRef.In,
           Method: formRef.Method,
         },
       ],
@@ -389,7 +381,7 @@ export default defineComponent({
             Name: formRef.Name,
             Desc: formRef.Desc,
             In: formRef.In,
-            Out: formRef.Out,
+            Out: formRef.In,
             Method: formRef.Method,
           },
         ],
@@ -413,8 +405,7 @@ export default defineComponent({
       formRef.Name = record.name
       formRef.Desc = record.desc
       formRef.Method = record.method
-      formRef.In = record.in
-      formRef.Out = record.out
+      formRef.In = record.in === '' ? record.out : record.in
     }
     const deleteFn = (record: ListResult) => {
       deleteDepartment(record.id).finally(() => {
@@ -436,7 +427,7 @@ export default defineComponent({
             Name: formRef.Name,
             Desc: formRef.Desc,
             In: formRef.In,
-            Out: formRef.Out,
+            Out: formRef.In,
             Method: formRef.Method,
           }).finally(() => {
             getListData(<ListParams>{
@@ -454,7 +445,7 @@ export default defineComponent({
             Name: formRef.Name,
             Desc: formRef.Desc,
             In: formRef.In,
-            Out: formRef.Out,
+            Out: formRef.In,
             Method: formRef.Method,
           }).finally(() => {
             getListData(<ListParams>{
