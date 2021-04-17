@@ -6,10 +6,12 @@ import (
 	"Kinux/tools/bytesconv"
 	"Kinux/tools/cfg"
 	"context"
+	"fmt"
 	"github.com/360EntSecGroup-Skylar/excelize/v2"
 	"github.com/spf13/cast"
 	"github.com/spf13/viper"
 	"github.com/yanyiwu/gojieba"
+	"gorm.io/gorm"
 	"os"
 	"path/filepath"
 	"strings"
@@ -172,7 +174,7 @@ func TestGetSQLiteDBInfo(t *testing.T) {
 }
 
 // 添加测试实验
-func TestAddMissions(t *testing.T) {
+func TestAddExampleMissions(t *testing.T) {
 	var basePath = filepath.Join("../../", "example_configs", "command")
 	// 查找命令行说明目录
 	entries, err := os.ReadDir(basePath)
@@ -225,4 +227,130 @@ func TestAddMissions(t *testing.T) {
 		}
 	}
 	t.Log("实验导入成功")
+}
+
+// 生成测试考点
+func TestAddExampleCheckpoints(t *testing.T) {
+	c1 := &models.Checkpoint{
+		Name:   "查看当前进程情况",
+		Desc:   "ps aux",
+		In:     "ps aux",
+		Out:    "",
+		Method: models.MethodExec,
+	}
+	if err := c1.Create(context.Background()); err != nil {
+		t.Fatal(err)
+	}
+	c2 := &models.Checkpoint{
+		Name:   "查看根目录",
+		Desc:   "ls /",
+		In:     "",
+		Out:    "bin  boot  dev  dump.rdb  etc  home  lib  lib64  lost+found  media  mnt  opt  proc  root  run  sbin  srv  sys  tmp  usr  var",
+		Method: models.MethodStdout,
+	}
+	if err := c2.Create(context.Background()); err != nil {
+		t.Fatal(err)
+	}
+	cps, err := models.ListCheckpoints(context.Background(), "", 0, nil)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	missions, err := models.ListMissions(context.Background(), "", nil)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	for _, cp := range cps {
+		for _, mission := range missions {
+			if err = models.AddMissionCheckpoint(context.Background(), &models.MissionCheckpoints{
+				Mission:         mission.ID,
+				CheckPoint:      cp.ID,
+				Percent:         10,
+				Priority:        0,
+				TargetContainer: mission.ExecContainer,
+			}); err != nil {
+				t.Fatal(err)
+			}
+		}
+	}
+	t.Log("考点添加成功")
+}
+
+// 生成测试课程
+func TestAddExampleLessons(t *testing.T) {
+	missions, err := models.ListMissions(context.Background(), "", nil)
+	if err != nil {
+		t.Fatal(err)
+	}
+	const gutter = 20
+
+	var index = 1
+	for i := 0; i < len(missions); {
+		if i > len(missions) {
+			break
+		}
+		max := i + gutter
+		if max > len(missions) {
+			max = len(missions)
+		}
+		descs := make([]string, 0, gutter)
+		for _, v := range missions[i:max] {
+			descs = append(descs, v.Name)
+		}
+		var title = fmt.Sprintf("Linux工具学习（%d）", index)
+		index++
+		var desc = fmt.Sprintf("课程内容: %s", strings.Join(descs, ","))
+		lesson := &models.Lesson{
+			Name: title,
+			Desc: desc,
+		}
+		if err = models.GetGlobalDB().WithContext(context.Background()).Create(&lesson).Error; err != nil {
+			t.Fatal(err)
+		}
+		if lesson.ID == 0 {
+			t.Fatal("id == 0")
+		}
+
+		for _, v := range missions[i:max] {
+			if err = models.GetGlobalDB().WithContext(context.Background()).Create(&models.LessonMission{
+				Model:    gorm.Model{},
+				Lesson:   lesson.ID,
+				Mission:  v.ID,
+				Priority: 0,
+			}).Error; err != nil {
+				t.Fatal(err)
+			}
+		}
+		i += gutter
+	}
+	t.Log("示例课程添加成功")
+}
+
+// 添加班级测试课程
+func TestAddExampleLessonsToDepartment(t *testing.T) {
+	selectRes := make([]*models.Lesson, 0)
+	if err := models.GetGlobalDB().WithContext(context.Background()).Model(new(models.Lesson)).Scopes(
+		func(db *gorm.DB) *gorm.DB {
+			return db.Where("name LIKE ?", fmt.Sprintf("%%%s%%", "Linux工具学习"))
+		},
+	).Find(&selectRes).Error; err != nil {
+		return
+	}
+	dps, err := models.ListDepartments(context.Background(), "", nil)
+	if err != nil {
+		t.Fatal(err)
+	}
+	for _, dp := range dps {
+		for _, lesson := range selectRes {
+			if err = models.GetGlobalDB().WithContext(context.Background()).Create(&models.LessonDepartment{
+				Model:      gorm.Model{},
+				Department: dp.ID,
+				Lesson:     lesson.ID,
+			}).Error; err != nil {
+				return
+			}
+		}
+	}
+	t.Log("班级课程添加成功")
 }
