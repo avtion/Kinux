@@ -42,9 +42,9 @@ func (c *Checkpoint) Create(ctx context.Context) (err error) {
 	db := GetGlobalDB().WithContext(ctx)
 	switch c.Method {
 	case MethodExec, MethodTargetPort:
-		err = db.Select("CreatedAt", "Name", "Desc", "Method", "In").Create(c).Error
+		err = db.Select("CreatedAt", "Name", "Desc", "Method", "In", "Out").Create(c).Error
 	case MethodStdout:
-		err = db.Select("CreatedAt", "Name", "Desc", "Method", "Out").Create(c).Error
+		err = db.Select("CreatedAt", "Name", "Desc", "Method", "In", "Out").Create(c).Error
 	default:
 		err = errors.New("未知检查方式")
 	}
@@ -164,5 +164,6 @@ func (c *Checkpoint) Edit(ctx context.Context) (err error) {
 	default:
 		return errors.New("检查点方式为空")
 	}
-	return GetGlobalDB().WithContext(ctx).Save(c).Error
+	return GetGlobalDB().WithContext(ctx).Select("*").Omit(
+		"id, created_at, updated_at").Updates(c).Error
 }
