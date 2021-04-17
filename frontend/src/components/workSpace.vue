@@ -94,6 +94,7 @@ export default {
     // 头像
     const avatar = new Avatars(AvatarsSprites, {
       dataUri: true,
+      skin: ['light'],
     }).create(<string>store.getters.GetAvatarSeed)
 
     return {

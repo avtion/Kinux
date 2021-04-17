@@ -51,7 +51,7 @@
             </a-card>
           </a-col>
           <a-col :span="6">
-            <a-card :bordered="false">
+            <a-card :bordered="false" :hoverable="true">
               <a-statistic title="课程数量" :value="data.lesson" />
             </a-card>
           </a-col>
@@ -121,6 +121,7 @@ export default {
     // 头像
     const avatar = new Avatars(AvatarsSprites, {
       dataUri: true,
+      skin: ['light'],
     }).create(<string>store.getters.GetAvatarSeed)
 
     // 数据

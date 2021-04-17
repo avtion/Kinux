@@ -145,6 +145,7 @@ export default defineComponent({
     const avatar = ref<string>(
       new Avatars(AvatarsSprites, {
         dataUri: true,
+        skin: ['light'],
       }).create(<string>store.getters.GetAvatarSeed)
     )
     watch(
@@ -153,6 +154,7 @@ export default defineComponent({
         // 头像种子更新
         avatar.value = new Avatars(AvatarsSprites, {
           dataUri: true,
+          skin: ['light'],
         }).create(newValue)
       }
     )
