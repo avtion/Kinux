@@ -60,5 +60,10 @@ func v2Router() initFunc {
 			score.GET("/save/:id/", controllers.GetScoreSaversForAdmin)              // 获取成绩存档
 			score.GET("/excel/:dp/:lesson/:mode/:st/:target/", controllers.GetExcel) // 获取成绩Excel文件
 		}
+
+		counter := v2WithAuth.Group("/counter")
+		{
+			counter.GET("/", controllers.Counter) // 数据统计
+		}
 	}
 }
