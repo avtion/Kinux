@@ -5,11 +5,14 @@ import (
 	"Kinux/core/web/msg"
 	"Kinux/core/web/services"
 	"errors"
+	"fmt"
+	"github.com/360EntSecGroup-Skylar/excelize/v2"
 	"github.com/gin-gonic/gin"
 	jsoniter "github.com/json-iterator/go"
 	"github.com/spf13/cast"
 	"gorm.io/gorm"
 	"net/http"
+	"strings"
 	"time"
 )
 
@@ -256,4 +259,134 @@ func GetScoreSaversForAdmin(c *gin.Context) {
 		RawCreatedAt: data.RawCreatedAt,
 		Data:         dataObj,
 	}))
+}
+
+// GetExcel 获取成绩的Excel
+func GetExcel(c *gin.Context) {
+	params := &struct {
+		Department uint
+		Lesson     uint
+		Mode       uint                  // 1-实时 2-存档
+		ScoreType  models.ScoreSaverType // 1-实验 2-考试
+		TargetID   uint                  // 目标ID
+	}{
+		Department: cast.ToUint(c.DefaultQuery("dp", "0")),
+		Lesson:     cast.ToUint(c.DefaultQuery("lesson", "0")),
+		Mode:       cast.ToUint(c.DefaultQuery("mode", "0")),
+		ScoreType:  cast.ToUint(c.DefaultQuery("st", "0")),
+		TargetID:   cast.ToUint(c.DefaultQuery("target", "0")),
+	}
+
+	if params.Department == 0 ||
+		params.Lesson == 0 ||
+		params.Mode == 0 ||
+		params.ScoreType == 0 ||
+		params.TargetID == 0 {
+		c.AbortWithStatusJSON(http.StatusOK, msg.BuildFailed(errors.New("参数为空")))
+		return
+	}
+
+	// 获取班级
+	dp, err := models.GetDeployment(c, params.Department)
+	if err != nil {
+		c.AbortWithStatusJSON(http.StatusOK, msg.BuildFailed(err))
+		return
+	}
+
+	// 课程
+	lesson, err := models.GetLesson(c, params.Lesson)
+	if err != nil {
+		c.AbortWithStatusJSON(http.StatusOK, msg.BuildFailed(err))
+		return
+	}
+
+	var (
+		f               *excelize.File
+		fileNameBuilder = strings.Builder{}
+	)
+
+	// 生成文件名
+	fileNameBuilder.WriteString(dp.Name)
+	fileNameBuilder.WriteString("-" + lesson.Name)
+	fileNameBuilder.WriteString("-" + cast.ToString(time.Now().Unix()))
+	fileNameBuilder.WriteString(".xlsx")
+
+	// 实时或者存档
+	switch params.Mode {
+	case 1:
+		switch params.Lesson {
+		case models.ScoreTypeMission:
+			res, err := services.GetMissionScoreForAdmin(c, params.Department, params.Lesson, params.TargetID)
+			if err != nil {
+				c.AbortWithStatusJSON(http.StatusOK, msg.BuildFailed(err))
+				return
+			}
+			f, err = res.GetExcel()
+			if err != nil {
+				c.AbortWithStatusJSON(http.StatusOK, msg.BuildFailed(err))
+				return
+			}
+		case models.ScoreTypeExam:
+			res, err := services.GetExamScoreForAdmin(c, params.Department, params.Lesson, params.TargetID)
+			if err != nil {
+				c.AbortWithStatusJSON(http.StatusOK, msg.BuildFailed(err))
+				return
+			}
+			f, err = res.GetExcel()
+			if err != nil {
+				c.AbortWithStatusJSON(http.StatusOK, msg.BuildFailed(err))
+				return
+			}
+		}
+	case 2:
+		var data = new(models.ScoresSaver)
+		if err := models.GetGlobalDB().WithContext(c).Where(
+			"id = ?", params.TargetID).First(&data).Error; err != nil {
+			c.AbortWithStatusJSON(http.StatusOK, msg.BuildFailed(err))
+			return
+		}
+
+		// 反序列化数据
+		var dataObj interface {
+			GetExcel() (f *excelize.File, err error)
+		}
+		switch data.ScoreType {
+		case models.ScoreTypeMission:
+			dataObj = make(services.MissionScoreForAdminSlice, 0)
+		case models.ScoreTypeExam:
+			dataObj = make(services.ExamScoreForAdminSlice, 0)
+		}
+		if err := jsoniter.Unmarshal(data.Data, &dataObj); err != nil {
+			c.AbortWithStatusJSON(http.StatusOK, msg.BuildFailed(err))
+			return
+		}
+
+		// 获取对应的成绩excel
+		f, err = dataObj.GetExcel()
+		if err != nil {
+			c.AbortWithStatusJSON(http.StatusOK, msg.BuildFailed(err))
+			return
+		}
+	}
+	if f == nil {
+		c.AbortWithStatusJSON(http.StatusOK, msg.BuildFailed("成绩Excel生成失败，清联系管理员"))
+		return
+	}
+
+	// 创建缓冲流
+	buff, err := f.WriteToBuffer()
+	if err != nil {
+		c.AbortWithStatusJSON(http.StatusOK, msg.BuildFailed(err))
+		return
+	}
+
+	c.DataFromReader(http.StatusOK, int64(buff.Len()),
+		"application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+		buff,
+		map[string]string{
+			"Content-Disposition": fmt.Sprintf(`attachment; filename="%s"`,
+				fileNameBuilder.String()),
+		},
+	)
+	return
 }

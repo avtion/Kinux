@@ -4,11 +4,13 @@ import (
 	"Kinux/core/web/models"
 	"Kinux/core/web/msg"
 	"fmt"
+	"github.com/360EntSecGroup-Skylar/excelize/v2"
 	"github.com/gin-gonic/gin"
 	"github.com/sergi/go-diff/diffmatchpatch"
 	"github.com/sirupsen/logrus"
 	"gorm.io/gorm"
 	"sort"
+	"time"
 )
 
 // NewScoreListener 成绩监听器
@@ -381,9 +383,12 @@ type ExamScoreForAdmin struct {
 	DepartmentId uint   `json:"department_id"`
 }
 
+type MissionScoreForAdminSlice []*MissionScoreForAdmin
+type ExamScoreForAdminSlice []*ExamScoreForAdmin
+
 // GetMissionScoreForAdmin 管理员获取实验成绩
 func GetMissionScoreForAdmin(c *gin.Context, department, lessonID, missionID uint) (
-	res []*MissionScoreForAdmin, err error) {
+	res MissionScoreForAdminSlice, err error) {
 	// 查找班级所有成员
 	accounts, err := models.ListAccountsWithProfiles(c, nil, func(db *gorm.DB) *gorm.DB {
 		return db.Where("department_id = ?", department)
@@ -428,7 +433,7 @@ func GetMissionScoreForAdmin(c *gin.Context, department, lessonID, missionID uin
 
 // GetExamScoreForAdmin 管理员获取考试成绩
 func GetExamScoreForAdmin(c *gin.Context, department, lessonID, examID uint) (
-	res []*ExamScoreForAdmin, err error) {
+	res ExamScoreForAdminSlice, err error) {
 	// 查找班级所有成员
 	accounts, err := models.ListAccountsWithProfiles(c, nil, func(db *gorm.DB) *gorm.DB {
 		return db.Where("department_id = ?", department)
@@ -466,6 +471,87 @@ func GetExamScoreForAdmin(c *gin.Context, department, lessonID, examID uint) (
 	})
 	for k := range res {
 		res[k].Pos = uint(k + 1)
+	}
+	return
+}
+
+const __defaultSheetName = "Sheet1"
+
+// GetExcel 生成Excel文件
+func (ms MissionScoreForAdminSlice) GetExcel() (f *excelize.File, err error) {
+	// 创建文件
+	f = excelize.NewFile()
+
+	// 顶部标题
+	for k, v := range [...]string{"排名", "班级", "用户名", "姓名", "实验", "成绩", "完成考点数"} {
+		if err = f.SetCellStr(__defaultSheetName,
+			fmt.Sprintf("%s%s", string(rune('A'+k)), "1"),
+			v,
+		); err != nil {
+			return
+		}
+	}
+
+	// 写入每行数据
+	for i := 0; i < len(ms); i++ {
+		var yIndex = 2 + i
+		for k, v := range [...]interface{}{
+			ms[i].Pos,
+			ms[i].Department,
+			ms[i].Username,
+			ms[i].RealName,
+			ms[i].MissionName,
+			ms[i].Score,
+			ms[i].FinishScoreCounter,
+		} {
+			if err = f.SetCellValue(
+				__defaultSheetName,
+				fmt.Sprintf("%s%d", string(rune('A'+k)), yIndex),
+				v,
+			); err != nil {
+				return
+			}
+		}
+	}
+	return
+}
+
+// GetExcel 生成Excel文件
+func (ex ExamScoreForAdminSlice) GetExcel() (f *excelize.File, err error) {
+	// 创建文件
+	f = excelize.NewFile()
+
+	// 顶部标题
+	for k, v := range [...]string{"排名", "班级", "用户名", "姓名", "考试", "成绩", "考试开始时间", "考试结束时间"} {
+		if err = f.SetCellStr(__defaultSheetName,
+			fmt.Sprintf("%s%s", string(rune('A'+k)), "1"),
+			v,
+		); err != nil {
+			return
+		}
+	}
+
+	// 写入每行数据
+	for i := 0; i < len(ex); i++ {
+		var yIndex = 2 + i
+		for k, v := range [...]interface{}{
+			ex[i].Pos,
+			ex[i].Department,
+			ex[i].Username,
+			ex[i].RealName,
+			ex[i].ExamName,
+			ex[i].Score,
+			time.Unix(ex[i].ExamBeginAt, 0).Format("2006-01-02 15:04:05"),
+			time.Unix(ex[i].ExamEndAt, 0).Format("2006-01-02 15:04:05"),
+		} {
+			if err = f.SetCellValue(
+				__defaultSheetName,
+				fmt.Sprintf("%s%d", string(rune('A'+k)), yIndex),
+				v,
+			); err != nil {
+				return
+			}
+		}
 	}
 	return
 }

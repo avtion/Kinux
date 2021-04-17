@@ -58,7 +58,7 @@ func v2Router() initFunc {
 			score.GET("/save/", controllers.SaveScoreForAdmin)          // 成绩存档
 			score.GET("/quick/", controllers.QuickScoreSaverForAdmin)   // 快速获取成绩存档选项
 			score.GET("/save/:id/", controllers.GetScoreSaversForAdmin) // 获取成绩存档
+			score.GET("/excel/", controllers.GetExcel)                  // 获取成绩Excel文件
 		}
-
 	}
 }

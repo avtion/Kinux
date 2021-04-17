@@ -24,7 +24,7 @@ func TestNewMissionController(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			mc := NewMissionController(tt.args.ctx)
 
-			ms, err := models.ListMissions(tt.args.ctx, "", nil, nil)
+			ms, err := models.ListMissions(tt.args.ctx, "", nil)
 			if err != nil {
 				t.Fatal(err)
 			}
@@ -66,7 +66,7 @@ func Test_MissionController_ResetAndWatch(t *testing.T) {
 			defer cancel()
 			mc := NewMissionController(ctx)
 
-			ms, err := models.ListMissions(tt.args.ctx, "", nil, nil)
+			ms, err := models.ListMissions(tt.args.ctx, "", nil)
 			if err != nil {
 				t.Fatal(err)
 			}
