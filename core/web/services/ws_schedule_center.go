@@ -179,3 +179,12 @@ func BroadcastMessage(_ context.Context, text string) (err error) {
 	})
 	return nil
 }
+
+// GetScheduleCenterCount 获取当前会话数量
+func GetScheduleCenterCount() (res int64) {
+	scheduleCenter.Range(func(key, value interface{}) bool {
+		res++
+		return true
+	})
+	return
+}
