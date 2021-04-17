@@ -2,6 +2,7 @@ package models
 
 import (
 	"context"
+	"fmt"
 	"testing"
 )
 
@@ -68,5 +69,23 @@ func TestListDepartments(t *testing.T) {
 			}
 			t.Log(gotDs)
 		})
+	}
+}
+
+func TestAddExampleDepartment(t *testing.T) {
+	var level = [...]string{"17", "18", "19", "20"}
+	var dpNames = [...]string{
+		"计算机科学与技术",
+		"软件工程（数据科学与大数据）",
+		"网络工程系",
+	}
+	for _, v := range level {
+		for _, name := range dpNames {
+			_, err := NewDepartment(context.Background(),
+				fmt.Sprintf("%s%s", v, name))
+			if err != nil {
+				t.Fatal(err)
+			}
+		}
 	}
 }
