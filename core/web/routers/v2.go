@@ -53,12 +53,12 @@ func v2Router() initFunc {
 
 		score := v2WithAuth.Group("/score")
 		{
-			score.GET("/mission/", controllers.GetMissionScore)         // 查询实验成绩
-			score.GET("/exam/", controllers.GetExamScore)               // 查询考试成绩
-			score.GET("/save/", controllers.SaveScoreForAdmin)          // 成绩存档
-			score.GET("/quick/", controllers.QuickScoreSaverForAdmin)   // 快速获取成绩存档选项
-			score.GET("/save/:id/", controllers.GetScoreSaversForAdmin) // 获取成绩存档
-			score.GET("/excel/", controllers.GetExcel)                  // 获取成绩Excel文件
+			score.GET("/mission/", controllers.GetMissionScore)                      // 查询实验成绩
+			score.GET("/exam/", controllers.GetExamScore)                            // 查询考试成绩
+			score.GET("/save/", controllers.SaveScoreForAdmin)                       // 成绩存档
+			score.GET("/quick/", controllers.QuickScoreSaverForAdmin)                // 快速获取成绩存档选项
+			score.GET("/save/:id/", controllers.GetScoreSaversForAdmin)              // 获取成绩存档
+			score.GET("/excel/:dp/:lesson/:mode/:st/:target/", controllers.GetExcel) // 获取成绩Excel文件
 		}
 	}
 }

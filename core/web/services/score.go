@@ -386,6 +386,13 @@ type ExamScoreForAdmin struct {
 type MissionScoreForAdminSlice []*MissionScoreForAdmin
 type ExamScoreForAdminSlice []*ExamScoreForAdmin
 
+type ExcelCreator interface {
+	GetExcel() (f *excelize.File, err error)
+}
+
+var _ ExcelCreator = (MissionScoreForAdminSlice)(nil)
+var _ ExcelCreator = (ExamScoreForAdminSlice)(nil)
+
 // GetMissionScoreForAdmin 管理员获取实验成绩
 func GetMissionScoreForAdmin(c *gin.Context, department, lessonID, missionID uint) (
 	res MissionScoreForAdminSlice, err error) {

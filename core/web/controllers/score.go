@@ -270,11 +270,11 @@ func GetExcel(c *gin.Context) {
 		ScoreType  models.ScoreSaverType // 1-实验 2-考试
 		TargetID   uint                  // 目标ID
 	}{
-		Department: cast.ToUint(c.DefaultQuery("dp", "0")),
-		Lesson:     cast.ToUint(c.DefaultQuery("lesson", "0")),
-		Mode:       cast.ToUint(c.DefaultQuery("mode", "0")),
-		ScoreType:  cast.ToUint(c.DefaultQuery("st", "0")),
-		TargetID:   cast.ToUint(c.DefaultQuery("target", "0")),
+		Department: cast.ToUint(c.Param("dp")),
+		Lesson:     cast.ToUint(c.Param("lesson")),
+		Mode:       cast.ToUint(c.Param("mode")),
+		ScoreType:  cast.ToUint(c.Param("st")),
+		TargetID:   cast.ToUint(c.Param("target")),
 	}
 
 	if params.Department == 0 ||
@@ -287,7 +287,7 @@ func GetExcel(c *gin.Context) {
 	}
 
 	// 获取班级
-	dp, err := models.GetDeployment(c, params.Department)
+	dp, err := models.GetDepartmentByID(c, params.Department)
 	if err != nil {
 		c.AbortWithStatusJSON(http.StatusOK, msg.BuildFailed(err))
 		return
@@ -314,7 +314,7 @@ func GetExcel(c *gin.Context) {
 	// 实时或者存档
 	switch params.Mode {
 	case 1:
-		switch params.Lesson {
+		switch params.ScoreType {
 		case models.ScoreTypeMission:
 			res, err := services.GetMissionScoreForAdmin(c, params.Department, params.Lesson, params.TargetID)
 			if err != nil {
@@ -347,22 +347,22 @@ func GetExcel(c *gin.Context) {
 		}
 
 		// 反序列化数据
-		var dataObj interface {
-			GetExcel() (f *excelize.File, err error)
-		}
 		switch data.ScoreType {
 		case models.ScoreTypeMission:
-			dataObj = make(services.MissionScoreForAdminSlice, 0)
+			raw := make(services.MissionScoreForAdminSlice, 0)
+			if err := jsoniter.Unmarshal(data.Data, &raw); err != nil {
+				c.AbortWithStatusJSON(http.StatusOK, msg.BuildFailed(err))
+				return
+			}
+			f, err = raw.GetExcel()
 		case models.ScoreTypeExam:
-			dataObj = make(services.ExamScoreForAdminSlice, 0)
+			raw := make(services.ExamScoreForAdminSlice, 0)
+			if err := jsoniter.Unmarshal(data.Data, &raw); err != nil {
+				c.AbortWithStatusJSON(http.StatusOK, msg.BuildFailed(err))
+				return
+			}
+			f, err = raw.GetExcel()
 		}
-		if err := jsoniter.Unmarshal(data.Data, &dataObj); err != nil {
-			c.AbortWithStatusJSON(http.StatusOK, msg.BuildFailed(err))
-			return
-		}
-
-		// 获取对应的成绩excel
-		f, err = dataObj.GetExcel()
 		if err != nil {
 			c.AbortWithStatusJSON(http.StatusOK, msg.BuildFailed(err))
 			return

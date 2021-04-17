@@ -89,7 +89,7 @@ var TokenCentral = &jwt.GinJWTMiddleware{
 		c.JSON(http.StatusOK, msg.Build(msg.CodeJWTAuthFailed, "系统鉴权失败"))
 		return
 	},
-	TokenLookup: "header:Authorization",
+	TokenLookup: "header:Authorization, query: token",
 	TimeFunc:    time.Now,
 }
 
