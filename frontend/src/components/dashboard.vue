@@ -28,6 +28,10 @@
           <BarChartOutlined class="align-middle" />
           <span class="align-middle">成绩查询</span>
         </a-menu-item>
+        <a-menu-item key="counterManager" v-if="isAdmin">
+          <ClusterOutlined class="align-middle" />
+          <span class="align-middle">系统统计</span>
+        </a-menu-item>
         <a-menu-item key="profile">
           <UserOutlined class="align-middle" />
           <span class="align-middle">个人资料</span>
@@ -145,6 +149,7 @@ import {
   DeploymentUnitOutlined,
   BarChartOutlined,
   DotChartOutlined,
+  ClusterOutlined,
 } from '@ant-design/icons-vue'
 
 // websocket
@@ -179,6 +184,7 @@ export default defineComponent({
     DeploymentUnitOutlined,
     BarChartOutlined,
     DotChartOutlined,
+    ClusterOutlined,
   },
   setup() {
     // logo

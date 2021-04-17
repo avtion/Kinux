@@ -100,93 +100,99 @@
 </template>
 
 <script lang="ts" type="module">
-import { reactive, ref, defineComponent, onBeforeMount } from "vue";
+import { reactive, ref, defineComponent, onBeforeMount, computed } from 'vue'
 
 // antd
-import { useForm } from "@ant-design-vue/use";
-import { UserOutlined, LockOutlined } from "@ant-design/icons-vue";
-import { notification } from "ant-design-vue";
+import { useForm } from '@ant-design-vue/use'
+import { UserOutlined, LockOutlined } from '@ant-design/icons-vue'
+import { notification } from 'ant-design-vue'
 
 // api
-import { Account } from "@api/user";
+import { Account } from '@api/user'
 
 // 背景图
-import backgroundImg from "@image/login-wallpaper.png";
+import backgroundImg from '@image/login-wallpaper.png'
 
 // store
-import { GetStore } from "@/store/store";
+import { GetStore } from '@/store/store'
 
 // vue-router
-import { useRouter } from "vue-router";
+import { useRouter } from 'vue-router'
+
+import { Profile, Role } from '@/store/interfaces'
 
 // 账号
 interface account {
-  username: string;
-  password: string;
+  username: string
+  password: string
 }
 
 export default defineComponent({
-  name: "login",
+  name: 'login',
   components: { UserOutlined, LockOutlined },
   setup(props, ctx) {
     // vue相关变量
-    const store = GetStore();
-    const router = useRouter();
+    const store = GetStore()
+    const router = useRouter()
 
     // 页面载入时先判断JWT是否有效
     onBeforeMount(() => {
-      const token = store.getters.GetJWTToken;
-      if ((token as string) && token != "") {
-        console.log("存在JWT密钥，正在与服务端进行校验");
+      const token = store.getters.GetJWTToken
+      if ((token as string) && token != '') {
+        console.log('存在JWT密钥，正在与服务端进行校验')
         // TODO 密钥校验
-        notification.success({ message: "您已经成功登陆" });
-        router.push("dashboard");
+        notification.success({ message: '您已经成功登陆' })
+        router.push('dashboard')
       }
-    });
+    })
 
     // 登陆状态进行时
-    const isLoging = ref(false);
+    const isLoging = ref(false)
 
     // 表单数据
     const loginFormData: account = reactive({
-      username: "",
-      password: "",
-    });
+      username: '',
+      password: '',
+    })
 
     // 表单校验规则
     const loginFormRules = reactive({
-      username: [{ required: true, message: "请输入用户名", trigger: "blur" }],
-      password: [{ required: true, message: "请输入密码", trigger: "blur" }],
-    });
+      username: [{ required: true, message: '请输入用户名', trigger: 'blur' }],
+      password: [{ required: true, message: '请输入密码', trigger: 'blur' }],
+    })
 
     // 登陆表单useForm解构
     const { resetFields, validate, validateInfos } = useForm(
       loginFormData,
       loginFormRules
-    );
+    )
 
     // 登陆按钮触发函数
     const onSubmit = (e: { preventDefault: () => void }) => {
       e.preventDefault()
 
       // 修改登陆状态
-      validate()
-        .then(() => {
-          isLoging.value = true;
-          // 登陆
-          new Account(loginFormData.username, loginFormData.password)
-            .login()
-            .then(() => {
-              notification.success({ message: "登陆成功" });
-              router.push("dashboard");
-            }).finally(() => {
-              isLoging.value = false;
-            });
-        })
+      validate().then(() => {
+        isLoging.value = true
+        // 登陆
+        new Account(loginFormData.username, loginFormData.password)
+          .login()
+          .then(() => {
+            notification.success({ message: '登陆成功' })
 
-    };
-
-
+            // 获取当前用户角色并跳转至不同的页面
+            const p: Profile = store.getters.GetProfile
+            if (p.roleID == Role.RoleAdmin || p.roleID === Role.RoleManager) {
+              router.push({ name: 'counterManager' })
+            } else {
+              router.push('dashboard')
+            }
+          })
+          .finally(() => {
+            isLoging.value = false
+          })
+      })
+    }
 
     return {
       backgroundImg,
@@ -195,9 +201,9 @@ export default defineComponent({
       loginFormRules,
       onSubmit,
       validateInfos,
-    };
+    }
   },
-});
+})
 </script>
 
 <style>

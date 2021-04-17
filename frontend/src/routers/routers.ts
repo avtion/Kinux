@@ -30,6 +30,9 @@ import teaScore from '@/components/score/teacher.vue'
 import ex from '@/components/score/ex.vue'
 import ms from '@/components/score/ms.vue'
 
+// 统计
+import counter from '@/components/counter.vue'
+
 // 实验相关
 const workspaceChild = [
   {
@@ -167,6 +170,12 @@ const routes = [
         props: true,
       },
       ...score,
+      {
+        path: 'admin/counter',
+        name: 'counterManager',
+        component: counter,
+        props: true,
+      },
     ],
   },
 ]
