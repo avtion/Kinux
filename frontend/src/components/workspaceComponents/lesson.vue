@@ -1,5 +1,10 @@
 <template>
-  <a-card title="课程选择" :bordered="false" :loading="isProjectDataLoading">
+  <a-card
+    title="课程选择"
+    :bordered="false"
+    :loading="isProjectDataLoading"
+    class="w-full"
+  >
     <a-list :data-source="departmentLessonData">
       <template #renderItem="{ item, index }">
         <a-list-item>
@@ -14,6 +19,7 @@
               <a-avatar :src="numberCreatorFn(index + 1)" />
             </template>
           </a-list-item-meta>
+
           <!-- 操作 -->
           <template #actions>
             <a-button @click="junmpToMission(item.id)">进入课程 </a-button>
@@ -130,5 +136,8 @@ export default {
 }
 </script>
 
-<style>
+<style lang="less" scoped>
+:deep(.ant-list-item-meta-description) {
+  max-width: 600px;
+}
 </style>
