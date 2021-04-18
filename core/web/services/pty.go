@@ -35,20 +35,22 @@ func missionPtyRegisterV2(ws *WebsocketSchedule, any jsoniter.Any) (err error) {
 	params := new(missionPtyParams)
 	any.Get("data").ToVal(params)
 
+	var lessonID = cast.ToUint(params.LessonID)
+
+	// 考试
+	var exam = new(models.Exam)
+	if examID := cast.ToUint(params.ExamID); examID != 0 {
+		exam, _ = models.GetExam(ws.Context, examID)
+		lessonID = exam.Lesson
+	}
+
 	// 获取课程
-	lessonID := cast.ToUint(params.LessonID)
 	if lessonID == 0 {
 		return errors.New("目标课程为空")
 	}
 	lesson, err := models.GetLesson(ws.Context, lessonID)
 	if err != nil {
 		return
-	}
-
-	// 考试
-	var exam = new(models.Exam)
-	if examID := cast.ToUint(params.ExamID); examID != 0 {
-		exam, _ = models.GetExam(ws.Context, examID)
 	}
 
 	// 获取实验
