@@ -84,7 +84,7 @@ func NewExamWatcher(ctx context.Context, ac, examID uint) (err error) {
 		defer func() {
 			// 写入EndAt
 			finishExam(ctx, eLog.ID)
-			ExamWatchers.Delete(eLog.ID)
+			ExamWatchers.Delete(ac)
 			// 告诉用户退出考试界面
 			leaveExam(ctx, eLog.Account)
 		}()
