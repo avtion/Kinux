@@ -1,7 +1,7 @@
 <template>
   <div class="w-full h-full">
     <div class="w-full h-full p-5">
-      <div class="w-full h-full bg-white rounded p-5">
+      <div class="w-full bg-white rounded p-5">
         <!-- 顶部 -->
         <a-page-header title="考试成绩" sub-title="" @back="back()">
           <a-divider>汇总</a-divider>

@@ -1,7 +1,7 @@
 <template>
   <div class="w-full h-full">
     <div class="w-full h-full p-5">
-      <div class="w-full h-full bg-white rounded">
+      <div class="w-full bg-white rounded">
         <!-- 顶部 -->
         <a-page-header title="实验成绩" :sub-title="title" @back="back()">
           <a-divider>汇总</a-divider>
