@@ -334,7 +334,7 @@ func GetExamScore(c *gin.Context, accountID, lessonID, examID uint) (res *ExamSc
 	for _, v := range examMissions {
 		// 查询对应实验的成绩
 		var ms *MissionScore
-		ms, err = GetMissionScore(c, ac.ID, lesson.ID, v.ID, exam.ID)
+		ms, err = GetMissionScore(c, ac.ID, lesson.ID, v.Mission, exam.ID)
 		if err != nil {
 			return
 		}
@@ -430,7 +430,7 @@ func GetMissionScoreForAdmin(c *gin.Context, department, lessonID, missionID uin
 
 	// 技术排名
 	sort.Slice(res, func(i, j int) bool {
-		return res[i].Score < res[j].Score
+		return res[i].Score > res[j].Score
 	})
 	for k := range res {
 		res[k].Pos = uint(k + 1)
@@ -474,7 +474,7 @@ func GetExamScoreForAdmin(c *gin.Context, department, lessonID, examID uint) (
 
 	// 技术排名
 	sort.Slice(res, func(i, j int) bool {
-		return res[i].Score < res[j].Score
+		return res[i].Score > res[j].Score
 	})
 	for k := range res {
 		res[k].Pos = uint(k + 1)
