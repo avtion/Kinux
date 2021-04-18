@@ -111,14 +111,18 @@ export default defineComponent({
       const status = m.status
       switch (status) {
         case missionStatus.Stop:
-          startMission(index, m.id + '')
+          startMission(index, m.mission_id + '')
           return
         case missionStatus.Pending:
           return
         case missionStatus.Working:
           router.push({
             name: 'shell',
-            params: { mission: m.id, lesson: m.mission_id, exam: examID },
+            params: {
+              mission: m.mission_id,
+              lesson: m.mission_id,
+              exam: examID,
+            },
           })
           return
         case missionStatus.Done:
