@@ -220,6 +220,8 @@ export default defineComponent({
       store.commit('ClearJWT')
       store.commit('ClearProfile')
       routers.push('/')
+      // 从上下文中获取对象
+      ws.close()
       notification.success({ message: '注销成功' })
     }
 
