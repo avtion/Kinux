@@ -23,7 +23,7 @@
 
 <script lang="ts" type="module">
 import { Score, MissionScoreForAdmin } from '@/apis/score'
-import { defineComponent, reactive } from 'vue'
+import { defineComponent, reactive, watch } from 'vue'
 import { useRequest } from 'vue-request'
 
 import { moment } from '@/utils/time'
@@ -64,6 +64,9 @@ export default defineComponent({
         console.log(scoreData)
       },
     })
+
+    // TODO 修复无法实时查询成绩
+
     return {
       // 时间处理
       moment,
