@@ -67,8 +67,6 @@
                   <a-button type="primary" @click="editMissionFn(record)">
                     修改实验
                   </a-button>
-                  <a-button type="default">自定义考点 </a-button>
-
                   <a-popconfirm
                     placement="top"
                     ok-text="是"
