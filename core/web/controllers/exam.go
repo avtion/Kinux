@@ -193,7 +193,7 @@ func ListExamMissions(c *gin.Context) {
 	// 查找实验的名称
 	var missionIDs = make([]uint, 0, len(data))
 	for _, v := range data {
-		missionIDs = append(missionIDs, v.ID)
+		missionIDs = append(missionIDs, v.Mission)
 	}
 	nameMapper, _ := models.GetMissionsNameMapper(c, missionIDs...)
 
