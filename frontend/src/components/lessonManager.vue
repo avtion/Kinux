@@ -39,7 +39,10 @@
           <template #desc="{ record }">
             <div style="width: 300px">
               <a-tooltip :title="record.desc">
-                <span class="desc">{{ record.desc }}</span>
+                <a-typography-paragraph
+                  :ellipsis="true"
+                  :content="record.desc"
+                />
               </a-tooltip>
             </div>
           </template>
@@ -410,12 +413,5 @@ export default defineComponent({
 <style lang="less" scoped>
 .ant-table-striped :deep(.table-striped) {
   background-color: #fafafa;
-}
-.desc {
-  overflow: hidden;
-  -webkit-line-clamp: 1;
-  text-overflow: ellipsis;
-  display: -webkit-box;
-  -webkit-box-orient: vertical;
 }
 </style>
