@@ -245,8 +245,8 @@ func TestAddExampleCheckpoints(t *testing.T) {
 		Name:   "查看根目录",
 		Desc:   "ls /",
 		In:     "",
-		Out:    "bin  boot  dev  dump.rdb  etc  home  lib  lib64  lost+found  media  mnt  opt  proc  root  run  sbin  srv  sys  tmp  usr  var",
-		Method: models.MethodStdout,
+		Out:    "ls /",
+		Method: models.MethodExec,
 	}
 	if err := c2.Create(context.Background()); err != nil {
 		t.Fatal(err)
