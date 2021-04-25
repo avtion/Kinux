@@ -23,7 +23,7 @@
             <!-- 课程 -->
             <a-select
               placeholder="课程"
-              style="width: 150px"
+              style="width: 200px"
               v-model:value="lesson"
             >
               <a-select-option
@@ -201,6 +201,8 @@ export default defineComponent({
         return defaultClient.get<BaseResponse>('/v2/lm/list', {
           params: {
             lesson: lesson,
+            page: 1,
+            size: 1 << 10,
           },
         })
       },
@@ -234,6 +236,8 @@ export default defineComponent({
         return defaultClient.get<BaseResponse>('/v1/exam/list/', {
           params: {
             lesson: lesson,
+            page: 1,
+            size: 1 << 10,
           },
         })
       },
@@ -275,6 +279,8 @@ export default defineComponent({
         return defaultClient.get<BaseResponse>('/v2/dl/list', {
           params: {
             department: dp.value,
+            page: 1,
+            size: 1 << 10,
           },
         })
       },
