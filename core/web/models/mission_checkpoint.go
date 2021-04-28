@@ -15,7 +15,7 @@ type MissionCheckpoints struct {
 	CheckPoint      uint   `gorm:"uniqueIndex:mission_checkpoint"`
 	Percent         uint   // 该检查点占任务总分的百分比
 	Priority        int    // 自定义排序
-	TargetContainer string `gorm:"uniqueIndex:mission_checkpoint"` // 目标容器
+	TargetContainer string `gorm:"uniqueIndex:mission_checkpoint;size:256"` // 目标容器
 }
 
 func (mc *MissionCheckpoints) Validate() (err error) {

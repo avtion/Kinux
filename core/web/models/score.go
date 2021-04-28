@@ -19,7 +19,7 @@ type Score struct {
 	Exam       uint   `gorm:"not null;uniqueIndex:score_unique_index"`
 	Mission    uint   `gorm:"not null;uniqueIndex:score_unique_index"`
 	Checkpoint uint   `gorm:"not null;uniqueIndex:score_unique_index"`
-	Container  string `gorm:"not null;uniqueIndex:score_unique_index"`
+	Container  string `gorm:"not null;uniqueIndex:score_unique_index;size:256"`
 }
 
 // FindAllAccountFinishScoreCpIDs 获取用户所有已经完成考点的检查点ID
