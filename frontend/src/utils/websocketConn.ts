@@ -15,7 +15,7 @@ import { moment } from '@/utils/time'
 import { examInfo } from '@api/exam'
 
 // 后端默认路由
-export const DefaultBackendWebsocketRoute = 'ws://127.0.0.1:9001/v1/ws/'
+export const DefaultBackendWebsocketRoute = `ws://${window.location.host}/ws`
 
 // 用于管理项目内的Websocket连接
 export class WebSocketConn extends WebSocket {

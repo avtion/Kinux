@@ -11,7 +11,7 @@ NProgress.configure({ showSpinner: false })
 
 // 默认Axios配置
 export const DefaultAxiosConfig: AxiosRequestConfig = {
-  baseURL: 'http://localhost:9001/',
+  baseURL: 'api/',
   headers: {
     'Content-Type': 'application/json',
   },

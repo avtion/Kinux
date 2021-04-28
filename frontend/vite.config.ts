@@ -12,4 +12,19 @@ export default defineConfig({
     },
   },
   plugins: [vue()],
+  server: {
+    proxy: {
+      '/api': {
+        target: 'http://localhost:9001/',
+        changeOrigin: true,
+        rewrite: (path) => path.replace(/^\/api/, '')
+      },
+      '/ws': {
+        target: 'ws://127.0.0.1:9001/v1/ws/',
+        changeOrigin: true,
+        rewrite: (path) => path.replace(/^\/ws/, ''),
+        ws: true
+      },
+    }
+  }
 })
