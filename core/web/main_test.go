@@ -16,7 +16,6 @@ import (
 	"path/filepath"
 	"strings"
 	"testing"
-	"time"
 )
 
 func init() {
@@ -40,11 +39,6 @@ func TestInitWebService(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			InitWebService()
-			if tt.noFinish {
-				select {}
-			} else {
-				<-time.After(10 * time.Second)
-			}
 		})
 	}
 }
