@@ -30,7 +30,7 @@
         <!-- 统计数据 -->
         <div
           class="pl-10 pr-10 pt-10 bg-gray-50 rounded"
-          v-if="scoreItems.length > 0"
+          v-if="areaChartConfig.data.length > 0"
         >
           <a-row>
             <a-col :span="12"
