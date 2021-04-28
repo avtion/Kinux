@@ -317,7 +317,7 @@ func ListExamByDepartment(c *gin.Context) {
 	var lessons = make([]*LessonType, 0)
 	if err := models.GetGlobalDB().WithContext(c).Model(new(models.LessonDepartment)).Joins(
 		"left join lessons ON lesson_departments.lesson = lessons.id",
-	).Select("lesson_departments.id as id, lessons.desc as desc, lessons.name as name").Where(
+	).Select("lesson_departments.id as `id`, lessons.desc as `desc`, lessons.name as `name`").Where(
 		"lesson_departments.department = ?", params.Dp).Scan(&lessons).Error; err != nil {
 		c.AbortWithStatusJSON(http.StatusOK, msg.BuildFailed(err))
 		return
