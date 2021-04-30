@@ -8,3 +8,5 @@ frontend/.DS_Store
 frontend/dist
 frontend/dist-ssr
 frontend/*.local
+frontend/build.sh
+/build.sh
