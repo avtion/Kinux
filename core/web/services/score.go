@@ -398,7 +398,7 @@ func GetMissionScoreForAdmin(c *gin.Context, department, lessonID, missionID uin
 	res MissionScoreForAdminSlice, err error) {
 	// 查找班级所有成员
 	accounts, err := models.ListAccountsWithProfiles(c, nil, func(db *gorm.DB) *gorm.DB {
-		return db.Where("department_id = ?", department)
+		return db.Where("departments.id = ?", department)
 	})
 	if err != nil {
 		return
@@ -443,7 +443,7 @@ func GetExamScoreForAdmin(c *gin.Context, department, lessonID, examID uint) (
 	res ExamScoreForAdminSlice, err error) {
 	// 查找班级所有成员
 	accounts, err := models.ListAccountsWithProfiles(c, nil, func(db *gorm.DB) *gorm.DB {
-		return db.Where("department_id = ?", department)
+		return db.Where("departments.id = ?", department)
 	})
 	if err != nil {
 		return
