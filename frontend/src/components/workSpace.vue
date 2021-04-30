@@ -53,11 +53,11 @@
 
 <script lang="ts" type="module">
 // vue
-import { reactive, ref, inject } from 'vue'
+import { reactive, inject, defineComponent } from 'vue'
 
 // 图标生成
-import Avatars from '@dicebear/avatars'
-import AvatarsSprites from '@dicebear/avatars-avataaars-sprites'
+import { createAvatar } from '@dicebear/avatars'
+import * as AvatarsSprites from '@dicebear/avatars-avataaars-sprites'
 
 // websocket
 import { WebSocketConn } from '@/utils/websocketConn'
@@ -68,7 +68,7 @@ import { GetStore } from '@/store/store'
 // vue-router
 import { Profile } from '@/store/interfaces'
 
-export default {
+export default defineComponent({
   setup(props, ctx) {
     // vue相关变量
     const store = GetStore()
@@ -92,10 +92,11 @@ export default {
     ])
 
     // 头像
-    const avatar = new Avatars(AvatarsSprites, {
+    const avatar = createAvatar(AvatarsSprites, {
+      seed: <string>store.getters.GetAvatarSeed,
       dataUri: true,
       skin: ['light'],
-    }).create(<string>store.getters.GetAvatarSeed)
+    })
 
     return {
       routes: breadcrumbPath,
@@ -104,7 +105,7 @@ export default {
     }
   },
   methods: {},
-}
+})
 </script>
 
 <style scoped lang="less">
