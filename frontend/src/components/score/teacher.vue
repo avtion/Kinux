@@ -115,7 +115,7 @@
 </template>
 
 <script lang="ts" type="module">
-import { defineComponent, ref, watch, computed } from 'vue'
+import { defineComponent, ref, watch, computed, nextTick } from 'vue'
 
 // store
 import { GetStore } from '@/store/store'
@@ -361,20 +361,24 @@ export default defineComponent({
 
     // 监听目标内容
     watch([dp, lesson, recordType, scoreType, targetID], () => {
+      // FIX 无法切换查询的成绩
+      console.log(targetID)
+      isExamScoreShow.value = false
+      isMissionScoreShow.value = false
       if (targetID.value === undefined || targetID.value === 0) {
-        isExamScoreShow.value = false
-        isMissionScoreShow.value = false
         return
       }
-      switch (scoreType.value) {
-        case missionOrExam.exam:
-          isExamScoreShow.value = true
-          break
-        case missionOrExam.mission:
-          isMissionScoreShow.value = true
-          break
-        default:
-      }
+      nextTick(() => {
+        switch (scoreType.value) {
+          case missionOrExam.exam:
+            isExamScoreShow.value = true
+            break
+          case missionOrExam.mission:
+            isMissionScoreShow.value = true
+            break
+          default:
+        }
+      })
     })
 
     // 是否显示存档按钮
