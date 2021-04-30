@@ -207,7 +207,6 @@ export default defineComponent({
 </script>
 
 <style>
-@import '../assets/css/tailwind@2.0.2.css';
 .form-item-custom {
   margin-bottom: 0px;
 }
