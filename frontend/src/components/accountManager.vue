@@ -299,36 +299,31 @@ export default defineComponent({
     const currentPage = ref<number>(1)
     const currentSize = ref<number>(10)
     const currentNameFilter = ref<string>('')
+    const getParamas = (): ListParams => {
+      return <ListParams>{
+        page: currentPage.value,
+        size: currentSize.value,
+        name: currentNameFilter.value,
+        role: currentRoleFilter.value,
+        department: currentDepartmentFilter.value,
+      }
+    }
 
     const {
       data: listData,
       run: getListData,
       loading: isListDataLoading,
     } = useRequest(listDataAPI, {
-      defaultParams: [
-        <ListParams>{
-          page: currentPage.value,
-          size: currentSize.value,
-          name: currentNameFilter.value,
-          role: currentRoleFilter.value,
-          department: currentDepartmentFilter.value,
-        },
-      ],
+      defaultParams: [getParamas()],
       formatResult: (res): ListResults => {
-        getTotal(<ListParams>{
-          name: currentNameFilter.value,
-        })
+        getTotal(getParamas())
         return res.data.Data
       },
     })
 
     // 分页组件
     const { data: total, run: getTotal } = useRequest(countDataAPI, {
-      defaultParams: [
-        <ListParams>{
-          name: currentNameFilter.value,
-        },
-      ],
+      defaultParams: [getParamas()],
       formatResult: (res): number => {
         return res.data.Data
       },
@@ -343,26 +338,14 @@ export default defineComponent({
 
     // 搜索按钮
     const onSearch = (value?: string) => {
-      getListData(<ListParams>{
-        page: currentPage.value,
-        size: currentSize.value,
-        name: currentNameFilter.value,
-        role: currentRoleFilter.value,
-        department: currentDepartmentFilter.value,
-      })
+      getListData(getParamas())
     }
 
     // 更新表格
     const handleTableChange = (pag: Pagination) => {
       currentPage.value = pag.current
       currentSize.value = pag.pageSize
-      getListData(<ListParams>{
-        page: currentPage.value,
-        size: currentSize.value,
-        name: currentNameFilter.value,
-        role: currentRoleFilter.value,
-        department: currentDepartmentFilter.value,
-      })
+      getListData(getParamas())
     }
 
     // 追加和更新窗口
@@ -440,13 +423,7 @@ export default defineComponent({
     }
     const deleteFn = (record: ListResult) => {
       deleteDepartment(record.id).finally(() => {
-        getListData(<ListParams>{
-          page: currentPage.value,
-          size: currentSize.value,
-          name: currentNameFilter.value,
-          role: currentRoleFilter.value,
-          department: currentDepartmentFilter.value,
-        })
+        getListData(getParamas())
       })
     }
 
@@ -462,13 +439,7 @@ export default defineComponent({
             role: formRef.role,
             department: formRef.department,
           }).finally(() => {
-            getListData(<ListParams>{
-              page: currentPage.value,
-              size: currentSize.value,
-              name: currentNameFilter.value,
-              role: currentRoleFilter.value,
-              department: currentDepartmentFilter.value,
-            })
+            getListData(getParamas())
             modalVisible.value = false
           })
           break
@@ -481,13 +452,7 @@ export default defineComponent({
             role: formRef.role,
             department: formRef.department,
           }).finally(() => {
-            getListData(<ListParams>{
-              page: currentPage.value,
-              size: currentSize.value,
-              name: currentNameFilter.value,
-              role: currentRoleFilter.value,
-              department: currentDepartmentFilter.value,
-            })
+            getListData(getParamas())
             modalVisible.value = false
           })
           break
