@@ -42,7 +42,6 @@ import {
     Tabs,
     Tag,
     Modal,
-    notification,
     Popconfirm,
     Progress,
     Skeleton,
@@ -83,14 +82,12 @@ const antd = [
     Tabs,
     Tag,
     Modal,
-    notification,
     Popconfirm,
     Progress,
     Skeleton,
     Spin,
     Tooltip,
     Switch,
-
 ]
 antd.forEach(plugin => {
     app.use(plugin)
