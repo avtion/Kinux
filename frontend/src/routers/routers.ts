@@ -57,34 +57,6 @@ const workspaceChild = [
   },
 ]
 
-// 成绩查询
-const score = [
-  // 学生查询成绩
-  {
-    path: '/dashboard/score/stu',
-    name: 'stuScore',
-    component: stuScore,
-  },
-  // 老师查询成绩
-  {
-    path: '/dashboard/score/teacher',
-    name: 'teaScore',
-    component: teaScore,
-  },
-  {
-    path: '/dashboard/score/ex',
-    name: 'exScore',
-    component: ex,
-    props: true,
-  },
-  {
-    path: '/dashboard/score/ms',
-    name: 'msScore',
-    component: ms,
-    props: true,
-  },
-]
-
 const routes = [
   {
     path: '/',
@@ -169,7 +141,30 @@ const routes = [
         component: shellWatcherComponents,
         props: true,
       },
-      ...score,
+      // 学生查询成绩
+      {
+        path: '/dashboard/score/stu',
+        name: 'stuScore',
+        component: stuScore,
+      },
+      // 老师查询成绩
+      {
+        path: '/dashboard/score/teacher',
+        name: 'teaScore',
+        component: teaScore,
+      },
+      {
+        path: '/dashboard/score/ex',
+        name: 'exScore',
+        component: ex,
+        props: true,
+      },
+      {
+        path: '/dashboard/score/ms',
+        name: 'msScore',
+        component: ms,
+        props: true,
+      },
       {
         path: 'admin/counter',
         name: 'counterManager',
