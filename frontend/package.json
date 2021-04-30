@@ -12,7 +12,6 @@
     "@antv/g2plot": "^2.3.17",
     "@dicebear/avatars": "^4.7.0-rc.0",
     "@dicebear/avatars-initials-sprites": "^4.7.0-rc.1",
-    "@dicebear/avatars-male-sprites": "^4.7.0-rc.1",
     "@dicebear/avatars-avataaars-sprites": "^4.7.0-rc.1",
     "@kangc/v-md-editor": "^2.2.1",
     "ant-design-vue": "^2.1.1",
