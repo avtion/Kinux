@@ -56,8 +56,7 @@
 import { reactive, inject, defineComponent } from 'vue'
 
 // 图标生成
-import { createAvatar } from '@dicebear/avatars'
-import * as AvatarsSprites from '@dicebear/avatars-avataaars-sprites'
+import { ProfileAvatarCreator } from '@/utils/avatar'
 
 // websocket
 import { WebSocketConn } from '@/utils/websocketConn'
@@ -92,11 +91,7 @@ export default defineComponent({
     ])
 
     // 头像
-    const avatar = createAvatar(AvatarsSprites, {
-      seed: <string>store.getters.GetAvatarSeed,
-      dataUri: true,
-      skin: ['light'],
-    })
+    const avatar = ProfileAvatarCreator(<string>store.getters.GetAvatarSeed)
 
     return {
       routes: breadcrumbPath,

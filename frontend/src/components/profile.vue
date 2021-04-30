@@ -121,8 +121,7 @@ import { RuleObject } from 'ant-design-vue/es/form/interface'
 import { useForm } from '@ant-design-vue/use'
 
 // 图标生成
-import Avatars from '@dicebear/avatars'
-import AvatarsSprites from '@dicebear/avatars-avataaars-sprites'
+import { ProfileAvatarCreator } from '@/utils/avatar'
 
 // store
 import { GetStore } from '@/store/store'
@@ -143,19 +142,13 @@ export default defineComponent({
 
     // 头像
     const avatar = ref<string>(
-      new Avatars(AvatarsSprites, {
-        dataUri: true,
-        skin: ['light'],
-      }).create(<string>store.getters.GetAvatarSeed)
+      ProfileAvatarCreator(<string>store.getters.GetAvatarSeed)
     )
     watch(
       () => <string>store.getters.GetAvatarSeed,
       (newValue) => {
         // 头像种子更新
-        avatar.value = new Avatars(AvatarsSprites, {
-          dataUri: true,
-          skin: ['light'],
-        }).create(newValue)
+        avatar.value = ProfileAvatarCreator(newValue)
       }
     )
     // 更新用户头像种子

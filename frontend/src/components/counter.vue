@@ -94,8 +94,8 @@ import { GetStore } from '@/store/store'
 import { Profile } from '@/store/interfaces'
 
 // 图标生成
-import Avatars from '@dicebear/avatars'
-import AvatarsSprites from '@dicebear/avatars-avataaars-sprites'
+import { ProfileAvatarCreator } from '@/utils/avatar'
+
 import { BaseResponse, defaultClient } from '@/apis/request'
 import { AxiosResponse } from 'axios'
 
@@ -119,10 +119,7 @@ export default {
     const profile = <Profile>store.getters.GetProfile
 
     // 头像
-    const avatar = new Avatars(AvatarsSprites, {
-      dataUri: true,
-      skin: ['light'],
-    }).create(<string>store.getters.GetAvatarSeed)
+    const avatar = ProfileAvatarCreator(<string>store.getters.GetAvatarSeed)
 
     // 数据
     const data = ref<counterRespData>(<counterRespData>{})

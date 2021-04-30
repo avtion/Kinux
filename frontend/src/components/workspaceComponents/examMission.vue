@@ -36,17 +36,13 @@
 
 <script lang="ts" type="module">
 // vue
-import { inject, onMounted, defineComponent } from 'vue'
+import { inject, defineComponent } from 'vue'
 
 // apis
 import { missionStatus } from '@api/mission'
 
 // 图标生成
-import Avatars from '@dicebear/avatars'
-import sprites from '@dicebear/avatars-initials-sprites'
-
-// store
-import { GetStore } from '@/store/store'
+import { IntCreator } from '@/utils/avatar'
 
 // vue-router
 import { useRouter } from 'vue-router'
@@ -160,12 +156,8 @@ export default defineComponent({
     }
 
     // 序号
-    const numberCreator = new Avatars(sprites, {
-      dataUri: true,
-      background: '#3B82F6',
-    })
     const numberCreatorFn = (str: any): string => {
-      return numberCreator.create(str + '')
+      return IntCreator(str + '', '#3B82F6')
     }
 
     // 描述生成

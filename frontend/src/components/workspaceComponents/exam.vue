@@ -60,8 +60,7 @@ import { useRouter } from 'vue-router'
 import { Profile } from '@/store/interfaces'
 
 // 图标生成
-import Avatars from '@dicebear/avatars'
-import sprites from '@dicebear/avatars-initials-sprites'
+import { IntCreator } from '@/utils/avatar'
 
 // 时间处理
 import { moment } from '@/utils/time'
@@ -132,12 +131,8 @@ export default {
     })
 
     // 序号
-    const numberCreator = new Avatars(sprites, {
-      dataUri: true,
-      background: '#F59E0B',
-    })
     const numberCreatorFn = (str: any): string => {
-      return numberCreator.create(str + '')
+      return IntCreator(str + '', '#F59E0B')
     }
 
     // 考试描述生成器

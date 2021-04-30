@@ -103,8 +103,7 @@ import { moment } from '@/utils/time'
 import { useRouter } from 'vue-router'
 
 // 图标生成
-import Avatars from '@dicebear/avatars'
-import sprites from '@dicebear/avatars-initials-sprites'
+import { IntCreator } from '@/utils/avatar'
 
 // 折线图
 import { LiquidChart, PieChart } from '@opd/g2plot-vue'
@@ -124,12 +123,8 @@ export default defineComponent({
     const router = useRouter()
 
     // 序号
-    const numberCreator = new Avatars(sprites, {
-      dataUri: true,
-      background: '#60A5FA',
-    })
     const numberCreatorFn = (str: any): string => {
-      return numberCreator.create(str + '')
+      return IntCreator(str + '', '#60A5FA')
     }
 
     // 返回

@@ -214,8 +214,7 @@ import { useRequest } from 'vue-request'
 import { Checkpoint, missionCheckpointRes } from '@/apis/checkpoint'
 
 // 图标生成
-import Avatars from '@dicebear/avatars'
-import sprites from '@dicebear/avatars-initials-sprites'
+import { IntCreator } from '@/utils/avatar'
 
 export default defineComponent({
   components: {
@@ -581,12 +580,8 @@ export default defineComponent({
     })
 
     // 序号
-    const numberCreator = new Avatars(sprites, {
-      dataUri: true,
-      background: '#1D4ED8',
-    })
     const numberCreatorFn = (str: any): string => {
-      return numberCreator.create(str + '')
+      return IntCreator(str, '#1D4ED8')
     }
 
     return {

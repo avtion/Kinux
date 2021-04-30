@@ -51,22 +51,16 @@
 
 <script lang="ts" type="module">
 // vue
-import { reactive, ref, inject, onMounted } from 'vue'
+import { ref, inject } from 'vue'
 
 // apis
 import { mission, missionList, missionStatus } from '@api/mission'
 
 // 图标生成
-import Avatars from '@dicebear/avatars'
-import AvatarsSprites from '@dicebear/avatars-male-sprites'
-import sprites from '@dicebear/avatars-initials-sprites'
-
-// store
-import { GetStore } from '@/store/store'
+import { IntCreator } from '@/utils/avatar'
 
 // vue-router
 import { useRouter } from 'vue-router'
-import { Profile } from '@/store/interfaces'
 
 // websocket
 import {
@@ -168,12 +162,8 @@ export default {
     }
 
     // 序号
-    const numberCreator = new Avatars(sprites, {
-      dataUri: true,
-      background: '#10B981',
-    })
     const numberCreatorFn = (str: any): string => {
-      return numberCreator.create(str + '')
+      return IntCreator(str + '', '#10B981')
     }
 
     // 说明文档提示

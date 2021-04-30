@@ -85,8 +85,7 @@ import { Score, missionScore, ScoreDetail } from '@api/score'
 import { useRequest } from 'vue-request'
 
 // 图标生成
-import Avatars from '@dicebear/avatars'
-import sprites from '@dicebear/avatars-initials-sprites'
+import { IntCreator } from '@/utils/avatar'
 
 // vue-router
 import { useRouter } from 'vue-router'
@@ -123,12 +122,8 @@ export default defineComponent({
     })
 
     // 序号
-    const numberCreator = new Avatars(sprites, {
-      dataUri: true,
-      background: '#60A5FA',
-    })
     const numberCreatorFn = (str: any): string => {
-      return numberCreator.create(str + '')
+      return IntCreator(str + '', '#60A5FA')
     }
 
     // 加载成绩
