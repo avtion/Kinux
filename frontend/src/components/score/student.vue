@@ -114,8 +114,7 @@ import { Profile } from '@/store/interfaces'
 import { mission, missionList, missionStatus } from '@api/mission'
 
 // 图标生成
-import Avatars from '@dicebear/avatars'
-import sprites from '@dicebear/avatars-initials-sprites'
+import { IntCreator } from '@/utils/avatar'
 
 // 考试状态
 import { examStatus, examRunningInfo, exam } from '@/apis/exam'
@@ -142,12 +141,8 @@ export default defineComponent({
     const profile = <Profile>store.getters.GetProfile
 
     // 序号
-    const numberCreator = new Avatars(sprites, {
-      dataUri: true,
-      background: '#60A5FA',
-    })
     const numberCreatorFn = (str: any): string => {
-      return numberCreator.create(str + '')
+      return IntCreator(str + '', '#60A5FA')
     }
 
     // 课程选择
