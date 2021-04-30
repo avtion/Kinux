@@ -110,9 +110,6 @@ import { notification } from 'ant-design-vue'
 // api
 import { Account } from '@api/user'
 
-// 背景图
-import backgroundImg from '@image/login-wallpaper.png'
-
 // store
 import { GetStore } from '@/store/store'
 
@@ -195,7 +192,7 @@ export default defineComponent({
     }
 
     return {
-      backgroundImg,
+      backgroundImg: '/login-wallpaper.png',
       isLoging,
       loginFormData,
       loginFormRules,
