@@ -192,7 +192,7 @@ export default defineComponent({
     }
 
     return {
-      backgroundImg: '/login-wallpaper.png',
+      backgroundImg: import.meta.env.VITE_LOGIN_WALLPAPER,
       isLoging,
       loginFormData,
       loginFormRules,
