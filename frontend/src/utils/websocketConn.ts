@@ -8,14 +8,11 @@ import { examRunningInfo } from '@api/exam'
 // Antd全局提醒
 import { message } from 'ant-design-vue'
 
-// 时间处理
-import { moment } from '@/utils/time'
-
 // 考试状态
 import { examInfo } from '@api/exam'
 
 // 后端默认路由
-export const DefaultBackendWebsocketRoute = `ws://${window.location.host}/ws`
+export const DefaultBackendWebsocketRoute = import.meta.env.VITE_WS_ADDR
 
 // 用于管理项目内的Websocket连接
 export class WebSocketConn extends WebSocket {
