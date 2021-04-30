@@ -89,7 +89,8 @@ func (e *Exam) Save(ctx context.Context) (err error) {
 	if e.ID == 0 {
 		return errors.New("ID为空")
 	}
-	return GetGlobalDB().WithContext(ctx).Save(e).Error
+	return GetGlobalDB().WithContext(ctx).Select("*").Omit(
+		"created_at", "updated_at", "deleted_at").Updates(e).Error
 }
 
 // 创建考试
@@ -161,7 +162,7 @@ func (em *ExamMissions) Save(ctx context.Context) (err error) {
 	if em.Percent == 0 {
 		return errors.New("成绩比例不能为空")
 	}
-	return GetGlobalDB().WithContext(ctx).Save(em).Error
+	return GetGlobalDB().WithContext(ctx).Select("*").Omit("created_at", "updated_at", "deleted_at").Updates(em).Error
 }
 
 // 删除
