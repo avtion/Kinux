@@ -7,14 +7,35 @@
     "strict": false,
     "jsx": "preserve",
     "sourceMap": true,
-    "lib": ["esnext", "dom"],
-    "types": ["vite/client"],
-    "plugins": [{ "name": "@vuedx/typescript-plugin-vue" }],
+    "lib": [
+      "esnext",
+      "dom"
+    ],
+    "types": [
+      "vite/client"
+    ],
+    "plugins": [
+      {
+        "name": "@vuedx/typescript-plugin-vue"
+      }
+    ],
     "paths": {
-      "@/*": ["src/*"],
-      "@api/*": ["src/apis/*"],
-      "@image/*": ["src/assets/images/*"]
-    }
+      "@/*": [
+        "src/*"
+      ],
+      "@api/*": [
+        "src/apis/*"
+      ],
+      "@image/*": [
+        "src/assets/images/*"
+      ]
+    },
+    "allowSyntheticDefaultImports": true,
   },
-  "include": ["src/**/*.ts", "src/**/*.d.ts", "src/**/*.tsx", "src/**/*.vue"]
+  "include": [
+    "src/**/*.ts",
+    "src/**/*.d.ts",
+    "src/**/*.tsx",
+    "src/**/*.vue"
+  ]
 }
