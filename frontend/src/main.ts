@@ -6,9 +6,96 @@ import App from './App.vue'
 const app = createApp(App)
 
 // antd
-import Antd from 'ant-design-vue'
-import 'ant-design-vue/dist/antd.css'
-app.use(Antd)
+// import Antd from 'ant-design-vue'
+// import 'ant-design-vue/dist/antd.css'
+// app.use(Antd)
+import {
+    Button,
+    Typography,
+    Divider,
+    Col,
+    Row,
+    Layout,
+    Space,
+    Breadcrumb,
+    Dropdown,
+    Menu,
+    PageHeader,
+    Pagination,
+    DatePicker,
+    Form,
+    Input,
+    InputNumber,
+    Select,
+    TimePicker,
+    Avatar,
+    Badge,
+    Card,
+    Collapse,
+    Descriptions,
+    Empty,
+    Image,
+    List,
+    Popover,
+    Statistic,
+    Table,
+    Tabs,
+    Tag,
+    Modal,
+    notification,
+    Popconfirm,
+    Progress,
+    Skeleton,
+    Spin,
+    Tooltip,
+    Switch,
+} from 'ant-design-vue'
+const antd = [
+    Button,
+    Typography,
+    Divider,
+    Col,
+    Row,
+    Layout,
+    Space,
+    Breadcrumb,
+    Dropdown,
+    Menu,
+    PageHeader,
+    Pagination,
+    DatePicker,
+    Form,
+    Input,
+    InputNumber,
+    Select,
+    TimePicker,
+    Avatar,
+    Badge,
+    Card,
+    Collapse,
+    Descriptions,
+    Empty,
+    Image,
+    List,
+    Popover,
+    Statistic,
+    Table,
+    Tabs,
+    Tag,
+    Modal,
+    notification,
+    Popconfirm,
+    Progress,
+    Skeleton,
+    Spin,
+    Tooltip,
+    Switch,
+
+]
+antd.forEach(plugin => {
+    app.use(plugin)
+})
+
 
 // vuex
 import { store, key } from './store/store'
