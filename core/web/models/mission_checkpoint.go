@@ -154,7 +154,7 @@ func EditMissionCheckpoints(ctx context.Context, missionID uint, checkpoints ...
 	return
 }
 
-// 获取用户需要完成的检查点
+// FindAllTodoMissionCheckpoints 获取用户需要完成的检查点
 func FindAllTodoMissionCheckpoints(ctx context.Context, account, lesson, exam, mission uint, containers ...string) (cps []*Checkpoint, err error) {
 	if account == 0 || mission == 0 {
 		return nil, errors.New("缺乏参数，无法获取用户需要完成的检查点")
@@ -196,7 +196,7 @@ func FindAllTodoMissionCheckpoints(ctx context.Context, account, lesson, exam, m
 	return FindCheckpoints(ctx, todoCheckpointIDs...)
 }
 
-// 获取用户需要完成的检查点V2
+// FindAllTodoMissionCheckpointsV2 获取用户需要完成实验的检查点V2
 func FindAllTodoMissionCheckpointsV2(ctx context.Context, account, lesson, exam, mission uint, containers ...string) (
 	mcp []*MissionCheckpoints, err error) {
 	if account == 0 || mission == 0 {
@@ -321,4 +321,58 @@ func DeleteMissionCheckpoint(ctx context.Context, id uint) (err error) {
 		return errors.New("id为空")
 	}
 	return GetGlobalDB().WithContext(ctx).Unscoped().Delete(new(MissionCheckpoints), id).Error
+}
+
+// FindAllTodoMissionCheckpointsV3 获取用户需要完成的考点 - 用于优化SQL查询
+func FindAllTodoMissionCheckpointsV3(ctx context.Context, account, lesson, exam uint, missions ...uint) (
+	mcp []*MissionCheckpoints, missionsMapping map[uint][]*MissionCheckpoints, err error) {
+	if account == 0 || len(missions) == 0 {
+		return nil, nil, errors.New("缺乏参数，无法获取用户需要完成的检查点")
+	}
+
+	// 查询实验所需要完成的考点
+	var mcs = make([]*MissionCheckpoints, 0)
+	if err = GetGlobalDB().WithContext(ctx).Model(new(MissionCheckpoints)).Where(
+		"mission IN ?", missions).Find(&mcs).Error; err != nil {
+		return
+	}
+
+	// 查找已经完成的检查点成绩
+	finishedCheckpointsScores, err := FindAllAccountFinishScoresV2(ctx, account, lesson, exam, missions...)
+	if err != nil {
+		return
+	}
+	// map[container]map[checkpointID]struct{}
+	var scoreMapping = make(map[string]map[uint]struct{})
+	for _, v := range finishedCheckpointsScores {
+		if _, isExist := scoreMapping[v.Container]; !isExist {
+			scoreMapping[v.Container] = make(map[uint]struct{})
+		}
+		scoreMapping[v.Container][v.Checkpoint] = struct{}{}
+	}
+
+	missionsMapping = make(map[uint][]*MissionCheckpoints, len(mcs)-len(finishedCheckpointsScores))
+
+	// 用于追加结果的函数
+	appendFn := func(mc *MissionCheckpoints) {
+		mcp = append(mcp, mc)
+		if _, _isExist := missionsMapping[mc.Mission]; !_isExist {
+			missionsMapping[mc.Mission] = make([]*MissionCheckpoints, 0)
+		}
+		missionsMapping[mc.Mission] = append(missionsMapping[mc.Mission], mc)
+	}
+
+	// 过滤已经完成的检查点
+	for _, mc := range mcs {
+		// 先查对应的容器
+		if _, isExist := scoreMapping[mc.TargetContainer]; !isExist {
+			appendFn(mc)
+			continue
+		}
+		// 如果这个容器没有完成相应的检查点则加入
+		if _, isExist := scoreMapping[mc.TargetContainer][mc.CheckPoint]; !isExist {
+			appendFn(mc)
+		}
+	}
+	return
 }

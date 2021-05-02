@@ -79,6 +79,12 @@ func ListMissionsV2(c *gin.Context, lessonID uint, page, size int) (res []*Missi
 		return
 	}
 
+	// 查询未完成的考点
+	_, cpsMapping, err := models.FindAllTodoMissionCheckpointsV3(c, ac.ID, lesson.ID, 0, missionIDs...)
+	if err != nil {
+		return
+	}
+
 	// 遍历构造对应的响应结果
 	for _, mission := range ms {
 		status, isExist := dpStatusMapper[mission.ID]
@@ -87,12 +93,7 @@ func ListMissionsV2(c *gin.Context, lessonID uint, page, size int) (res []*Missi
 		}
 
 		// 查询任务是否已经完成
-		var cps []*models.Checkpoint
-		cps, err = models.FindAllTodoMissionCheckpoints(c, ac.ID, lesson.ID, 0, mission.ID)
-		if err != nil {
-			return
-		}
-		if len(cps) == 0 {
+		if _, isExist = cpsMapping[mission.ID]; !isExist {
 			status = MissionStatusDone
 		}
 		res = append(res, &Mission{
