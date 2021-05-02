@@ -61,6 +61,15 @@ func FindAllAccountFinishScoresV2(ctx context.Context, account, lesson, exam uin
 	return
 }
 
+// FindAllAccountFinishScoresV3 批量获取用户所有已经完成考点的成绩点
+func FindAllAccountFinishScoresV3(ctx context.Context, accounts []uint, lesson, exam, mission uint) (
+	score []*Score, err error) {
+	db := GetGlobalDB().WithContext(ctx).Model(new(Score)).Where(
+		"account IN ? AND lesson = ? AND exam = ? AND mission = ?", accounts, lesson, exam, mission)
+	err = db.Find(&score).Error
+	return
+}
+
 type ScoreSaverType = uint
 
 // 存档类型

@@ -283,6 +283,134 @@ func GetMissionScore(c *gin.Context, accountID, lessonID, missionID, examID uint
 	return
 }
 
+// GetMissionScoreV2 获取实验成绩 - 优化批量账号查询
+func GetMissionScoreV2(c *gin.Context, accountIDs []uint, lessonID, missionID, examID uint) (
+	res []*MissionScore, resMapping map[uint]*MissionScore, err error) {
+	if len(accountIDs) == 0 {
+		return []*MissionScore{}, map[uint]*MissionScore{}, nil
+	}
+
+	// 获取课程信息
+	lesson, err := models.GetLesson(c, lessonID)
+	if err != nil {
+		return
+	}
+
+	// 获取实验信息
+	mission, err := models.GetMission(c, missionID)
+	if err != nil {
+		return
+	}
+
+	var exam = new(models.Exam)
+	if examID != 0 {
+		exam, _ = models.GetExam(c, examID)
+	}
+
+	// 找到实验所有的考点
+	allMCps, err := models.FindAllMissionCheckpoints(c, mission.ID)
+	if err != nil {
+		return
+	}
+
+	// 初始化结果
+	res = make([]*MissionScore, 0, len(accountIDs))
+	resMapping = make(map[uint]*MissionScore, len(accountIDs))
+	for _, id := range accountIDs {
+		ms := &MissionScore{
+			MissionID:          mission.ID,
+			MissionName:        mission.Name,
+			MissionDesc:        mission.Desc,
+			FinishScoreCounter: 0,
+			AllScoreCounter:    uint(len(allMCps)),
+			Score:              0,
+			ScoreDetails:       make([]*ScoreItem, 0),
+		}
+		res = append(res, ms)
+		resMapping[id] = ms
+	}
+
+	if uint(len(allMCps)) == 0 {
+		return
+	}
+
+	// 考点信息
+	var cpIDs = make([]uint, 0, len(allMCps))
+	for _, v := range allMCps {
+		cpIDs = append(cpIDs, v.CheckPoint)
+	}
+	cps, err := models.FindCheckpoints(c, cpIDs...)
+	if err != nil {
+		return
+	}
+	var cpsMapping = make(map[uint]*models.Checkpoint, len(cps))
+	for k, v := range cps {
+		cpsMapping[v.ID] = cps[k]
+	}
+
+	// 找到已经完成的成绩
+	finishScores, err := models.FindAllAccountFinishScoresV3(c, accountIDs, lesson.ID, exam.ID, mission.ID)
+	if err != nil {
+		return
+	}
+	var finishScoresMapping = make(map[uint]map[string]map[uint]*models.Score) // map[账号ID]map[容器名]map[考点ID]成绩
+	for k, v := range finishScores {
+		if _, isExist := finishScoresMapping[v.Account]; !isExist {
+			finishScoresMapping[v.Account] = make(map[string]map[uint]*models.Score)
+		}
+		if _, isExist := finishScoresMapping[v.Account][v.Container]; !isExist {
+			finishScoresMapping[v.Account][v.Container] = make(map[uint]*models.Score)
+		}
+		finishScoresMapping[v.Account][v.Container][v.Checkpoint] = finishScores[k]
+
+		// 增加FinishScoreCounter
+		if _, isExist := resMapping[v.Account]; isExist {
+			resMapping[v.Account].FinishScoreCounter += 1
+		}
+	}
+
+	for accountID, _res := range resMapping {
+		for _, cp := range allMCps {
+			// 找到对应的成绩
+			var (
+				_score     *models.Score
+				isCpFinish bool
+			)
+			if _, isExist := finishScoresMapping[accountID][cp.TargetContainer]; isExist {
+				_score, isCpFinish = finishScoresMapping[accountID][cp.TargetContainer][cp.CheckPoint]
+			}
+
+			_cp, _ := cpsMapping[cp.CheckPoint]
+
+			// 生成详情结果
+			var item = &ScoreItem{
+				CheckpointID: cp.ID,
+				Percent:      cp.Percent,
+				IsFinish:     isCpFinish,
+				FinishTime: func() int64 {
+					if isCpFinish {
+						return _score.CreatedAt.Unix()
+					}
+					return 0
+				}(),
+				TargetContainer: cp.TargetContainer,
+				CheckpointName:  _cp.Name,
+				CheckpointDesc:  _cp.Desc,
+			}
+
+			// 添加成绩
+			if isCpFinish {
+				_res.Score += float64(mission.Total) * (float64(cp.Percent) / 100)
+			}
+			_res.Total = mission.Total
+
+			// 追加结果
+			_res.ScoreDetails = append(_res.ScoreDetails, item)
+		}
+	}
+	return
+}
+
 // GetExamScore 获取考试成绩
 func GetExamScore(c *gin.Context, accountID, lessonID, examID uint) (res *ExamScore, err error) {
 	// 获取用户信息
@@ -403,19 +531,24 @@ func GetMissionScoreForAdmin(c *gin.Context, department, lessonID, missionID uin
 	if err != nil {
 		return
 	}
+	var accountIDs = make([]uint, 0, len(accounts))
+	for _, v := range accounts {
+		accountIDs = append(accountIDs, v.ID)
+	}
 
 	// 初始化结果
 	res = make([]*MissionScoreForAdmin, 0)
 
+	_, msMapping, err := GetMissionScoreV2(c, accountIDs, lessonID, missionID, 0)
+	if err != nil {
+		return
+	}
+
 	// 逐个获取对应的课程成绩
 	for _, ac := range accounts {
-		// 查询成绩
-		ms, _err := GetMissionScore(c, ac.ID, lessonID, missionID, 0)
-		if _err != nil {
-			ms = new(MissionScore)
-		}
+		_ms, _ := msMapping[ac.ID]
 		res = append(res, &MissionScoreForAdmin{
-			MissionScore: ms,
+			MissionScore: _ms,
 			Pos:          0,
 
 			ID:           ac.ID,
