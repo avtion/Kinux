@@ -205,8 +205,8 @@ func CountExamMissions(ctx context.Context, exam, mission uint) (
 // 考试日志 - 用于记录用户开始考试的时间
 type ExamLog struct {
 	gorm.Model
-	Account uint      // 用户ID
-	Exam    uint      // 考试
+	Account uint      `gorm:"index:e_record"` // 用户ID
+	Exam    uint      `gorm:"index:e_record"` // 考试
 	TickAt  time.Time // 用于防止监考守护写成中断导致监考无法被恢复
 	EndAt   time.Time // 考试结束时记录
 }

@@ -63,10 +63,10 @@ var _ = []ScoreSaverType{ScoreTypeExam, ScoreTypeMission}
 // ScoresSaver 成绩存档
 type ScoresSaver struct {
 	gorm.Model
-	ScoreType    ScoreSaverType
-	RawID        uint      // 实验或考试的原ID
-	RawName      string    // 实验或者考试原名
-	RawCreatedAt time.Time // 实验或者考试的创建时间
+	ScoreType    ScoreSaverType `gorm:"index:ssr"`
+	RawID        uint           `gorm:"index:ssr"` // 实验或考试的原ID
+	RawName      string         // 实验或者考试原名
+	RawCreatedAt time.Time      // 实验或者考试的创建时间
 	Data         []byte
 }
 

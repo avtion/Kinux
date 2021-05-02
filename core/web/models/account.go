@@ -38,7 +38,7 @@ type Account struct {
 type Profile struct {
 	gorm.Model
 	RealName   string // 真实姓名
-	Department uint   // 部门
+	Department uint   `gorm:"index"` // 部门
 	AvatarSeed string // 头像种子
 }
 
