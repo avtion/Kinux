@@ -107,6 +107,40 @@ func ListMissionsV2(c *gin.Context, lessonID uint, page, size int) (res []*Missi
 	return
 }
 
+// ListMissionsV3 获取任务信息 - 不检索状态
+func ListMissionsV3(c *gin.Context, lessonID uint, page, size int) (res []*Mission, err error) {
+	lesson, err := models.GetLesson(c, lessonID)
+	if err != nil {
+		return
+	}
+
+	missionIDs, err := models.GetMissionIDsByLessons(c, func(db *gorm.DB) *gorm.DB {
+		return db.Scopes(models.NewPageBuilder(page, size).Build).Where("lesson = ?", lesson.ID)
+	})
+	if err != nil {
+		return
+	}
+
+	ms, err := models.GetMissions(c, func(db *gorm.DB) *gorm.DB {
+		return db.Where("id IN ?", missionIDs)
+	})
+	if err != nil {
+		return
+	}
+
+	// 遍历构造对应的响应结果
+	for _, mission := range ms {
+		res = append(res, &Mission{
+			ID:     mission.ID,
+			Name:   mission.Name,
+			Desc:   mission.Desc,
+			Guide:  mission.Guide,
+			Status: MissionStatusStop,
+		})
+	}
+	return
+}
+
 // GetDeploymentStatusForMission 根据Deployment的状态获取对应任务的状态
 func GetDeploymentStatusForMission(ctx context.Context, namespace string, l *labelMaker) (
 	res map[uint]MissionStatus, err error) {

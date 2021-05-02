@@ -314,14 +314,24 @@ func UpdateMissionGuide(c *gin.Context) {
 // 获取实验
 func ListMissionsV2(c *gin.Context) {
 	params := &struct {
-		Page, Size int
-		Lesson     uint
+		Page, Size      int
+		Lesson          uint
+		SkipStatusCheck uint
 	}{
-		Page:   cast.ToInt(c.DefaultQuery("page", "1")),
-		Size:   cast.ToInt(c.DefaultQuery("size", "10")),
-		Lesson: cast.ToUint(c.DefaultQuery("lesson", "0")),
+		Page:            cast.ToInt(c.DefaultQuery("page", "1")),
+		Size:            cast.ToInt(c.DefaultQuery("size", "10")),
+		Lesson:          cast.ToUint(c.DefaultQuery("lesson", "0")),
+		SkipStatusCheck: cast.ToUint(c.DefaultQuery("skip", "0")),
 	}
-	ms, err := services.ListMissionsV2(c, params.Lesson, params.Page, params.Size)
+	var (
+		ms  []*services.Mission
+		err error
+	)
+	if params.SkipStatusCheck == 1 {
+		ms, err = services.ListMissionsV3(c, params.Lesson, params.Page, params.Size)
+	} else {
+		ms, err = services.ListMissionsV2(c, params.Lesson, params.Page, params.Size)
+	}
 	if err != nil {
 		c.AbortWithStatusJSON(http.StatusOK, msg.BuildFailed(err))
 		return
