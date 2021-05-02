@@ -11,7 +11,7 @@ NProgress.configure({ showSpinner: false })
 
 // 默认Axios配置
 export const DefaultAxiosConfig: AxiosRequestConfig = {
-  baseURL: 'api/',
+  baseURL: import.meta.env.VITE_API_ADDR,
   headers: {
     'Content-Type': 'application/json',
   },

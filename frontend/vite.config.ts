@@ -34,14 +34,5 @@ export default ({ mode }) => {
         ],
       }),
     ],
-    server: {
-      proxy: {
-        '/api': {
-          target: loadEnv(mode, process.cwd()).VITE_API_ADDR,
-          changeOrigin: true,
-          rewrite: (path) => path.replace(/^\/api/, '')
-        },
-      }
-    }
   })
 }
