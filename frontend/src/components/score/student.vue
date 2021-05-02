@@ -203,9 +203,11 @@ export default defineComponent({
       page: number
       size: number
       lesson: number
+      skip: number
     }
     const { data: missionData, run: getMissionData } = useRequest(
       (params: missionReqParams) => {
+        params.skip = 1
         return defaultClient.get<BaseResponse>('/v2/ms/', {
           params: params,
         })
