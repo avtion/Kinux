@@ -273,7 +273,7 @@ func EditMission(ctx context.Context, id uint, name string, dp uint, opts ...Mis
 		return
 	}
 	m.ID = id
-	return GetGlobalDB().WithContext(ctx).Select("*").Omit("guide").Updates(m).Error
+	return GetGlobalDB().WithContext(ctx).Select("*").Omit("created_at", "guide").Updates(m).Error
 }
 
 // UpdateMissionGuide 修改任务的文档

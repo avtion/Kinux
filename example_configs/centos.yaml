@@ -1,30 +1,24 @@
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: centos7
+  name: centos
   namespace: default
 spec:
   replicas: 1
   selector:
     matchLabels:
-      app: centos7
+      app: centos
   template:
     metadata:
       labels:
-        app: centos7
+        app: centos
     spec:
       securityContext:
         runAsUser: 1000
         runAsGroup: 1000
         fsGroup: 1000
-      nodeSelector:
-        cpu: amd64
       containers:
         - name: centos
-          image: registry.cn-shenzhen.aliyuncs.com/avtion/kinux:0.1.2
-          imagePullPolicy: IfNotPresent
-          command: ["tail", "-f", "/dev/null"]
-        - name: centos2
-          image: registry.cn-shenzhen.aliyuncs.com/avtion/kinux:0.1.2
+          image: registry.cn-shenzhen.aliyuncs.com/avtion/kinux:67f462b
           imagePullPolicy: IfNotPresent
           command: ["tail", "-f", "/dev/null"]
