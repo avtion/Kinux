@@ -115,7 +115,7 @@ func EditLesson(c *gin.Context) {
 		c.AbortWithStatusJSON(http.StatusOK, msg.BuildFailed(err))
 		return
 	}
-	if err := models.GetGlobalDB().WithContext(c).Save(&models.Lesson{
+	if err := models.GetGlobalDB().WithContext(c).Omit("created_at").Save(&models.Lesson{
 		Model: gorm.Model{
 			ID: params.ID,
 		},
