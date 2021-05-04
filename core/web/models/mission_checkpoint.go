@@ -342,13 +342,16 @@ func FindAllTodoMissionCheckpointsV3(ctx context.Context, account, lesson, exam 
 	if err != nil {
 		return
 	}
-	// map[container]map[checkpointID]struct{}
-	var scoreMapping = make(map[string]map[uint]struct{})
+	// map[missionID]map[container]map[checkpointID]struct{}
+	var scoreMapping = make(map[uint]map[string]map[uint]struct{})
 	for _, v := range finishedCheckpointsScores {
-		if _, isExist := scoreMapping[v.Container]; !isExist {
-			scoreMapping[v.Container] = make(map[uint]struct{})
+		if _, isExist := scoreMapping[v.Mission]; !isExist {
+			scoreMapping[v.Mission] = make(map[string]map[uint]struct{})
 		}
-		scoreMapping[v.Container][v.Checkpoint] = struct{}{}
+		if _, isExist := scoreMapping[v.Mission][v.Container]; !isExist {
+			scoreMapping[v.Mission][v.Container] = make(map[uint]struct{})
+		}
+		scoreMapping[v.Mission][v.Container][v.Checkpoint] = struct{}{}
 	}
 
 	missionsMapping = make(map[uint][]*MissionCheckpoints, len(mcs)-len(finishedCheckpointsScores))
@@ -365,12 +368,16 @@ func FindAllTodoMissionCheckpointsV3(ctx context.Context, account, lesson, exam 
 	// 过滤已经完成的检查点
 	for _, mc := range mcs {
 		// 先查对应的容器
-		if _, isExist := scoreMapping[mc.TargetContainer]; !isExist {
+		if _, isExist := scoreMapping[mc.Mission]; !isExist {
+			appendFn(mc)
+			continue
+		}
+		if _, isExist := scoreMapping[mc.Mission][mc.TargetContainer]; !isExist {
 			appendFn(mc)
 			continue
 		}
 		// 如果这个容器没有完成相应的检查点则加入
-		if _, isExist := scoreMapping[mc.TargetContainer][mc.CheckPoint]; !isExist {
+		if _, isExist := scoreMapping[mc.Mission][mc.TargetContainer][mc.CheckPoint]; !isExist {
 			appendFn(mc)
 		}
 	}
