@@ -48,6 +48,7 @@ import {
     Spin,
     Tooltip,
     Switch,
+    Alert,
 } from 'ant-design-vue'
 const antd = [
     Button,
@@ -88,6 +89,7 @@ const antd = [
     Spin,
     Tooltip,
     Switch,
+    Alert,
 ]
 antd.forEach(plugin => {
     app.use(plugin)
