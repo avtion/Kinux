@@ -310,14 +310,16 @@ func ListExamByDepartment(c *gin.Context) {
 
 	// 查看班级的课程
 	type LessonType struct {
-		ID   uint   `json:"id"`
-		Name string `json:"name"`
-		Desc string `json:"desc"`
+		ID     uint   `json:"id"`
+		Name   string `json:"name"`
+		Desc   string `json:"desc"`
+		Lesson uint   `json:"lesson"`
 	}
 	var lessons = make([]*LessonType, 0)
 	if err := models.GetGlobalDB().WithContext(c).Model(new(models.LessonDepartment)).Joins(
 		"left join lessons ON lesson_departments.lesson = lessons.id",
-	).Select("lesson_departments.id as `id`, lessons.desc as `desc`, lessons.name as `name`").Where(
+	).Select("lesson_departments.id as `id`, lessons.desc as `desc`, "+
+		"lessons.name as `name`, lesson_departments.lesson as `lesson`").Where(
 		"lesson_departments.department = ?", params.Dp).Scan(&lessons).Error; err != nil {
 		c.AbortWithStatusJSON(http.StatusOK, msg.BuildFailed(err))
 		return
@@ -326,8 +328,8 @@ func ListExamByDepartment(c *gin.Context) {
 	var lessonIDs = make([]uint, 0, len(lessons))
 	var lessonMapping = make(map[uint]*LessonType, len(lessons))
 	for k, v := range lessons {
-		lessonIDs = append(lessonIDs, v.ID)
-		lessonMapping[v.ID] = lessons[k]
+		lessonIDs = append(lessonIDs, v.Lesson)
+		lessonMapping[v.Lesson] = lessons[k]
 	}
 
 	data, err := models.ListExams(c, func(db *gorm.DB) *gorm.DB {
