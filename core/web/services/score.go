@@ -146,8 +146,12 @@ func NewScoreListener(account *models.Account, lesson *models.Lesson, exam *mode
 	}
 
 	return CombineWsPtyWrapperOptions(inOpt, outOpt, func(w *WsPtyWrapper) {
-		go inListenFn(inReader, w, inMap)
-		go outListenFn(outReader, w, outMap)
+		if inOpt != nil {
+			go inListenFn(inReader, w, inMap)
+		}
+		if outOpt != nil {
+			go outListenFn(outReader, w, outMap)
+		}
 	})
 }
 
