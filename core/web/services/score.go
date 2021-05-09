@@ -3,12 +3,14 @@ package services
 import (
 	"Kinux/core/web/models"
 	"Kinux/core/web/msg"
+	"Kinux/tools/bytesconv"
+	"bufio"
 	"fmt"
 	"github.com/360EntSecGroup-Skylar/excelize/v2"
 	"github.com/gin-gonic/gin"
-	"github.com/sergi/go-diff/diffmatchpatch"
 	"github.com/sirupsen/logrus"
 	"gorm.io/gorm"
+	"io"
 	"sort"
 	"time"
 )
@@ -39,9 +41,10 @@ func NewScoreListener(account *models.Account, lesson *models.Lesson, exam *mode
 
 	// 定义监听器
 	var (
-		inOpt, outOpt       WsPtyWrapperOption
-		inReader, outReader *TerminalListener
-		inMap, outMap       map[string]func(w *WsPtyWrapper) (err error)
+		inOpt, outOpt WsPtyWrapperOption
+		inReader      *TerminalListener
+		outReader     io.Reader
+		inMap, outMap map[string]func(w *WsPtyWrapper) (err error)
 	)
 
 	// 回调函数
@@ -76,8 +79,16 @@ func NewScoreListener(account *models.Account, lesson *models.Lesson, exam *mode
 			inMap[cp.In] = newCallbackFn(cp)
 		case models.MethodStdout:
 			// 初始化
-			if outOpt == nil || outReader == nil {
-				outOpt, outReader = NewPtyWrapperListenerOpt(ListenStdin)
+			if outOpt == nil {
+				var pw io.Writer
+				outReader, pw = io.Pipe()
+				outOpt = func(w *WsPtyWrapper) {
+					if w.stdoutListener == nil {
+						w.stdoutListener = pw
+					} else {
+						w.stdoutListener = io.MultiWriter(w.stdoutListener, pw)
+					}
+				}
 			}
 			if outMap == nil {
 				outMap = make(map[string]func(w *WsPtyWrapper) (err error))
@@ -89,10 +100,9 @@ func NewScoreListener(account *models.Account, lesson *models.Lesson, exam *mode
 	}
 
 	// 监听方法
-	listenFn := func(listener *TerminalListener, w *WsPtyWrapper,
+	inListenFn := func(listener *TerminalListener, w *WsPtyWrapper,
 		callbackMap map[string]func(w *WsPtyWrapper) (err error)) {
 		// 比较器
-		dmp := diffmatchpatch.New()
 		for {
 			select {
 			case <-listener.Context.Done():
@@ -110,25 +120,34 @@ func NewScoreListener(account *models.Account, lesson *models.Lesson, exam *mode
 					continue
 				}
 				delete(callbackMap, line)
-			} else {
-				for k := range callbackMap {
-					diffs := dmp.DiffMain(line, k, false)
-					logrus.WithField("diff", dmp.DiffPrettyText(diffs)).Trace("指令差异")
+			}
+		}
+	}
+
+	// 监听方法
+	outListenFn := func(listener io.Reader, w *WsPtyWrapper,
+		callbackMap map[string]func(w *WsPtyWrapper) (err error)) {
+		reader := bufio.NewReader(listener)
+		// 比较器
+		for {
+			line, _, _err := reader.ReadLine()
+			if _err != nil {
+				logrus.WithField("err", _err).Error("监听器发生错误")
+				return
+			}
+			if callback, isExist := callbackMap[bytesconv.BytesToString(line)]; isExist {
+				if _err := callback(w); _err != nil {
+					logrus.WithField("err", _err).Error("监听器执行回调函数失败")
+					continue
 				}
+				delete(callbackMap, bytesconv.BytesToString(line))
 			}
 		}
 	}
 
 	return CombineWsPtyWrapperOptions(inOpt, outOpt, func(w *WsPtyWrapper) {
-		// 输入和输出监听
-		for _, tmp := range []struct {
-			l *TerminalListener
-			m map[string]func(w *WsPtyWrapper) (err error)
-		}{{l: inReader, m: inMap}, {l: outReader, m: outMap}} {
-			if tmp.l != nil {
-				go listenFn(tmp.l, w, tmp.m)
-			}
-		}
+		go inListenFn(inReader, w, inMap)
+		go outListenFn(outReader, w, outMap)
 	})
 }
 
