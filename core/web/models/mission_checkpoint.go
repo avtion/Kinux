@@ -312,7 +312,8 @@ func EditMissionCheckpoint(ctx context.Context, mc *MissionCheckpoints) (err err
 	if mc.ID == 0 {
 		return errors.New("ID为空")
 	}
-	return GetGlobalDB().WithContext(ctx).Save(mc).Error
+	return GetGlobalDB().WithContext(ctx).Select("*").Omit(
+		"id, created_at, updated_at").Updates(mc).Error
 }
 
 // 删除任务检查点
