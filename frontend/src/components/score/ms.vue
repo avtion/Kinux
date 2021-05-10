@@ -148,7 +148,7 @@ export default defineComponent({
         res.score_details.forEach((v) => {
           if (v.is_finish) {
             areaChartConfig.data.push({
-              完成时间: moment.unix(v.finish_time).format('lll'),
+              完成时间: moment.unix(v.finish_time).format('MM-DD HH:mm:ss'),
               完成考点数量: counter,
             })
             counter++
