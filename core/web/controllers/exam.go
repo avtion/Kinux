@@ -493,6 +493,7 @@ func ListExamMissionsForAccount(c *gin.Context) {
 		MissionName string `json:"mission_name"`
 		Percent     uint   `json:"percent"`
 		Priority    int    `json:"priority"`
+		Lesson      uint   `json:"lesson"`
 
 		// 任务状态
 		Status services.MissionStatus `json:"status"`
@@ -567,6 +568,7 @@ func ListExamMissionsForAccount(c *gin.Context) {
 			Percent:     v.Percent,
 			Priority:    v.Priority,
 			Status:      status,
+			Lesson:      exam.Lesson,
 		})
 	}
 	c.JSON(http.StatusOK, msg.BuildSuccess(res))

@@ -245,7 +245,7 @@ func GetCheckpoints(c *gin.Context) {
 		if _, isExist := mcpMapping[v.TargetContainer]; !isExist {
 			mcpMapping[v.TargetContainer] = make(map[uint]struct{})
 		}
-		mcpMapping[v.TargetContainer][v.ID] = struct{}{}
+		mcpMapping[v.TargetContainer][v.CheckPoint] = struct{}{}
 	}
 
 	// 结果
@@ -292,8 +292,8 @@ func GetCheckpoints(c *gin.Context) {
 			CpMethod: cp.Method,
 			// TODO 应该反着过来查询
 			IsDone: func() bool {
-				if _, isExist := mcpMapping[v.TargetContainer]; isExist {
-					if _, isExist := mcpMapping[v.TargetContainer][v.ID]; isExist {
+				if _, _isExist := mcpMapping[v.TargetContainer]; _isExist {
+					if _, ok := mcpMapping[v.TargetContainer][v.CheckPoint]; ok {
 						return false
 					}
 				}
