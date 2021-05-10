@@ -15,7 +15,7 @@ export const DefaultAxiosConfig: AxiosRequestConfig = {
   headers: {
     'Content-Type': 'application/json',
   },
-  timeout: 15 * 1000,
+  timeout: 60 * 3 * 1000,
   timeoutErrorMessage: '无法与服务器建立链接',
 }
 

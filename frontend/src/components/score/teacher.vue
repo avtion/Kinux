@@ -183,7 +183,11 @@ export default defineComponent({
     // 班级列表
     const { data: dpList } = useRequest(
       () => {
-        return defaultClient.get<BaseResponse>(paths.department.list)
+        return defaultClient.get<BaseResponse>(paths.department.list, {
+          params: {
+            size: 1 << 10,
+          },
+        })
       },
       {
         formatResult: (res): dpListResult[] => {

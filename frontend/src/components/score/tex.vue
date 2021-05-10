@@ -93,7 +93,7 @@ export default defineComponent({
         },
         {
           title: '考试结束时间',
-          dataIndex: 'exam_begin_at',
+          dataIndex: 'exam_end_at',
           slots: { customRender: 'time' },
         },
       ],
