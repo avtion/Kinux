@@ -12,10 +12,12 @@ import (
 	"github.com/spf13/viper"
 	"github.com/yanyiwu/gojieba"
 	"gorm.io/gorm"
+	"math/rand"
 	"os"
 	"path/filepath"
 	"strings"
 	"testing"
+	"time"
 )
 
 func init() {
@@ -347,4 +349,143 @@ func TestAddExampleLessonsToDepartment(t *testing.T) {
 		}
 	}
 	t.Log("班级课程添加成功")
+}
+
+// 生成实验成绩
+func TestAddMissionScore(t *testing.T) {
+	rand.Seed(time.Now().UnixNano())
+	// 自定义参数
+	const (
+		// 班级
+		dpID      = 12
+		LessonID  = 30
+		missionID = 577
+	)
+	// 查找班级所有成员
+	accounts, err := models.ListAccountsWithProfiles(context.Background(), nil, func(db *gorm.DB) *gorm.DB {
+		return db.Where("departments.id = ?", dpID)
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	lesson, err := models.GetLesson(context.Background(), LessonID)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	mission, err := models.GetMission(context.Background(), missionID)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	for _, account := range accounts {
+		todoCps, _err := models.FindAllTodoMissionCheckpointsV2(
+			context.Background(),
+			account.ID,
+			lesson.ID,
+			0,
+			mission.ID,
+		)
+		if _err != nil {
+			t.Fatal(err)
+		}
+		if len(todoCps) == 0 {
+			continue
+		}
+		for _, cp := range todoCps[0:rand.Intn(len(todoCps))] {
+			if err = models.GetGlobalDB().WithContext(context.Background()).Create(&models.Score{
+				Model: gorm.Model{
+					CreatedAt: time.Now().Add(time.Duration(rand.Intn(5)) * time.Second),
+				},
+				Account:    account.ID,
+				Lesson:     lesson.ID,
+				Exam:       0,
+				Mission:    mission.ID,
+				Checkpoint: cp.CheckPoint,
+				Container:  cp.TargetContainer,
+			}).Error; err != nil {
+				return
+			}
+		}
+	}
+}
+
+// 生成考试成绩
+func TestAddExamScore(t *testing.T) {
+	rand.Seed(time.Now().UnixNano())
+	// 自定义参数
+	const (
+		// 班级
+		dpID      = 12
+		lessonID  = 30
+		examID    = 2
+		missionID = 577
+	)
+	// 查找班级所有成员
+	accounts, err := models.ListAccountsWithProfiles(context.Background(), nil, func(db *gorm.DB) *gorm.DB {
+		return db.Where("departments.id = ?", dpID)
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	//lesson, err := models.GetLesson(context.Background(), lessonID)
+	//if err != nil {
+	//	t.Fatal(err)
+	//}
+	//
+	//mission, err := models.GetMission(context.Background(), missionID)
+	//if err != nil {
+	//	t.Fatal(err)
+	//}
+
+	exam, err := models.GetExam(context.Background(), examID)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	for _, account := range accounts {
+		afterM := rand.Intn(10)
+		if err = models.GetGlobalDB().WithContext(context.Background()).Create(&models.ExamLog{
+			Model: gorm.Model{
+				CreatedAt: exam.BeginAt,
+			},
+			Account: account.ID,
+			Exam:    examID,
+			TickAt:  exam.BeginAt.Add(exam.TimeLimit + (time.Duration(afterM) * time.Minute)),
+			EndAt:   exam.BeginAt.Add(exam.TimeLimit + (time.Duration(afterM) * time.Minute)),
+		}).Error; err != nil {
+			t.Fatal(err)
+		}
+
+		//todoCps, _err := models.FindAllTodoMissionCheckpointsV2(
+		//	context.Background(),
+		//	account.ID,
+		//	lesson.ID,
+		//	exam.ID,
+		//	mission.ID,
+		//)
+		//if _err != nil {
+		//	t.Fatal(err)
+		//}
+		//if len(todoCps) == 0 {
+		//	continue
+		//}
+		//for _, cp := range todoCps[0:rand.Intn(len(todoCps))] {
+		//	if err = models.GetGlobalDB().WithContext(context.Background()).Create(&models.Score{
+		//		Model: gorm.Model{
+		//			CreatedAt: time.Now().Add(time.Duration(rand.Intn(5)) * time.Second),
+		//		},
+		//		Account:    account.ID,
+		//		Lesson:     lesson.ID,
+		//		Exam:       exam.ID,
+		//		Mission:    mission.ID,
+		//		Checkpoint: cp.CheckPoint,
+		//		Container:  cp.TargetContainer,
+		//	}).Error; err != nil {
+		//		return
+		//	}
+		//}
+	}
 }
