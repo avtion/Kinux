@@ -81,6 +81,7 @@ export default defineComponent({
       percent: number
       priority: number
       status: number
+      lesson: number
     }
     const departmentLessonDataAPI = (params: examReqParams) => {
       return defaultClient.get<BaseResponse>('/v1/em/list/', {
@@ -116,7 +117,7 @@ export default defineComponent({
             name: 'shell',
             params: {
               mission: m.mission_id,
-              lesson: m.mission_id,
+              lesson: m.lesson,
               exam: examID,
             },
           })
